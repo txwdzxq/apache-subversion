@@ -42,10 +42,3 @@ Veto-blocked changes:
 
 Approved changes:
 =================
-
- * r1921264
-   swig-rb: Fix warnings on printf-format for the size_t argument.
-   Justification:
-     Avoid possibly crash due to the incorrect format.
-   Votes:
-     +1: jun66j5, dsahlberg
