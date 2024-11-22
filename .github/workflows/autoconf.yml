@@ -42,7 +42,7 @@ jobs:
     name: ${{ matrix.name }}
 
     steps:
-      - name: Install dependecies (Linux, apt-get)
+      - name: Install dependencies (Linux, apt-get)
         if: runner.os == 'Linux'
         run: >
           sudo apt-get update &&

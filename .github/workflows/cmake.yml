@@ -90,7 +90,7 @@ jobs:
       CMAKE_GENERATOR: ${{ matrix.cmake_generator }}
 
     steps:
-      - name: Prepare Enviroment (Windows)
+      - name: Prepare Environment (Windows)
         if: runner.os == 'Windows'
         run: |
           $root = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
@@ -99,7 +99,7 @@ jobs:
 
           ls env: | foreach { "$($_.Name)=$($_.Value)" >> $env:GITHUB_ENV }
 
-      - name: Prepare Enviroment (Linux)
+      - name: Prepare Environment (Linux)
         if: runner.os == 'Windows'
         run: |
           # nothing yet
@@ -112,7 +112,7 @@ jobs:
             core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
-      - name: Install dependecies (Windows, vcpkg)
+      - name: Install dependencies (Windows, vcpkg)
         if: runner.os == 'Windows'
         run: |
           C:\vcpkg\vcpkg.exe install --triplet ${{ matrix.vcpkg_triplet }} `
@@ -120,7 +120,7 @@ jobs:
 
           "CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $env:GITHUB_ENV
 
-      - name: Install dependecies (Linux, apt-get)
+      - name: Install dependencies (Linux, apt-get)
         if: runner.os == 'Linux'
         run: >
           sudo apt-get update &&
