@@ -34,12 +34,3 @@ Veto-blocked changes:
 
 Approved changes:
 =================
-
- * r1921267
-   Suppress error messages from gen-make.py while auto-detections for perl and
-   ruby on Windows.
-   Justification:
-     Avoid noisy messages.
-   Votes:
-     +1: jun66j5, jcorvel
-     Concept +1: dsahlberg
