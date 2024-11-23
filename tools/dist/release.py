@@ -830,6 +830,8 @@ def roll_tarballs(args):
         exclude += ['STATUS']
         if args.version.minor < 7:
             exclude += ['packages', 'www']
+    if os.path.exists('.github'):
+        exclude += ['.github']
     cwd = os.getcwd()
     os.chdir(get_workdir(args.base_dir))
     run_svn(['update', '--set-depth=exclude'] + exclude,
