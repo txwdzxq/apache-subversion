@@ -852,7 +852,8 @@ def compare_dump_files(label_expected, label_actual,
     print('DIFF of raw dumpfiles (including expected differences)')
     print('--- ' + (label_expected or 'expected'))
     print('+++ ' + (label_actual or 'actual'))
-    print(''.join(ndiff([line.decode('utf-8') for line in expected], [line.decode('utf-8') for line in actual])))
+    print(''.join(ndiff([repr(line) for line in expected], 
+                        [repr(line) for line in actual])))
     raise svntest.Failure('DIFF of parsed dumpfiles (ignoring expected differences)\n'
                           + '\n'.join(ndiff(
           pprint.pformat(parsed_expected).splitlines(),
