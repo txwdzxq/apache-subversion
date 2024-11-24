@@ -384,35 +384,6 @@ session_url_is(svn_ra_session_t *ra_session,
   return strcmp(url, session_url) == 0;
 }
 
-/* Return a new merge_source_t structure, allocated in RESULT_POOL,
- * initialized with deep copies of LOC1 and LOC2 and ANCESTRAL. */
-svn_client__merge_source_t *
-svn_client__merge_source_create(const svn_client__pathrev_t *loc1,
-                                const svn_client__pathrev_t *loc2,
-                                svn_boolean_t ancestral,
-                                apr_pool_t *result_pool)
-{
-  svn_client__merge_source_t *s
-    = apr_palloc(result_pool, sizeof(*s));
-
-  s->loc1 = svn_client__pathrev_dup(loc1, result_pool);
-  s->loc2 = svn_client__pathrev_dup(loc2, result_pool);
-  s->ancestral = ancestral;
-  return s;
-}
-
-/* Return a deep copy of SOURCE, allocated in RESULT_POOL. */
-svn_client__merge_source_t *
-svn_client__merge_source_dup(const svn_client__merge_source_t *source,
-                             apr_pool_t *result_pool)
-{
-  svn_client__merge_source_t *s = apr_palloc(result_pool, sizeof(*s));
-
-  s->loc1 = svn_client__pathrev_dup(source->loc1, result_pool);
-  s->loc2 = svn_client__pathrev_dup(source->loc2, result_pool);
-  s->ancestral = source->ancestral;
-  return s;
-}
 
 /* Decide whether ambiguous foreign merge should be a warning or an error */
 #define WITH_AMBIGUOUS_FOREIGN_MERGE_WARNING \
