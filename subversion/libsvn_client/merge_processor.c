@@ -233,6 +233,33 @@ make_conflict_versions(const svn_wc_conflict_version_t **left,
   return SVN_NO_ERROR;
 }
 
+
+/* Make a copy of PROPCHANGES (array of svn_prop_t) into *TRIMMED_PROPCHANGES,
+   omitting any svn:mergeinfo changes.  */
+static svn_error_t *
+omit_mergeinfo_changes(apr_array_header_t **trimmed_propchanges,
+                       const apr_array_header_t *propchanges,
+                       apr_pool_t *result_pool)
+{
+  int i;
+
+  *trimmed_propchanges = apr_array_make(result_pool,
+                                        propchanges->nelts,
+                                        sizeof(svn_prop_t));
+
+  for (i = 0; i < propchanges->nelts; ++i)
+    {
+      const svn_prop_t *change = &APR_ARRAY_IDX(propchanges, i, svn_prop_t);
+
+      /* If this property is not svn:mergeinfo, then copy it.  */
+      if (strcmp(change->name, SVN_PROP_MERGEINFO) != 0)
+        APR_ARRAY_PUSH(*trimmed_propchanges, svn_prop_t) = *change;
+    }
+
+  return SVN_NO_ERROR;
+}
+
+
 /* Prepare a set of property changes PROPCHANGES to be used for a merge
    operation on LOCAL_ABSPATH.
 
