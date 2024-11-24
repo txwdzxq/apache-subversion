@@ -1280,6 +1280,24 @@ svn_client__textbase_sync(svn_ra_session_t **ra_session_p,
 const svn_version_t *
 svn_client__compatible_wc_version_optional_pristine(apr_pool_t *result_pool);
 
+/* Return a diff processor that will apply the merge to the WC.
+ */
+svn_diff_tree_processor_t *
+svn_client__apply_processor_create(const svn_client__merge_target_t *target,
+                                   const svn_client__merge_source_t *source,
+                                   svn_wc_notify_func2_t notify_func,
+                                   void *notify_baton,
+                                   svn_boolean_t same_repos,
+                                   svn_boolean_t force_delete,
+                                   svn_boolean_t record_only,
+                                   svn_boolean_t dry_run,
+                                   const char *diff3_cmd,
+                                   const apr_array_header_t *merge_options,
+                                   const apr_array_header_t *ext_patterns,
+                                   svn_client_ctx_t *ctx,
+                                   apr_pool_t *scratch_pool,
+                                   apr_pool_t *result_pool);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
