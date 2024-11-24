@@ -223,14 +223,23 @@ def verify_backport(sbox, expected_dump_file, uuid):
     # There is no expected dump file.
     return
 
-  # Remove some SVNSync-specific housekeeping properties from the
-  # mirror repository in preparation for the comparison dump.
+  # Prepare for dump comparison
+  # We will run this over file://, let's set a known author: by default it
+  # would be the developer's OS username, since svn(1) as executed by this
+  # script doesn't use the _with_auth() codepath.
+  # We also need to ignore the date, since it will be based on the date the
+  # test is executed.
   svntest.actions.enable_revprop_changes(sbox.repo_dir)
   for revnum in range(0, 1+int(sbox.youngest())):
     svntest.actions.run_and_verify_svnadmin([], [],
       "delrevprop", "-r", revnum, sbox.repo_dir, "svn:date")
+    # Assume r1:HEAD have svn:author set, and r0 hasn't
+    if revnum > 0:
+      svntest.actions.run_and_verify_svn([], [],
+        "propset", "--revprop", "-r", revnum, "-q", "svn:author", "jrandom",
+        sbox.wc_dir)
 
-  # Create a dump file from the mirror repository.
+  # Create a dump file from the repository.
   dest_dump = open(expected_dump_file, 'rb').readlines()
   svntest.actions.run_and_verify_svnadmin(None, [],
                                           'setuuid', '--', sbox.repo_dir, uuid)
