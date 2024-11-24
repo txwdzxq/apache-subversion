@@ -136,8 +136,6 @@ svn_client__pathrev_fspath(const svn_client__pathrev_t *pathrev,
 }
 
 
-/* Return a new merge_source_t structure, allocated in RESULT_POOL,
- * initialized with deep copies of LOC1 and LOC2 and ANCESTRAL. */
 svn_client__merge_source_t *
 svn_client__merge_source_create(const svn_client__pathrev_t *loc1,
                                 const svn_client__pathrev_t *loc2,
@@ -153,7 +151,6 @@ svn_client__merge_source_create(const svn_client__pathrev_t *loc1,
   return s;
 }
 
-/* Return a deep copy of SOURCE, allocated in RESULT_POOL. */
 svn_client__merge_source_t *
 svn_client__merge_source_dup(const svn_client__merge_source_t *source,
                              apr_pool_t *result_pool)
