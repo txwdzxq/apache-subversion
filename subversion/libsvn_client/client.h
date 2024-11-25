@@ -1280,6 +1280,23 @@ svn_client__textbase_sync(svn_ra_session_t **ra_session_p,
 const svn_version_t *
 svn_client__compatible_wc_version_optional_pristine(apr_pool_t *result_pool);
 
+typedef struct svn_client__apply_processor_callbacks_t
+{
+  svn_error_t *(*conflicted_path)(void *baton,
+                                  const char *path,
+                                  svn_boolean_t tree_conflict,
+                                  apr_pool_t *pool);
+
+  svn_error_t *(*skipped_path)(void *baton,
+                               const char *path,
+                               apr_pool_t *pool);
+
+  svn_error_t *(*updated_path)(void *baton,
+                               const char *local_abspath,
+                               svn_wc_notify_action_t action,
+                               apr_pool_t *pool);
+} svn_client__apply_processor_callbacks_t;
+
 /* Return a diff processor that will apply the merge to the WC.
  */
 svn_diff_tree_processor_t *
@@ -1294,6 +1311,8 @@ svn_client__apply_processor_create(const svn_client__merge_target_t *target,
                                    const char *diff3_cmd,
                                    const apr_array_header_t *merge_options,
                                    const apr_array_header_t *ext_patterns,
+                                   const svn_client__apply_processor_callbacks_t *cb_table,
+                                   void *cb_baton,
                                    svn_client_ctx_t *ctx,
                                    apr_pool_t *scratch_pool,
                                    apr_pool_t *result_pool);

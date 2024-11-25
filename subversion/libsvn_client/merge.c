@@ -7240,6 +7240,98 @@ ensure_ra_session_url(svn_ra_session_t **ra_session,
   return SVN_NO_ERROR;
 }
 
+/* Implements svn_client__apply_processor_callbacks_t::conflicted_path */
+static svn_error_t *
+apply_processor_conflicted_path(void *baton, const char *local_abspath,
+                                svn_boolean_t tree_conflict, apr_pool_t *pool)
+{
+  merge_cmd_baton_t *merge_b = baton;
+
+  alloc_and_store_path(&merge_b->conflicted_paths, local_abspath,
+                       merge_b->pool);
+
+  if (tree_conflict)
+    alloc_and_store_path(&merge_b->tree_conflicted_abspaths, 
+                         local_abspath,
+                         merge_b->pool);
+
+  return SVN_NO_ERROR;
+}
+
+/* Implements svn_client__apply_processor_callbacks_t::skipped_path */
+static svn_error_t *
+apply_processor_skipped_path(void *baton, const char *local_abspath,
+                             apr_pool_t *pool)
+{
+  merge_cmd_baton_t *merge_b = baton;
+
+  if (merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
+    {
+      store_path(merge_b->skipped_abspaths, local_abspath);
+    }
+
+  return SVN_NO_ERROR;
+}
+
+/* Implements svn_client__apply_processor_callbacks_t::updated_path */
+static svn_error_t *
+apply_processor_updated_path(void *baton, const char *local_abspath,
+                             svn_wc_notify_action_t action, apr_pool_t *pool)
+{
+  merge_cmd_baton_t *merge_b = baton;
+
+  switch (action)
+  {
+  case svn_wc_notify_update_update:
+    if (merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
+      {
+        store_path(merge_b->merged_abspaths, local_abspath);
+      }
+    break;
+
+  case svn_wc_notify_update_delete:
+    /* Update the lists of merged, skipped, tree-conflicted and added paths. */
+    if (merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
+      {
+        /* Issue #4166: If a previous merge added NOTIFY_ABSPATH, but we
+           are now deleting it, then remove it from the list of added
+           paths. */
+        svn_hash_sets(merge_b->added_abspaths, local_abspath, NULL);
+        store_path(merge_b->merged_abspaths, local_abspath);
+      }
+
+    /* Note in children_with_mergeinfo that all paths in this subtree are
+     * being deleted, to avoid trying to set mergeinfo on them later. */
+    if (merge_b->children_with_mergeinfo)
+      {
+        int i;
+
+        for (i = 0; i < merge_b->children_with_mergeinfo->nelts; i++)
+          {
+            svn_client__merge_path_t *child
+              = APR_ARRAY_IDX(merge_b->children_with_mergeinfo, i,
+                  svn_client__merge_path_t *);
+
+            if (svn_dirent_is_ancestor(local_abspath, child->abspath))
+              {
+                SVN_ERR(svn_sort__array_delete2(merge_b->children_with_mergeinfo, i--, 1));
+              }
+          }
+      }
+
+    break;
+
+  case svn_wc_notify_update_add:
+    if (merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
+      {
+        store_path(merge_b->added_abspaths, local_abspath);
+      }
+    break;
+  }
+
+  return SVN_NO_ERROR;
+}
+
 /* Drive a merge of MERGE_SOURCES into working copy node TARGET
    and possibly record mergeinfo describing the merge -- see
    RECORD_MERGEINFO().
@@ -7456,6 +7548,11 @@ do_merge(apr_hash_t **modified_subtrees,
       svn_client__merge_source_t *source =
         APR_ARRAY_IDX(merge_sources, i, svn_client__merge_source_t *);
       single_range_conflict_report_t *conflicted_range_report;
+      svn_client__apply_processor_callbacks_t cb_table = { 0 };
+
+      cb_table.conflicted_path = apply_processor_conflicted_path;
+      cb_table.skipped_path = apply_processor_skipped_path;
+      cb_table.updated_path = apply_processor_updated_path;
 
       svn_pool_clear(iterpool);
 
@@ -7481,6 +7578,8 @@ do_merge(apr_hash_t **modified_subtrees,
                                                      diff3_cmd,
                                                      merge_options,
                                                      ext_patterns,
+                                                     &cb_table,
+                                                     &merge_cmd_baton,
                                                      ctx,
                                                      scratch_pool, scratch_pool);
 

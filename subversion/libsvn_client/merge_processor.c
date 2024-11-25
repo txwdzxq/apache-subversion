@@ -102,6 +102,8 @@ typedef struct merge_apply_processor_baton_t
   svn_wc_notify_func2_t notify_func;
   void *notify_baton;
 
+  const svn_client__apply_processor_callbacks_t *cb_table;
+  void *cb_baton;
 } merge_apply_processor_baton_t;
 
 
@@ -522,13 +524,12 @@ record_skip(merge_apply_processor_baton_t *merge_b,
   if (merge_b->record_only)
     return SVN_NO_ERROR; /* ### Why? - Legacy compatibility */
 
-#if TODO_STORE_PATH
-  if ((merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
+  if (merge_b->cb_table && merge_b->cb_table->skipped_path
       && !(pdb && pdb->shadowed))
     {
-      store_path(merge_b->skipped_abspaths, local_abspath);
+      SVN_ERR(merge_b->cb_table->skipped_path(merge_b->cb_baton, local_abspath,
+                                              scratch_pool));
     }
-#endif
 
   if (merge_b->notify_func)
     {
@@ -573,16 +574,11 @@ record_tree_conflict(merge_apply_processor_baton_t *merge_b,
   if (merge_b->record_only)
     return SVN_NO_ERROR;
 
-#if TODO_STORE_PATH
-  if (merge_b->merge_source.ancestral
-      || merge_b->reintegrate_merge)
+  if (merge_b->cb_table && merge_b->cb_table->conflicted_path)
     {
-      store_path(merge_b->tree_conflicted_abspaths, local_abspath);
+      SVN_ERR(merge_b->cb_table->conflicted_path(
+          merge_b->cb_baton, local_abspath, TRUE, scratch_pool));
     }
-
-  alloc_and_store_path(&merge_b->conflicted_paths, local_abspath,
-                       merge_b->pool);
-#endif
 
   if (!merge_b->dry_run)
     {
@@ -718,12 +714,12 @@ record_update_add(merge_apply_processor_baton_t *merge_b,
                   svn_boolean_t notify_replaced,
                   apr_pool_t *scratch_pool)
 {
-#if TODO_STORE_PATH
-  if (merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
+  if (merge_b->cb_table && merge_b->cb_table->updated_path)
     {
-      store_path(merge_b->merged_abspaths, local_abspath);
+      SVN_ERR(merge_b->cb_table->updated_path(merge_b->cb_baton, local_abspath,
+                                              svn_wc_notify_update_add,
+                                              scratch_pool));
     }
-#endif
 
   if (merge_b->notify_func)
     {
@@ -753,12 +749,12 @@ record_update_update(merge_apply_processor_baton_t *merge_b,
                      svn_wc_notify_state_t prop_state,
                      apr_pool_t *scratch_pool)
 {
-#if TODO_STORE_PATH
-  if (merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
+  if (merge_b->cb_table && merge_b->cb_table->updated_path)
     {
-      store_path(merge_b->merged_abspaths, local_abspath);
+      SVN_ERR(merge_b->cb_table->updated_path(merge_b->cb_baton, local_abspath,
+                                              svn_wc_notify_update_update,
+                                              scratch_pool));
     }
-#endif
 
   if (merge_b->notify_func)
     {
@@ -786,16 +782,11 @@ record_update_delete(merge_apply_processor_baton_t *merge_b,
                      svn_node_kind_t kind,
                      apr_pool_t *scratch_pool)
 {
-#if TODO_STORE_PATH
-  /* Update the lists of merged, skipped, tree-conflicted and added paths. */
-  if (merge_b->merge_source.ancestral
-      || merge_b->reintegrate_merge)
+  if (merge_b->cb_table && merge_b->cb_table->updated_path)
     {
-      /* Issue #4166: If a previous merge added NOTIFY_ABSPATH, but we
-         are now deleting it, then remove it from the list of added
-         paths. */
-      svn_hash_sets(merge_b->added_abspaths, local_abspath, NULL);
-      store_path(merge_b->merged_abspaths, local_abspath);
+      SVN_ERR(merge_b->cb_table->updated_path(merge_b->cb_baton, local_abspath,
+                                              svn_wc_notify_update_delete,
+                                              scratch_pool));
     }
 
   if (parent_db)
@@ -808,26 +799,6 @@ record_update_delete(merge_apply_processor_baton_t *merge_b,
       svn_hash_sets(parent_db->pending_deletes, dup_abspath,
                     svn_node_kind_to_word(kind));
     }
-
-  /* Note in children_with_mergeinfo that all paths in this subtree are
-   * being deleted, to avoid trying to set mergeinfo on them later. */
-  if (merge_b->children_with_mergeinfo)
-    {
-      int i;
-
-      for (i = 0; i < merge_b->children_with_mergeinfo->nelts; i++)
-        {
-          svn_client__merge_path_t *child
-            = APR_ARRAY_IDX(merge_b->children_with_mergeinfo, i,
-                            svn_client__merge_path_t *);
-
-          if (svn_dirent_is_ancestor(local_abspath, child->abspath))
-            {
-              SVN_ERR(svn_sort__array_delete2(merge_b->children_with_mergeinfo, i--, 1));
-            }
-        }
-    }
-#endif
 
   return SVN_NO_ERROR;
 }
@@ -925,13 +896,11 @@ mark_dir_edited(merge_apply_processor_baton_t *merge_b,
                                scratch_pool);
         }
 
-#if TODO_STORE_PATH
-      if (merge_b->merge_source.ancestral
-          || merge_b->reintegrate_merge)
+      if (merge_b->cb_table && merge_b->cb_table->skipped_path)
         {
-          store_path(merge_b->skipped_abspaths, local_abspath);
+          SVN_ERR(merge_b->cb_table->skipped_path(
+              merge_b->cb_baton, local_abspath, scratch_pool));
         }
-#endif
     }
   else if (db->tree_conflict_reason != CONFLICT_REASON_NONE)
     {
@@ -1006,13 +975,11 @@ mark_file_edited(merge_apply_processor_baton_t *merge_b,
                                scratch_pool);
         }
 
-#if TODO_STORE_PATH
-      if (merge_b->merge_source.ancestral
-          || merge_b->reintegrate_merge)
+      if (merge_b->cb_table && merge_b->cb_table->skipped_path)
         {
-          store_path(merge_b->skipped_abspaths, local_abspath);
+          SVN_ERR(merge_b->cb_table->skipped_path(
+              merge_b->cb_baton, local_abspath, scratch_pool));
         }
-#endif
     }
   else if (fb->tree_conflict_reason != CONFLICT_REASON_NONE)
     {
@@ -1357,13 +1324,12 @@ merge_file_changed(const char *relpath,
                                   NULL, NULL,
                                   ctx->cancel_func, ctx->cancel_baton,
                                   scratch_pool));
-#if TODO_STORE_PATH
-      if (property_state == svn_wc_notify_state_conflicted)
+      if (merge_b->cb_table && merge_b->cb_table->conflicted_path
+          && property_state == svn_wc_notify_state_conflicted)
         {
-          alloc_and_store_path(&merge_b->conflicted_paths, local_abspath,
-                               merge_b->pool);
+          SVN_ERR(merge_b->cb_table->conflicted_path(
+              merge_b->cb_baton, local_abspath, FALSE, scratch_pool));
         }
-#endif
     }
 
   /* Easy out: We are only applying mergeinfo differences. */
@@ -1423,14 +1389,15 @@ merge_file_changed(const char *relpath,
                             ctx->cancel_baton,
                             scratch_pool));
 
-#if TODO_STORE_PATH
       if (content_outcome == svn_wc_merge_conflict
           || property_state == svn_wc_notify_state_conflicted)
         {
-          alloc_and_store_path(&merge_b->conflicted_paths, local_abspath,
-                               merge_b->pool);
+          if (merge_b->cb_table && merge_b->cb_table->conflicted_path)
+            {
+              SVN_ERR(merge_b->cb_table->conflicted_path(
+                  merge_b->cb_baton, local_abspath, FALSE, scratch_pool));
+            }
         }
-#endif
 
       if (content_outcome == svn_wc_merge_conflict)
         text_state = svn_wc_notify_state_conflicted;
@@ -1511,14 +1478,13 @@ merge_file_added(const char *relpath,
       return SVN_NO_ERROR;
     }
 
-#if TODO_STORE_PATH
-  if ((merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
+  if (merge_b->cb_table && merge_b->cb_table->updated_path
       && ( !fb->parent_baton || !fb->parent_baton->added))
     {
-      /* Store the roots of added subtrees */
-      store_path(merge_b->added_abspaths, local_abspath);
+      SVN_ERR(merge_b->cb_table->updated_path(merge_b->cb_baton, local_abspath,
+                                              svn_wc_notify_update_add,
+                                              scratch_pool));
     }
-#endif
 
   if (!merge_b->dry_run)
     {
@@ -1768,11 +1734,9 @@ merge_file_deleted(const char *relpath,
     {
       if (same)
         {
-#if TODO_STORE_PATH
           /* Note that we checked this file */
           store_path(fb->parent_baton->delete_state->compared_abspaths,
                      local_abspath);
-#endif
         }
       else
         {
@@ -2294,13 +2258,12 @@ merge_dir_changed(const char *relpath,
                                   ctx->cancel_func, ctx->cancel_baton,
                                   scratch_pool));
 
-#if TODO_STORE_PATH
-      if (prop_state == svn_wc_notify_state_conflicted)
+      if (merge_b->cb_table && merge_b->cb_table->conflicted_path &&
+          prop_state == svn_wc_notify_state_conflicted)
         {
-          alloc_and_store_path(&merge_b->conflicted_paths, local_abspath,
-                               merge_b->pool);
+          SVN_ERR(merge_b->cb_table->conflicted_path(
+              merge_b->cb_baton, local_abspath, FALSE, scratch_pool));
         }
-#endif
 
       if (prop_state == svn_wc_notify_state_conflicted
           || prop_state == svn_wc_notify_state_merged
@@ -2363,14 +2326,13 @@ merge_dir_added(const char *relpath,
                  && ! merge_b->record_only /* Skip details from merge_open_dir() */
                  );
 
-#if TODO_STORE_PATH
-  if ((merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
+  if (merge_b->cb_table && merge_b->cb_table->updated_path
       && ( !db->parent_baton || !db->parent_baton->added))
     {
-      /* Store the roots of added subtrees */
-      store_path(merge_b->added_abspaths, local_abspath);
+          SVN_ERR(merge_b->cb_table->updated_path(
+              merge_b->cb_baton, local_abspath, svn_wc_notify_update_add,
+              scratch_pool));
     }
-#endif
 
   if (merge_b->same_repos)
     {
@@ -2453,13 +2415,12 @@ merge_dir_added(const char *relpath,
                                   merge_b->ctx->cancel_func,
                                   merge_b->ctx->cancel_baton,
                                   scratch_pool));
-#if TODO_STORE_PATH
-      if (prop_state == svn_wc_notify_state_conflicted)
+      if (merge_b->cb_table && merge_b->cb_table->conflicted_path &&
+          prop_state == svn_wc_notify_state_conflicted)
         {
-          alloc_and_store_path(&merge_b->conflicted_paths, local_abspath,
-                               merge_b->pool);
+          SVN_ERR(merge_b->cb_table->conflicted_path(
+              merge_b->cb_baton, local_abspath, FALSE, scratch_pool));
         }
-#endif
     }
 
   return SVN_NO_ERROR;
@@ -2734,6 +2695,8 @@ svn_client__apply_processor_create(const svn_client__merge_target_t *target,
                                    const char *diff3_cmd,
                                    const apr_array_header_t *merge_options,
                                    const apr_array_header_t *ext_patterns,
+                                   const svn_client__apply_processor_callbacks_t *cb_table,
+                                   void *cb_baton,
                                    svn_client_ctx_t *ctx,
                                    apr_pool_t *scratch_pool,
                                    apr_pool_t *result_pool)
@@ -2754,6 +2717,8 @@ svn_client__apply_processor_create(const svn_client__merge_target_t *target,
   baton->dry_run = dry_run;
   baton->notify_func = notify_func;
   baton->notify_baton = notify_baton;
+  baton->cb_table = cb_table;
+  baton->cb_baton = cb_baton;
   baton->ctx = ctx;
 
   merge_processor = svn_diff__tree_processor_create(baton,
