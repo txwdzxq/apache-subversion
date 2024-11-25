@@ -331,8 +331,6 @@ typedef struct merge_cmd_baton_t {
   apr_pool_t *pool;
 
   /* Our notification callback, that adds a 'begin' notification */
-  svn_wc_notify_func2_t notify_func;
-  void *notify_baton;
   struct notify_begin_state_t notify_begin;
 
 } merge_cmd_baton_t;
@@ -7529,8 +7527,6 @@ do_merge(apr_hash_t **modified_subtrees,
   merge_cmd_baton.added_abspaths = apr_hash_make(result_pool);
   merge_cmd_baton.tree_conflicted_abspaths = apr_hash_make(result_pool);
 
-  merge_cmd_baton.notify_func = notify_merging;
-  merge_cmd_baton.notify_baton = &merge_cmd_baton.notify_begin;
   merge_cmd_baton.notify_begin.merge_b = &merge_cmd_baton;
   merge_cmd_baton.notify_begin.notify_func2 = ctx->notify_func2;
   merge_cmd_baton.notify_begin.notify_baton2 = ctx->notify_baton2;
