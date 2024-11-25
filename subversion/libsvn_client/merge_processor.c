@@ -1512,13 +1512,17 @@ merge_file_added(const char *relpath,
           pristine_props = right_props; /* Includes last_* information */
           new_props = NULL; /* No local changes */
 
-#if TODO_STORE_PATH
-          if (svn_hash_gets(pristine_props, SVN_PROP_MERGEINFO))
+          if (merge_b->cb_table && merge_b->cb_table->mergeinfo_changed)
             {
-              alloc_and_store_path(&merge_b->paths_with_new_mergeinfo,
-                                   local_abspath, merge_b->pool);
+              const svn_string_t *new_mergeinfo
+                = svn_hash_gets(pristine_props, SVN_PROP_MERGEINFO);
+
+              SVN_ERR(merge_b->cb_table->mergeinfo_changed(merge_b->cb_baton,
+                                                           local_abspath,
+                                                           NULL,
+                                                           new_mergeinfo,
+                                                           scratch_pool));
             }
-#endif
         }
       else
         {
@@ -1756,11 +1760,22 @@ merge_file_deleted(const char *relpath,
                                NULL, NULL /* no notify */,
                                scratch_pool));
 
-#if TODO_STORE_PATH
-      /* Record that we might have deleted mergeinfo */
-      alloc_and_store_path(&merge_b->paths_with_deleted_mergeinfo,
-                           local_abspath, merge_b->pool);
-#endif
+      if (merge_b->cb_table && merge_b->cb_table->mergeinfo_changed)
+        {
+          /* Does LOCAL_ABSPATH have any pristine mergeinfo? */
+          const svn_string_t *old_mergeinfo;
+
+          if (left_props)
+            old_mergeinfo = svn_hash_gets(left_props, SVN_PROP_MERGEINFO);
+          else
+            old_mergeinfo = NULL;
+
+          /* Record that we might have deleted mergeinfo */
+          SVN_ERR(merge_b->cb_table->mergeinfo_changed(merge_b->cb_baton, local_abspath,
+                                                       old_mergeinfo,
+                                                       NULL,
+                                                       scratch_pool));
+        }
 
       /* And notify the deletion */
       SVN_ERR(record_update_delete(merge_b, fb->parent_baton, local_abspath,
@@ -2377,13 +2392,17 @@ merge_dir_added(const char *relpath,
                                                 scratch_pool));
         }
 
-#if TODO_STORE_PATH
-      if (svn_hash_gets(new_pristine_props, SVN_PROP_MERGEINFO))
+      if (merge_b->cb_table && merge_b->cb_table->mergeinfo_changed)
         {
-          alloc_and_store_path(&merge_b->paths_with_new_mergeinfo,
-                               local_abspath, merge_b->pool);
+          const svn_string_t *new_mergeinfo = svn_hash_gets(new_pristine_props,
+                                                            SVN_PROP_MERGEINFO);
+
+          SVN_ERR(merge_b->cb_table->mergeinfo_changed(merge_b->cb_baton,
+                                                       local_abspath,
+                                                       NULL,
+                                                       new_mergeinfo,
+                                                       scratch_pool));
         }
-#endif
     }
   else
     {
@@ -2611,14 +2630,22 @@ merge_dir_deleted(const char *relpath,
   else
     {
       /* Record that we might have deleted mergeinfo */
-      if (working_props
-          && svn_hash_gets(working_props, SVN_PROP_MERGEINFO))
+      if (merge_b->cb_table && merge_b->cb_table->mergeinfo_changed)
         {
-#if TODO_STORE_PATH
-          alloc_and_store_path(&merge_b->paths_with_deleted_mergeinfo,
-                               local_abspath, merge_b->pool);
-#endif
-        }
+          const svn_string_t *old_mergeinfo;
+          if (working_props)
+            old_mergeinfo = svn_hash_gets(working_props, SVN_PROP_MERGEINFO);
+          else
+            old_mergeinfo = NULL;
+
+          if (old_mergeinfo)
+            {
+              SVN_ERR(merge_b->cb_table->mergeinfo_changed(merge_b->cb_baton, local_abspath,
+                                                           old_mergeinfo,
+                                                           NULL,
+                                                           scratch_pool));
+            }
+      }
 
       SVN_ERR(record_update_delete(merge_b, db->parent_baton, local_abspath,
                                    svn_node_dir, scratch_pool));

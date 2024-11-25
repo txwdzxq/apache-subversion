@@ -7330,6 +7330,29 @@ apply_processor_updated_path(void *baton, const char *local_abspath,
   return SVN_NO_ERROR;
 }
 
+/* Implements svn_client__apply_processor_callbacks_t::mergeinfo_changed */
+static svn_error_t *
+apply_processor_mergeinfo_changed(void *baton, const char *local_abspath,
+                                  const svn_string_t *old_mergeinfo,
+                                  const svn_string_t *new_mergeinfo,
+                                  apr_pool_t *pool)
+{
+  merge_cmd_baton_t *merge_b = baton;
+
+  if (old_mergeinfo && !new_mergeinfo)
+    {
+      alloc_and_store_path(&merge_b->paths_with_deleted_mergeinfo,
+                           local_abspath, merge_b->pool);
+    }
+  else if (!old_mergeinfo && new_mergeinfo)
+    {
+      alloc_and_store_path(&merge_b->paths_with_new_mergeinfo, local_abspath,
+                           merge_b->pool);
+    }
+
+  return SVN_NO_ERROR;
+}
+
 /* Drive a merge of MERGE_SOURCES into working copy node TARGET
    and possibly record mergeinfo describing the merge -- see
    RECORD_MERGEINFO().
@@ -7549,6 +7572,7 @@ do_merge(apr_hash_t **modified_subtrees,
       cb_table.conflicted_path = apply_processor_conflicted_path;
       cb_table.skipped_path = apply_processor_skipped_path;
       cb_table.updated_path = apply_processor_updated_path;
+      cb_table.mergeinfo_changed = apply_processor_mergeinfo_changed;
 
       svn_pool_clear(iterpool);
 

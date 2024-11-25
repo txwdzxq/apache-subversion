@@ -1295,6 +1295,12 @@ typedef struct svn_client__apply_processor_callbacks_t
                                const char *local_abspath,
                                svn_wc_notify_action_t action,
                                apr_pool_t *pool);
+
+  svn_error_t *(*mergeinfo_changed)(void *baton,
+                                    const char *local_abspath,
+                                    const svn_string_t *old_mergeinfo,
+                                    const svn_string_t *new_mergeinfo,
+                                    apr_pool_t *pool);
 } svn_client__apply_processor_callbacks_t;
 
 /* Return a diff processor that will apply the merge to the WC.
