@@ -75,6 +75,7 @@ option(SVN_ENABLE_SVNXX "Enable compilation of the C++ bindings (requires C++)" 
 option(SVN_ENABLE_PROGRAMS "Build Subversion programs (such as svn.exe)" ON)
 cmake_dependent_option(SVN_ENABLE_TOOLS "Build Subversion tools" ON "SVN_ENABLE_TESTS" OFF)
 option(SVN_ENABLE_TESTS "Build Subversion test-suite" OFF)
+option(EXPAND_TESTS "Expand tests; This will slow-down configuration, but you will have an ability to run any subtest" OFF)
 option(SVN_ENABLE_APACHE_MODULES "Build modules for Apache HTTPD" OFF)
 
 option(SVN_ENABLE_SWIG_PERL "Enable Subversion SWIG bindings for Perl" OFF)
@@ -768,6 +769,24 @@ include("build/cmake/targets.cmake")
 
 if(SVN_ENABLE_TESTS)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
+  set(run_tests_script "${CMAKE_CURRENT_SOURCE_DIR}/build/run_tests.py")
+
+  function(add_py_test name prog)
+    add_test(
+      NAME
+        "${name}"
+      COMMAND
+        "${Python3_EXECUTABLE}" "${run_tests_script}"
+        --bin ${binary_dir}
+        --tools-bin ${binary_dir}
+        --verbose
+        --log-to-stdout
+        --set-log-level=WARNING
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${binary_dir}
+        "${prog}"
+    )
+  endfunction()
 
   file(GLOB PYTHON_TESTS
      "subversion/tests/cmdline/*_tests.py"
@@ -778,20 +797,34 @@ if(SVN_ENABLE_TESTS)
     get_filename_component(py_test_name ${py_test_path} NAME_WLE)
     set(binary_dir $<TARGET_FILE_DIR:svn>)
 
-    add_test(
-      NAME
+    if(EXPAND_TESTS)
+      message("Listing tests in ${py_test_name}")
+      execute_process(
+        COMMAND
+          "${Python3_EXECUTABLE}" "${run_tests_script}"
+          --log-to-stdout
+          --list
+          ${CMAKE_CURRENT_SOURCE_DIR}
+          ${binary_dir}
+          ${py_test_path}
+          OUTPUT_VARIABLE tests_list_output
+      )
+      string(REGEX MATCHALL "\n *([0-9]+)" tests_list ${tests_list_output})
+
+      foreach(test_num ${tests_list})
+        string(REGEX MATCH "([0-9]+)" test_num ${test_num})
+
+        add_py_test(
+          "cmdline.${py_test_name}.${test_num}"
+          "${py_test_path}#${test_num}"
+        )
+      endforeach()
+    else()
+      add_py_test(
         "cmdline.${py_test_name}"
-      COMMAND
-        "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/build/run_tests.py"
-        --bin ${binary_dir}
-        --tools-bin ${binary_dir}
-        --verbose
-        --log-to-stdout
-        --set-log-level=WARNING
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${binary_dir}
-        ${py_test_path}
-    )
+        "${py_test_path}"
+      )
+    endif()
   endforeach()
 endif()
 
