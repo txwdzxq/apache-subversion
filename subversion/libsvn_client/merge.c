@@ -7436,7 +7436,6 @@ do_merge(apr_hash_t **modified_subtrees,
   svn_ra_session_t *ra_session1 = NULL, *ra_session2 = NULL;
   const char *old_src_session_url = NULL;
   apr_pool_t *iterpool;
-  const svn_diff_tree_processor_t *processor;
 
   SVN_ERR_ASSERT(svn_dirent_is_absolute(target->abspath));
 
@@ -7544,6 +7543,7 @@ do_merge(apr_hash_t **modified_subtrees,
       svn_client__merge_source_t *source =
         APR_ARRAY_IDX(merge_sources, i, svn_client__merge_source_t *);
       single_range_conflict_report_t *conflicted_range_report;
+      const svn_diff_tree_processor_t *processor;
       svn_client__apply_processor_callbacks_t cb_table = { 0 };
 
       cb_table.conflicted_path = apply_processor_conflicted_path;
