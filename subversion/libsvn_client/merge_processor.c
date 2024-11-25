@@ -544,15 +544,6 @@ record_skip(merge_apply_processor_baton_t *merge_b,
   return SVN_NO_ERROR;
 }
 
-/* Forward declaration */
-static svn_client__merge_path_t *
-find_nearest_ancestor_with_intersecting_ranges(
-  svn_revnum_t *start,
-  svn_revnum_t *end,
-  const apr_array_header_t *children_with_mergeinfo,
-  svn_boolean_t path_is_own_ancestor,
-  const char *local_abspath);
-
 /* Record a tree conflict in the WC, unless this is a dry run or a record-
  * only merge, or if a tree conflict is already flagged for the VICTIM_PATH.
  * (The latter can happen if a merge-tracking-aware merge is doing multiple
