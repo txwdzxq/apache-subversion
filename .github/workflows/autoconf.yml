@@ -51,6 +51,7 @@ jobs:
           libtool-bin
           libapr1-dev
           libaprutil1-dev
+          libserf-dev
           libexpat1-dev
           zlib1g-dev
           libsqlite3-dev

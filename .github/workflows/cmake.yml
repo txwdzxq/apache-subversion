@@ -63,7 +63,7 @@ jobs:
             os: windows-latest
             build_shared: OFF
             cmake_generator: Ninja
-            vcpkg_triplet: x64-windows-static
+            vcpkg_triplet: x64-windows-static-md
             arch: x64
             run_tests: true
           - name: Linux, shared, with tests
@@ -116,7 +116,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           C:\vcpkg\vcpkg.exe install --triplet ${{ matrix.vcpkg_triplet }} `
-            apr apr-util expat zlib sqlite3
+            apr apr-util serf expat zlib sqlite3
 
           "CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $env:GITHUB_ENV
 
@@ -129,6 +129,7 @@ jobs:
           libtool-bin
           libapr1-dev
           libaprutil1-dev
+          libserf-dev
           libexpat1-dev
           zlib1g-dev
           libsqlite3-dev
@@ -150,6 +151,7 @@ jobs:
           cmake -B out
           -DBUILD_SHARED_LIBS=${{ matrix.build_shared }}
           -DSVN_ENABLE_TESTS=ON
+          -DSVN_ENABLE_RA_SERF=ON
           -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/installdir
           -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_triplet }}
           ${{ matrix.extra_config_opts }}
