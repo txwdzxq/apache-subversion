@@ -1298,6 +1298,20 @@ struct merge_file_baton_t
   svn_boolean_t add_is_replace; /* Add is second part of replace */
 };
 
+/* Allocate new #merge_file_baton_t structure in @a result_pool */
+static struct merge_file_baton_t *
+create_file_baton(apr_pool_t *result_pool)
+{
+  struct merge_file_baton_t *fb;
+
+  fb = apr_pcalloc(result_pool, sizeof(*fb));
+  fb->tree_conflict_reason = CONFLICT_REASON_NONE;
+  fb->tree_conflict_action = svn_wc_conflict_action_edit;
+  fb->skip_reason = svn_wc_notify_state_unknown;
+
+  return fb;
+}
+
 /* Record the skip for future processing and (later) produce the
    skip notification */
 static svn_error_t *
@@ -1836,14 +1850,9 @@ merge_file_opened(void **new_file_baton,
 {
   merge_cmd_baton_t *merge_b = processor->baton;
   struct merge_dir_baton_t *pdb = dir_baton;
-  struct merge_file_baton_t *fb;
+  struct merge_file_baton_t *fb = create_file_baton(result_pool);
   const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
                                               relpath, scratch_pool);
-
-  fb = apr_pcalloc(result_pool, sizeof(*fb));
-  fb->tree_conflict_reason = CONFLICT_REASON_NONE;
-  fb->tree_conflict_action = svn_wc_conflict_action_edit;
-  fb->skip_reason = svn_wc_notify_state_unknown;
 
   if (left_source)
     fb->tree_conflict_merge_left_node_kind = svn_node_file;
