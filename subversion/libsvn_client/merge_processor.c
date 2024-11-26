@@ -344,7 +344,8 @@ prepare_merge_props_changed(const apr_array_header_t **prop_updates,
   /* Make a record in BATON if we find a PATH where mergeinfo is added
      where none existed previously or PATH is having its existing
      mergeinfo deleted. */
-  if (props->nelts)
+  if (merge_b->cb_table && merge_b->cb_table->mergeinfo_changed
+      && props->nelts)
     {
       int i;
 
@@ -355,7 +356,7 @@ prepare_merge_props_changed(const apr_array_header_t **prop_updates,
           if (strcmp(prop->name, SVN_PROP_MERGEINFO) == 0)
             {
               /* Does LOCAL_ABSPATH have any pristine mergeinfo? */
-              svn_boolean_t has_pristine_mergeinfo = FALSE;
+              const svn_string_t *old_mergeinfo;
               apr_hash_t *pristine_props;
 
               SVN_ERR(svn_wc_get_pristine_props(&pristine_props,
@@ -364,24 +365,16 @@ prepare_merge_props_changed(const apr_array_header_t **prop_updates,
                                                 scratch_pool,
                                                 scratch_pool));
 
-              if (pristine_props
-                  && svn_hash_gets(pristine_props, SVN_PROP_MERGEINFO))
-                has_pristine_mergeinfo = TRUE;
+              if (pristine_props)
+                old_mergeinfo = svn_hash_gets(pristine_props, SVN_PROP_MERGEINFO);
+              else
+                old_mergeinfo = NULL;
 
-              if (!has_pristine_mergeinfo && prop->value)
-                {
-#if TODO_STORE_PATH
-                  alloc_and_store_path(&merge_b->paths_with_new_mergeinfo,
-                                       local_abspath, merge_b->pool);
-#endif
-                }
-              else if (has_pristine_mergeinfo && !prop->value)
-                {
-#if TODO_STORE_PATH
-                  alloc_and_store_path(&merge_b->paths_with_deleted_mergeinfo,
-                                       local_abspath, merge_b->pool);
-#endif
-                }
+              SVN_ERR(merge_b->cb_table->mergeinfo_changed(merge_b->cb_baton,
+                                                           local_abspath,
+                                                           old_mergeinfo,
+                                                           prop->value,
+                                                           scratch_pool));
             }
         }
     }
