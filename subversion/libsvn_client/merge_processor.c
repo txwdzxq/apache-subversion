@@ -727,13 +727,6 @@ record_update_add(merge_apply_processor_baton_t *merge_b,
                   svn_boolean_t notify_replaced,
                   apr_pool_t *scratch_pool)
 {
-  if (merge_b->cb_table && merge_b->cb_table->updated_path)
-    {
-      SVN_ERR(merge_b->cb_table->updated_path(merge_b->cb_baton, local_abspath,
-                                              svn_wc_notify_update_add,
-                                              scratch_pool));
-    }
-
   if (merge_b->notify_func)
     {
       svn_wc_notify_t *notify;
@@ -762,13 +755,6 @@ record_update_update(merge_apply_processor_baton_t *merge_b,
                      svn_wc_notify_state_t prop_state,
                      apr_pool_t *scratch_pool)
 {
-  if (merge_b->cb_table && merge_b->cb_table->updated_path)
-    {
-      SVN_ERR(merge_b->cb_table->updated_path(merge_b->cb_baton, local_abspath,
-                                              svn_wc_notify_update_update,
-                                              scratch_pool));
-    }
-
   if (merge_b->notify_func)
     {
       svn_wc_notify_t *notify;
@@ -795,13 +781,6 @@ record_update_delete(merge_apply_processor_baton_t *merge_b,
                      svn_node_kind_t kind,
                      apr_pool_t *scratch_pool)
 {
-  if (merge_b->cb_table && merge_b->cb_table->updated_path)
-    {
-      SVN_ERR(merge_b->cb_table->updated_path(merge_b->cb_baton, local_abspath,
-                                              svn_wc_notify_update_delete,
-                                              scratch_pool));
-    }
-
   if (parent_db)
     {
       const char *dup_abspath = apr_pstrdup(parent_db->pool, local_abspath);
@@ -1484,14 +1463,6 @@ merge_file_added(const char *relpath,
   if (merge_b->record_only)
     {
       return SVN_NO_ERROR;
-    }
-
-  if (merge_b->cb_table && merge_b->cb_table->updated_path
-      && ( !fb->parent_baton || !fb->parent_baton->added))
-    {
-      SVN_ERR(merge_b->cb_table->updated_path(merge_b->cb_baton, local_abspath,
-                                              svn_wc_notify_update_add,
-                                              scratch_pool));
     }
 
   if (!merge_b->dry_run)
@@ -2349,14 +2320,6 @@ merge_dir_added(const char *relpath,
                  db->edited                  /* Marked edited from merge_open_dir() */
                  && ! merge_b->record_only /* Skip details from merge_open_dir() */
                  );
-
-  if (merge_b->cb_table && merge_b->cb_table->updated_path
-      && ( !db->parent_baton || !db->parent_baton->added))
-    {
-          SVN_ERR(merge_b->cb_table->updated_path(
-              merge_b->cb_baton, local_abspath, svn_wc_notify_update_add,
-              scratch_pool));
-    }
 
   if (merge_b->same_repos)
     {
