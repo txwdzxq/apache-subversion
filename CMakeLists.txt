@@ -797,10 +797,10 @@ if(SVN_ENABLE_TESTS)
      "subversion/tests/cmdline/*_tests.py"
   )
 
-  foreach(py_test_path ${PYTHON_TESTS})
+  foreach(py_test_abspath ${PYTHON_TESTS})
     # Keep `.py'.
-    get_filename_component(py_test_name ${py_test_path} NAME_WLE)
-    file(RELATIVE_PATH py_test_path ${CMAKE_CURRENT_SOURCE_DIR} ${py_test_path})
+    get_filename_component(py_test_name ${py_test_abspath} NAME_WLE)
+    file(RELATIVE_PATH py_test_relpath ${CMAKE_CURRENT_SOURCE_DIR} ${py_test_path})
     set(binary_dir $<TARGET_FILE_DIR:svn>)
 
     if(EXPAND_TESTS)
@@ -822,13 +822,13 @@ if(SVN_ENABLE_TESTS)
 
         add_py_test(
           "cmdline.${py_test_name}.${test_num}"
-          "${py_test_path}#${test_num}"
+          "${py_test_relpath}#${test_num}"
         )
       endforeach()
     else()
       add_py_test(
         "cmdline.${py_test_name}"
-        "${py_test_path}"
+        "${py_test_relpath}"
       )
     endif()
   endforeach()
