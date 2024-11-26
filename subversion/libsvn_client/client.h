@@ -1287,10 +1287,6 @@ typedef struct svn_client__apply_processor_callbacks_t
                                   svn_boolean_t tree_conflict,
                                   apr_pool_t *pool);
 
-  svn_error_t *(*skipped_path)(void *baton,
-                               const char *path,
-                               apr_pool_t *pool);
-
   svn_error_t *(*mergeinfo_changed)(void *baton,
                                     const char *local_abspath,
                                     const svn_string_t *old_mergeinfo,

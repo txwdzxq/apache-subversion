@@ -1332,6 +1332,12 @@ notify_merging(void *baton,
         store_path(merge_b->added_abspaths, notify->path);
       }
     break;
+
+  case svn_wc_notify_skip:
+    if (merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
+      {
+        store_path(merge_b->skipped_abspaths, notify->path);
+      }
   }
 
   notify_merge_begin(b, notify->path,
@@ -7309,21 +7315,6 @@ apply_processor_conflicted_path(void *baton, const char *local_abspath,
   return SVN_NO_ERROR;
 }
 
-/* Implements svn_client__apply_processor_callbacks_t::skipped_path */
-static svn_error_t *
-apply_processor_skipped_path(void *baton, const char *local_abspath,
-                             apr_pool_t *pool)
-{
-  merge_cmd_baton_t *merge_b = baton;
-
-  if (merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
-    {
-      store_path(merge_b->skipped_abspaths, local_abspath);
-    }
-
-  return SVN_NO_ERROR;
-}
-
 /* Implements svn_client__apply_processor_callbacks_t::mergeinfo_changed */
 static svn_error_t *
 apply_processor_mergeinfo_changed(void *baton, const char *local_abspath,
@@ -7594,7 +7585,6 @@ do_merge(apr_hash_t **modified_subtrees,
       svn_client__apply_processor_callbacks_t cb_table = { 0 };
 
       cb_table.conflicted_path = apply_processor_conflicted_path;
-      cb_table.skipped_path = apply_processor_skipped_path;
       cb_table.mergeinfo_changed = apply_processor_mergeinfo_changed;
       cb_table.adjust_mergeinfo = apply_processor_adjust_mergeinfo;
 

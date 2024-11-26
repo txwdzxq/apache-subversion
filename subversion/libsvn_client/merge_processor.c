@@ -537,13 +537,6 @@ record_skip(merge_apply_processor_baton_t *merge_b,
   if (merge_b->record_only)
     return SVN_NO_ERROR; /* ### Why? - Legacy compatibility */
 
-  if (merge_b->cb_table && merge_b->cb_table->skipped_path
-      && !(pdb && pdb->shadowed))
-    {
-      SVN_ERR(merge_b->cb_table->skipped_path(merge_b->cb_baton, local_abspath,
-                                              scratch_pool));
-    }
-
   if (merge_b->notify_func)
     {
       svn_wc_notify_t *notify;
@@ -887,12 +880,6 @@ mark_dir_edited(merge_apply_processor_baton_t *merge_b,
                                notify,
                                scratch_pool);
         }
-
-      if (merge_b->cb_table && merge_b->cb_table->skipped_path)
-        {
-          SVN_ERR(merge_b->cb_table->skipped_path(
-              merge_b->cb_baton, local_abspath, scratch_pool));
-        }
     }
   else if (db->tree_conflict_reason != CONFLICT_REASON_NONE)
     {
@@ -965,12 +952,6 @@ mark_file_edited(merge_apply_processor_baton_t *merge_b,
           merge_b->notify_func(merge_b->notify_baton,
                                notify,
                                scratch_pool);
-        }
-
-      if (merge_b->cb_table && merge_b->cb_table->skipped_path)
-        {
-          SVN_ERR(merge_b->cb_table->skipped_path(
-              merge_b->cb_baton, local_abspath, scratch_pool));
         }
     }
   else if (fb->tree_conflict_reason != CONFLICT_REASON_NONE)
