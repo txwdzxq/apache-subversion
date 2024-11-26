@@ -832,6 +832,8 @@ def roll_tarballs(args):
             exclude += ['packages', 'www']
     if os.path.exists('.github'):
         exclude += ['.github']
+    if os.path.exists('.asf.yaml'):
+        exclude += ['.asf.yaml']
     cwd = os.getcwd()
     os.chdir(get_workdir(args.base_dir))
     run_svn(['update', '--set-depth=exclude'] + exclude,

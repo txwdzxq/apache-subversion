@@ -1,6 +1,6 @@
 # .clang-format       : clang format rules
 #
-# This file configures clang format rules. Fhis file should be automatically
+# This file configures clang format rules. This file should be automatically
 # read by Visual Studio and other IDEs, when the project gets opened.
 #
 # See clang docs for more info:

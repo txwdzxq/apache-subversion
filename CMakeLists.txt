@@ -76,6 +76,7 @@ option(SVN_ENABLE_PROGRAMS "Build Subversion programs (such as svn.exe)" ON)
 cmake_dependent_option(SVN_ENABLE_TOOLS "Build Subversion tools" ON "SVN_ENABLE_TESTS" OFF)
 option(SVN_ENABLE_TESTS "Build Subversion test-suite" OFF)
 option(EXPAND_TESTS "Expand tests; This will slow-down configuration, but you will have an ability to run any subtest" OFF)
+option(SVN_TEST_CONFIGURE_FOR_PARALLEL "Configures tests for parallel run execution" OFF)
 option(SVN_ENABLE_APACHE_MODULES "Build modules for Apache HTTPD" OFF)
 
 option(SVN_ENABLE_SWIG_PERL "Enable Subversion SWIG bindings for Perl" OFF)
@@ -772,6 +773,14 @@ if(SVN_ENABLE_TESTS)
   set(run_tests_script "${CMAKE_CURRENT_SOURCE_DIR}/build/run_tests.py")
 
   function(add_py_test name prog)
+    if(SVN_TEST_CONFIGURE_FOR_PARALLEL)
+      set(test_root "${CMAKE_CURRENT_BINARY_DIR}/Testing/${name}")
+    else()
+      set(test_root "${CMAKE_CURRENT_BINARY_DIR}/Testing")
+    endif()
+
+    file(MAKE_DIRECTORY "${test_root}/subversion/tests/cmdline")
+
     add_test(
       NAME
         "${name}"
@@ -783,8 +792,10 @@ if(SVN_ENABLE_TESTS)
         --log-to-stdout
         --set-log-level=WARNING
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${binary_dir}
+        ${test_root}
         "${prog}"
+      WORKING_DIRECTORY
+        ${test_root}
     )
   endfunction()
 
@@ -792,9 +803,10 @@ if(SVN_ENABLE_TESTS)
      "subversion/tests/cmdline/*_tests.py"
   )
 
-  foreach(py_test_path ${PYTHON_TESTS})
+  foreach(py_test_abspath ${PYTHON_TESTS})
     # Keep `.py'.
-    get_filename_component(py_test_name ${py_test_path} NAME_WLE)
+    get_filename_component(py_test_name ${py_test_abspath} NAME_WLE)
+    file(RELATIVE_PATH py_test_relpath ${CMAKE_CURRENT_SOURCE_DIR} ${py_test_abspath})
     set(binary_dir $<TARGET_FILE_DIR:svn>)
 
     if(EXPAND_TESTS)
@@ -806,7 +818,7 @@ if(SVN_ENABLE_TESTS)
           --list
           ${CMAKE_CURRENT_SOURCE_DIR}
           ${binary_dir}
-          ${py_test_path}
+          ${py_test_abspath}
           OUTPUT_VARIABLE tests_list_output
       )
       string(REGEX MATCHALL "\n *([0-9]+)" tests_list ${tests_list_output})
@@ -816,13 +828,13 @@ if(SVN_ENABLE_TESTS)
 
         add_py_test(
           "cmdline.${py_test_name}.${test_num}"
-          "${py_test_path}#${test_num}"
+          "${py_test_relpath}#${test_num}"
         )
       endforeach()
     else()
       add_py_test(
         "cmdline.${py_test_name}"
-        "${py_test_path}"
+        "${py_test_relpath}"
       )
     endif()
   endforeach()
