@@ -460,6 +460,21 @@ struct merge_dir_baton_t
   struct dir_delete_baton_t *delete_state;
 };
 
+/* Allocate new #merge_dir_baton_t structure in @a result_pool */
+static struct merge_dir_baton_t *
+create_dir_baton(apr_pool_t *result_pool)
+{
+  struct merge_dir_baton_t *db;
+
+  db = apr_pcalloc(result_pool, sizeof(*db));
+  db->pool = result_pool;
+  db->tree_conflict_reason = CONFLICT_REASON_NONE;
+  db->tree_conflict_action = svn_wc_conflict_action_edit;
+  db->skip_reason = svn_wc_notify_state_unknown;
+
+  return db;
+}
+
 /* Baton for the merge_dir_*() functions. Initialized in merge_file_opened() */
 struct merge_file_baton_t
 {
@@ -1812,15 +1827,9 @@ merge_dir_opened(void **new_dir_baton,
                  apr_pool_t *scratch_pool)
 {
   merge_apply_processor_baton_t *merge_b = processor->baton;
-  struct merge_dir_baton_t *db;
+  struct merge_dir_baton_t *db = create_dir_baton(result_pool);
   struct merge_dir_baton_t *pdb = parent_dir_baton;
   const char *local_abspath;
-
-  db = apr_pcalloc(result_pool, sizeof(*db));
-  db->pool = result_pool;
-  db->tree_conflict_reason = CONFLICT_REASON_NONE;
-  db->tree_conflict_action = svn_wc_conflict_action_edit;
-  db->skip_reason = svn_wc_notify_state_unknown;
 
   *new_dir_baton = db;
 
