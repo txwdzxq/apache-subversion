@@ -5193,13 +5193,16 @@ do_file_merge(svn_mergeinfo_catalog_t result_catalog,
              do a text-n-props merge; otherwise, do a delete-n-add merge. */
           if (! (merge_b->diff_ignore_ancestry || sources_related))
             {
-#if TODO_REPLACE_SINGLE_FILE
-              void *dir_baton = open_dir_for_replace_single_file(iterpool);
-#else
-              void *dir_baton = NULL;
-#endif
-              void *file_baton;
               svn_boolean_t skip;
+              svn_boolean_t skip_dir = FALSE;
+              svn_boolean_t skip_children;
+              void *dir_baton;
+              void *file_baton;
+
+              SVN_ERR(processor->dir_opened(&dir_baton,
+                                            &skip_dir, &skip_children,
+                                            NULL, NULL, NULL, NULL, NULL,
+                                            processor, iterpool, iterpool));
 
               /* Delete... */
               file_baton = NULL;

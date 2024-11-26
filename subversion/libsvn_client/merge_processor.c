@@ -1814,9 +1814,7 @@ merge_dir_opened(void **new_dir_baton,
   merge_apply_processor_baton_t *merge_b = processor->baton;
   struct merge_dir_baton_t *db;
   struct merge_dir_baton_t *pdb = parent_dir_baton;
-
-  const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
-                                              relpath, scratch_pool);
+  const char *local_abspath;
 
   db = apr_pcalloc(result_pool, sizeof(*db));
   db->pool = result_pool;
@@ -1825,6 +1823,15 @@ merge_dir_opened(void **new_dir_baton,
   db->skip_reason = svn_wc_notify_state_unknown;
 
   *new_dir_baton = db;
+
+  /* Easy out: we are opening a fake directory, that doesn't have a relpath.
+   * This may be used as a directory of replace-single-file merge.
+   */
+  if (relpath == NULL)
+    return SVN_NO_ERROR;
+
+  local_abspath = svn_dirent_join(merge_b->target->abspath,
+                                  relpath, scratch_pool);
 
   if (left_source)
     db->tree_conflict_merge_left_node_kind = svn_node_dir;
@@ -2750,20 +2757,4 @@ svn_client__apply_processor_create(const svn_client__merge_target_t *target,
   merge_processor->node_absent = merge_node_absent;
 
   return merge_processor;
-}
-
-/* Initialize minimal dir baton to allow calculating 'R'eplace
-   from 'D'elete + 'A'dd. */
-/* TODO: doesn't yet works */
-static void *
-open_dir_for_replace_single_file(apr_pool_t *result_pool)
-{
-  struct merge_dir_baton_t *dir_baton = apr_pcalloc(result_pool, sizeof(*dir_baton));
-
-  dir_baton->pool = result_pool;
-  dir_baton->tree_conflict_reason = CONFLICT_REASON_NONE;
-  dir_baton->tree_conflict_action = svn_wc_conflict_action_edit;
-  dir_baton->skip_reason = svn_wc_notify_state_unknown;
-
-  return dir_baton;
 }
