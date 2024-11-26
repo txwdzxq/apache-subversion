@@ -76,6 +76,7 @@ option(SVN_ENABLE_PROGRAMS "Build Subversion programs (such as svn.exe)" ON)
 cmake_dependent_option(SVN_ENABLE_TOOLS "Build Subversion tools" ON "SVN_ENABLE_TESTS" OFF)
 option(SVN_ENABLE_TESTS "Build Subversion test-suite" OFF)
 option(EXPAND_TESTS "Expand tests; This will slow-down configuration, but you will have an ability to run any subtest" OFF)
+option(SVN_TEST_CONFIGURE_FOR_PARALLEL "Configures tests for parallel run execution" OFF)
 option(SVN_ENABLE_APACHE_MODULES "Build modules for Apache HTTPD" OFF)
 
 option(SVN_ENABLE_SWIG_PERL "Enable Subversion SWIG bindings for Perl" OFF)
@@ -772,7 +773,12 @@ if(SVN_ENABLE_TESTS)
   set(run_tests_script "${CMAKE_CURRENT_SOURCE_DIR}/build/run_tests.py")
 
   function(add_py_test name prog)
-    set(test_root "${CMAKE_CURRENT_BINARY_DIR}/Testing")
+    if(SVN_TEST_CONFIGURE_FOR_PARALLEL)
+      set(test_root "${CMAKE_CURRENT_BINARY_DIR}/Testing/${name}")
+    else()
+      set(test_root "${CMAKE_CURRENT_BINARY_DIR}/Testing")
+    endif()
+
     file(MAKE_DIRECTORY "${test_root}/subversion/tests/cmdline")
 
     add_test(
