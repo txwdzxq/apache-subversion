@@ -772,6 +772,9 @@ if(SVN_ENABLE_TESTS)
   set(run_tests_script "${CMAKE_CURRENT_SOURCE_DIR}/build/run_tests.py")
 
   function(add_py_test name prog)
+    set(test_root "${CMAKE_CURRENT_BINARY_DIR}/Testing")
+    file(MAKE_DIRECTORY "${test_root}/subversion/tests/cmdline")
+
     add_test(
       NAME
         "${name}"
@@ -783,8 +786,10 @@ if(SVN_ENABLE_TESTS)
         --log-to-stdout
         --set-log-level=WARNING
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${binary_dir}
+        ${test_root}
         "${prog}"
+      WORKING_DIRECTORY
+        ${test_root}
     )
   endfunction()
 
@@ -795,6 +800,7 @@ if(SVN_ENABLE_TESTS)
   foreach(py_test_path ${PYTHON_TESTS})
     # Keep `.py'.
     get_filename_component(py_test_name ${py_test_path} NAME_WLE)
+    file(RELATIVE_PATH py_test_path ${CMAKE_CURRENT_SOURCE_DIR} ${py_test_path})
     set(binary_dir $<TARGET_FILE_DIR:svn>)
 
     if(EXPAND_TESTS)
