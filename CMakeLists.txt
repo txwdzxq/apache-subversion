@@ -800,7 +800,7 @@ if(SVN_ENABLE_TESTS)
   foreach(py_test_abspath ${PYTHON_TESTS})
     # Keep `.py'.
     get_filename_component(py_test_name ${py_test_abspath} NAME_WLE)
-    file(RELATIVE_PATH py_test_relpath ${CMAKE_CURRENT_SOURCE_DIR} ${py_test_path})
+    file(RELATIVE_PATH py_test_relpath ${CMAKE_CURRENT_SOURCE_DIR} ${py_test_abspath})
     set(binary_dir $<TARGET_FILE_DIR:svn>)
 
     if(EXPAND_TESTS)
@@ -812,7 +812,7 @@ if(SVN_ENABLE_TESTS)
           --list
           ${CMAKE_CURRENT_SOURCE_DIR}
           ${binary_dir}
-          ${py_test_path}
+          ${py_test_abspath}
           OUTPUT_VARIABLE tests_list_output
       )
       string(REGEX MATCHALL "\n *([0-9]+)" tests_list ${tests_list_output})
