@@ -321,22 +321,13 @@ prepare_merge_props_changed(const apr_array_header_t **prop_updates,
       if (! merge_b->same_repos)
         SVN_ERR(omit_mergeinfo_changes(&props, props, result_pool));
 
-      /* If this is a forward merge then don't add new mergeinfo to
-         PATH that is already part of PATH's own history, see
-         http://svn.haxx.se/dev/archive-2008-09/0006.shtml.  If the
-         merge sources are not ancestral then there is no concept of a
-         'forward' or 'reverse' merge and we filter unconditionally. */
-      if (merge_b->merge_source.loc1->rev < merge_b->merge_source.loc2->rev
-          || !merge_b->merge_source.ancestral)
+      if (merge_b->cb_table && merge_b->cb_table->adjust_mergeinfo)
         {
-#if TODO_FILTER_MERGEINFO
-          if (HONOR_MERGEINFO(merge_b) || merge_b->reintegrate_merge)
-            SVN_ERR(filter_self_referential_mergeinfo(&props,
+          SVN_ERR(merge_b->cb_table->adjust_mergeinfo(merge_b->cb_baton,
+                                                      &props,
                                                       local_abspath,
-                                                      merge_b->ra_session2,
-                                                      merge_b->ctx,
+                                                      scratch_pool,
                                                       result_pool));
-#endif
         }
     }
   *prop_updates = props;

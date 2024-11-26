@@ -7353,6 +7353,36 @@ apply_processor_mergeinfo_changed(void *baton, const char *local_abspath,
   return SVN_NO_ERROR;
 }
 
+/* Implements svn_client__apply_processor_callbacks_t::adjust_mergeinfo */
+static svn_error_t *
+apply_processor_adjust_mergeinfo(void *baton,
+                                 apr_array_header_t **props_changes_p,
+                                 const char *local_abspath,
+                                 apr_pool_t *scratch_pool,
+                                 apr_pool_t *result_pool)
+
+{
+  merge_cmd_baton_t *merge_b = baton;
+
+  /* If this is a forward merge then don't add new mergeinfo to
+     PATH that is already part of PATH's own history, see
+     http://svn.haxx.se/dev/archive-2008-09/0006.shtml.  If the
+     merge sources are not ancestral then there is no concept of a
+     'forward' or 'reverse' merge and we filter unconditionally. */
+  if (merge_b->merge_source.loc1->rev < merge_b->merge_source.loc2->rev
+      || !merge_b->merge_source.ancestral)
+    {
+      if (HONOR_MERGEINFO(merge_b) || merge_b->reintegrate_merge)
+        SVN_ERR(filter_self_referential_mergeinfo(props_changes_p,
+                                                  local_abspath,
+                                                  merge_b->ra_session2,
+                                                  merge_b->ctx,
+                                                  result_pool));
+    }
+
+  return SVN_NO_ERROR;
+}
+
 /* Drive a merge of MERGE_SOURCES into working copy node TARGET
    and possibly record mergeinfo describing the merge -- see
    RECORD_MERGEINFO().
@@ -7573,6 +7603,7 @@ do_merge(apr_hash_t **modified_subtrees,
       cb_table.skipped_path = apply_processor_skipped_path;
       cb_table.updated_path = apply_processor_updated_path;
       cb_table.mergeinfo_changed = apply_processor_mergeinfo_changed;
+      cb_table.adjust_mergeinfo = apply_processor_adjust_mergeinfo;
 
       svn_pool_clear(iterpool);
 
