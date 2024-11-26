@@ -1,0 +1,2 @@
+notifications:
+  jobs: notifications@subversion.apache.org
