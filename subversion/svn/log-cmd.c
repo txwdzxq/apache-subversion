@@ -75,6 +75,8 @@ display_diff(const svn_log_entry_t *log_entry,
   svn_opt_revision_t start_revision;
   svn_opt_revision_t end_revision;
 
+BREAK THE BUILD TO CHECK GHA NOTIFICATIONS!!
+
   /* Fall back to "" to get options initialized either way. */
   if (diff_extensions)
     diff_options = svn_cstring_split(diff_extensions, " \t\n\r",
