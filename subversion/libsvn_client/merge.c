@@ -1338,6 +1338,7 @@ notify_merging(void *baton,
       {
         store_path(merge_b->skipped_abspaths, notify->path);
       }
+    break;
   }
 
   notify_merge_begin(b, notify->path,
