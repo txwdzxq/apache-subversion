@@ -1339,7 +1339,21 @@ notify_merging(void *baton,
         store_path(merge_b->skipped_abspaths, notify->path);
       }
     break;
+
+  case svn_wc_notify_tree_conflict:
+    alloc_and_store_path(&merge_b->conflicted_paths, notify->path,
+                         merge_b->pool);
+    alloc_and_store_path(&merge_b->tree_conflicted_abspaths, notify->path,
+                         merge_b->pool);
+    break;
   }
+
+  if (notify->content_state == svn_wc_notify_state_conflicted ||
+      notify->prop_state == svn_wc_notify_state_conflicted)
+    {
+      alloc_and_store_path(&merge_b->conflicted_paths, notify->path,
+                           merge_b->pool);
+    }
 
   notify_merge_begin(b, notify->path,
                      notify->action == svn_wc_notify_update_delete,
@@ -7298,24 +7312,6 @@ ensure_ra_session_url(svn_ra_session_t **ra_session,
   return SVN_NO_ERROR;
 }
 
-/* Implements svn_client__apply_processor_callbacks_t::conflicted_path */
-static svn_error_t *
-apply_processor_conflicted_path(void *baton, const char *local_abspath,
-                                svn_boolean_t tree_conflict, apr_pool_t *pool)
-{
-  merge_cmd_baton_t *merge_b = baton;
-
-  alloc_and_store_path(&merge_b->conflicted_paths, local_abspath,
-                       merge_b->pool);
-
-  if (tree_conflict)
-    alloc_and_store_path(&merge_b->tree_conflicted_abspaths, 
-                         local_abspath,
-                         merge_b->pool);
-
-  return SVN_NO_ERROR;
-}
-
 /* Implements svn_client__apply_processor_callbacks_t::mergeinfo_changed */
 static svn_error_t *
 apply_processor_mergeinfo_changed(void *baton, const char *local_abspath,
@@ -7585,7 +7581,6 @@ do_merge(apr_hash_t **modified_subtrees,
       const svn_diff_tree_processor_t *processor;
       svn_client__apply_processor_callbacks_t cb_table = { 0 };
 
-      cb_table.conflicted_path = apply_processor_conflicted_path;
       cb_table.mergeinfo_changed = apply_processor_mergeinfo_changed;
       cb_table.adjust_mergeinfo = apply_processor_adjust_mergeinfo;
 

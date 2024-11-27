@@ -580,12 +580,6 @@ record_tree_conflict(merge_apply_processor_baton_t *merge_b,
   if (merge_b->record_only)
     return SVN_NO_ERROR;
 
-  if (merge_b->cb_table && merge_b->cb_table->conflicted_path)
-    {
-      SVN_ERR(merge_b->cb_table->conflicted_path(
-          merge_b->cb_baton, local_abspath, TRUE, scratch_pool));
-    }
-
   if (!merge_b->dry_run)
     {
        svn_wc_conflict_description2_t *conflict;
@@ -1292,12 +1286,6 @@ merge_file_changed(const char *relpath,
                                   NULL, NULL,
                                   ctx->cancel_func, ctx->cancel_baton,
                                   scratch_pool));
-      if (merge_b->cb_table && merge_b->cb_table->conflicted_path
-          && property_state == svn_wc_notify_state_conflicted)
-        {
-          SVN_ERR(merge_b->cb_table->conflicted_path(
-              merge_b->cb_baton, local_abspath, FALSE, scratch_pool));
-        }
     }
 
   /* Easy out: We are only applying mergeinfo differences. */
@@ -1356,16 +1344,6 @@ merge_file_changed(const char *relpath,
                             ctx->cancel_func,
                             ctx->cancel_baton,
                             scratch_pool));
-
-      if (content_outcome == svn_wc_merge_conflict
-          || property_state == svn_wc_notify_state_conflicted)
-        {
-          if (merge_b->cb_table && merge_b->cb_table->conflicted_path)
-            {
-              SVN_ERR(merge_b->cb_table->conflicted_path(
-                  merge_b->cb_baton, local_abspath, FALSE, scratch_pool));
-            }
-        }
 
       if (content_outcome == svn_wc_merge_conflict)
         text_state = svn_wc_notify_state_conflicted;
@@ -2234,13 +2212,6 @@ merge_dir_changed(const char *relpath,
                                   ctx->cancel_func, ctx->cancel_baton,
                                   scratch_pool));
 
-      if (merge_b->cb_table && merge_b->cb_table->conflicted_path &&
-          prop_state == svn_wc_notify_state_conflicted)
-        {
-          SVN_ERR(merge_b->cb_table->conflicted_path(
-              merge_b->cb_baton, local_abspath, FALSE, scratch_pool));
-        }
-
       if (prop_state == svn_wc_notify_state_conflicted
           || prop_state == svn_wc_notify_state_merged
           || prop_state == svn_wc_notify_state_changed)
@@ -2387,12 +2358,6 @@ merge_dir_added(const char *relpath,
                                   merge_b->ctx->cancel_func,
                                   merge_b->ctx->cancel_baton,
                                   scratch_pool));
-      if (merge_b->cb_table && merge_b->cb_table->conflicted_path &&
-          prop_state == svn_wc_notify_state_conflicted)
-        {
-          SVN_ERR(merge_b->cb_table->conflicted_path(
-              merge_b->cb_baton, local_abspath, FALSE, scratch_pool));
-        }
     }
 
   return SVN_NO_ERROR;
