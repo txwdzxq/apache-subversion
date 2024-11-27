@@ -19,5 +19,17 @@
 # .asf.yml -- ASF infra services configuration
 #
 
-notifications:
-  jobs: notifications@subversion.apache.org
+# GitHub Action notifications, see 
+# https://github.com/apache/infrastructure-asfyaml?tab=readme-ov-file
+#
+# However, according to discussion with Humbedooh on Slack the-asf#Infra,
+# it require a r/w Git repository, so the below doesn't work.
+#
+# Humbedooh has kindly helped us hard-code a one-off notification which
+# doesn't rely on .asf.yaml.
+#
+# Commenting out, but keeping in place as a sticky-note for future changes.
+#
+# For reference, this is the hard-coded configuration:
+#notifications:
+#  jobs: notifications@subversion.apache.org
