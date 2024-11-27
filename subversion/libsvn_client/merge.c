@@ -1428,7 +1428,7 @@ record_tree_conflict(merge_cmd_baton_t *merge_b,
 
       if (HONOR_MERGEINFO(merge_b) && merge_b->merge_source.ancestral)
         {
-          struct svn_client__merge_source_t *source;
+          svn_client__merge_source_t *source;
           svn_client__pathrev_t *loc1;
           svn_client__pathrev_t *loc2;
           svn_revnum_t start_rev;
