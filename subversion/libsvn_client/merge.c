@@ -1444,6 +1444,7 @@ record_tree_conflict(merge_cmd_baton_t *merge_b,
             merge_b->children_with_mergeinfo,
             action != svn_wc_conflict_action_delete,
             local_abspath);
+
           loc1 = svn_client__pathrev_dup(merge_b->merge_source.loc1,
                                          scratch_pool);
           loc2 = svn_client__pathrev_dup(merge_b->merge_source.loc2,
@@ -1453,6 +1454,7 @@ record_tree_conflict(merge_cmd_baton_t *merge_b,
           source = svn_client__merge_source_create(loc1, loc2,
                                                    merge_b->merge_source.ancestral,
                                                    scratch_pool);
+
           SVN_ERR(make_conflict_versions(&left, &right, local_abspath,
                                          merge_left_node_kind,
                                          merge_right_node_kind,
