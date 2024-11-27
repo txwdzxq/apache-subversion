@@ -7365,6 +7365,50 @@ apply_processor_adjust_mergeinfo(void *baton,
   return SVN_NO_ERROR;
 }
 
+/* Implements svn_client__apply_processor_callbacks_t::adjust_merge_source */
+static svn_error_t *
+apply_processor_adjust_merge_source(void *baton,
+                                    svn_client__merge_source_t **source_p,
+                                    const char *local_abspath,
+                                    svn_wc_conflict_action_t action,
+                                    apr_pool_t *scratch_pool,
+                                    apr_pool_t *result_pool)
+{
+  merge_cmd_baton_t *merge_b = baton;
+  svn_client__merge_source_t *source = *source_p;
+
+  if (HONOR_MERGEINFO(merge_b) && source->ancestral)
+    {
+      svn_client__pathrev_t *loc1;
+      svn_client__pathrev_t *loc2;
+      svn_revnum_t start_rev;
+      svn_revnum_t end_rev;
+
+      /* We are honoring mergeinfo so do not blindly record
+       * a conflict describing the merge of
+       * SOURCE->LOC1->URL@SOURCE->LOC1->REV through
+       * SOURCE->LOC2->URL@SOURCE->LOC2->REV
+       * but figure out the actual revision range merged. */
+      (void)find_nearest_ancestor_with_intersecting_ranges(
+        &start_rev, &end_rev,
+        merge_b->children_with_mergeinfo,
+        action != svn_wc_conflict_action_delete,
+        local_abspath);
+
+      loc1 = svn_client__pathrev_dup(source->loc1, scratch_pool);
+      loc2 = svn_client__pathrev_dup(source->loc2, scratch_pool);
+      loc1->rev = start_rev;
+      loc2->rev = end_rev;
+
+      source = svn_client__merge_source_create(loc1, loc2,
+                                               source->ancestral,
+                                               result_pool);
+    }
+
+  *source_p = source;
+  return SVN_NO_ERROR;
+}
+
 /* Drive a merge of MERGE_SOURCES into working copy node TARGET
    and possibly record mergeinfo describing the merge -- see
    RECORD_MERGEINFO().
@@ -7583,6 +7627,7 @@ do_merge(apr_hash_t **modified_subtrees,
 
       cb_table.mergeinfo_changed = apply_processor_mergeinfo_changed;
       cb_table.adjust_mergeinfo = apply_processor_adjust_mergeinfo;
+      cb_table.adjust_merge_source = apply_processor_adjust_merge_source;
 
       svn_pool_clear(iterpool);
 
