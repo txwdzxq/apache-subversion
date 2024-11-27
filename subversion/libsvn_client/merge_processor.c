@@ -616,11 +616,11 @@ record_tree_conflict(merge_apply_processor_baton_t *merge_b,
 #if TODO_FILTER_MERGEINFO
       if (HONOR_MERGEINFO(merge_b) && merge_b->merge_source.ancestral)
         {
-          struct svn_client__merge_source_t *source;
+          svn_client__merge_source_t *source;
           svn_client__pathrev_t *loc1;
           svn_client__pathrev_t *loc2;
-          svn_merge_range_t range =
-            {SVN_INVALID_REVNUM, SVN_INVALID_REVNUM, TRUE};
+          svn_revnum_t start_rev;
+          svn_revnum_t end_rev;
 
           /* We are honoring mergeinfo so do not blindly record
            * a conflict describing the merge of
@@ -628,25 +628,27 @@ record_tree_conflict(merge_apply_processor_baton_t *merge_b,
            * SOURCE->LOC2->URL@SOURCE->LOC2->REV
            * but figure out the actual revision range merged. */
           (void)find_nearest_ancestor_with_intersecting_ranges(
-            &(range.start), &(range.end),
+            &start_rev, &end_rev,
             merge_b->children_with_mergeinfo,
             action != svn_wc_conflict_action_delete,
             local_abspath);
+
           loc1 = svn_client__pathrev_dup(merge_b->merge_source.loc1,
                                          scratch_pool);
           loc2 = svn_client__pathrev_dup(merge_b->merge_source.loc2,
                                          scratch_pool);
-          loc1->rev = range.start;
-          loc2->rev = range.end;
+          loc1->rev = start_rev;
+          loc2->rev = end_rev;
           source = svn_client__merge_source_create(loc1, loc2,
                                                    merge_b->merge_source.ancestral,
                                                    scratch_pool);
+
           SVN_ERR(make_conflict_versions(&left, &right, local_abspath,
                                          merge_left_node_kind,
                                          merge_right_node_kind,
                                          source, merge_b->target,
                                          result_pool, scratch_pool));
-        }
+      }
       else
 #endif
         SVN_ERR(make_conflict_versions(&left, &right, local_abspath,
