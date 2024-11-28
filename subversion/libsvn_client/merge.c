@@ -1341,9 +1341,13 @@ notify_merging(void *baton,
     break;
 
   case svn_wc_notify_tree_conflict:
+    if (merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
+      {
+        alloc_and_store_path(&merge_b->tree_conflicted_abspaths, notify->path,
+                             merge_b->pool);
+      }
+
     alloc_and_store_path(&merge_b->conflicted_paths, notify->path,
-                         merge_b->pool);
-    alloc_and_store_path(&merge_b->tree_conflicted_abspaths, notify->path,
                          merge_b->pool);
     break;
   }
