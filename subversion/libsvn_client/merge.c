@@ -7277,7 +7277,9 @@ apply_processor_skipped_path(void *baton, const char *local_abspath,
 /* Implements svn_client__apply_processor_callbacks_t::updated_path */
 static svn_error_t *
 apply_processor_updated_path(void *baton, const char *local_abspath,
-                             svn_wc_notify_action_t action, apr_pool_t *pool)
+                             svn_wc_notify_action_t action,
+                             svn_boolean_t parent_added,
+                             apr_pool_t *pool)
 {
   merge_cmd_baton_t *merge_b = baton;
 
@@ -7325,7 +7327,8 @@ apply_processor_updated_path(void *baton, const char *local_abspath,
   case svn_wc_notify_update_add:
     if (merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
       {
-        store_path(merge_b->added_abspaths, local_abspath);
+        if (! parent_added)
+          store_path(merge_b->added_abspaths, local_abspath);
       }
     break;
   }

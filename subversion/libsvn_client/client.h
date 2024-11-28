@@ -1294,6 +1294,7 @@ typedef struct svn_client__apply_processor_callbacks_t
   svn_error_t *(*updated_path)(void *baton,
                                const char *local_abspath,
                                svn_wc_notify_action_t action,
+                               svn_boolean_t parent_added,
                                apr_pool_t *pool);
 
   svn_error_t *(*mergeinfo_changed)(void *baton,
