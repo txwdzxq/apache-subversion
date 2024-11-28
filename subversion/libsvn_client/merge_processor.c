@@ -541,6 +541,22 @@ notify_conflicted_path(merge_apply_processor_baton_t *merge_b,
   return SVN_NO_ERROR;
 }
 
+/* Wrapper around the merge_b->cb_table->skipped_path() function */
+static svn_error_t *
+notify_skipped_path(merge_apply_processor_baton_t *merge_b,
+                    const char *local_abspath,
+                    apr_pool_t *scratch_pool)
+{
+  if (merge_b->cb_table && merge_b->cb_table->skipped_path)
+    {
+      SVN_ERR(merge_b->cb_table->skipped_path(merge_b->cb_baton,
+                                              local_abspath,
+                                              scratch_pool));
+    }
+
+  return SVN_NO_ERROR;
+}
+
 /* Record the skip for future processing and (later) produce the
    skip notification */
 static svn_error_t *
@@ -555,12 +571,8 @@ record_skip(merge_apply_processor_baton_t *merge_b,
   if (merge_b->record_only)
     return SVN_NO_ERROR; /* ### Why? - Legacy compatibility */
 
-  if (merge_b->cb_table && merge_b->cb_table->skipped_path
-      && !(pdb && pdb->shadowed))
-    {
-      SVN_ERR(merge_b->cb_table->skipped_path(merge_b->cb_baton, local_abspath,
-                                              scratch_pool));
-    }
+  if (!(pdb && pdb->shadowed))
+    SVN_ERR(notify_skipped_path(merge_b, local_abspath, scratch_pool));
 
   if (merge_b->notify_func)
     {
@@ -903,11 +915,7 @@ mark_dir_edited(merge_apply_processor_baton_t *merge_b,
                                scratch_pool);
         }
 
-      if (merge_b->cb_table && merge_b->cb_table->skipped_path)
-        {
-          SVN_ERR(merge_b->cb_table->skipped_path(
-              merge_b->cb_baton, local_abspath, scratch_pool));
-        }
+        SVN_ERR(notify_skipped_path(merge_b, local_abspath, scratch_pool));
     }
   else if (db->tree_conflict_reason != CONFLICT_REASON_NONE)
     {
@@ -982,11 +990,7 @@ mark_file_edited(merge_apply_processor_baton_t *merge_b,
                                scratch_pool);
         }
 
-      if (merge_b->cb_table && merge_b->cb_table->skipped_path)
-        {
-          SVN_ERR(merge_b->cb_table->skipped_path(
-              merge_b->cb_baton, local_abspath, scratch_pool));
-        }
+      SVN_ERR(notify_skipped_path(merge_b, local_abspath, scratch_pool));
     }
   else if (fb->tree_conflict_reason != CONFLICT_REASON_NONE)
     {
