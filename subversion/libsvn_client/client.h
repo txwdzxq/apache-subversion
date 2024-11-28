@@ -1282,6 +1282,20 @@ svn_client__compatible_wc_version_optional_pristine(apr_pool_t *result_pool);
 
 typedef struct svn_client__apply_processor_callbacks_t
 {
+  svn_error_t *(*conflicted_path)(void *baton,
+                                  const char *path,
+                                  svn_boolean_t tree_conflict,
+                                  apr_pool_t *pool);
+
+  svn_error_t *(*skipped_path)(void *baton,
+                               const char *path,
+                               apr_pool_t *pool);
+
+  svn_error_t *(*updated_path)(void *baton,
+                               const char *local_abspath,
+                               svn_wc_notify_action_t action,
+                               apr_pool_t *pool);
+
   svn_error_t *(*mergeinfo_changed)(void *baton,
                                     const char *local_abspath,
                                     const svn_string_t *old_mergeinfo,
