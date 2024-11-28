@@ -154,6 +154,7 @@ jobs:
           -DSVN_ENABLE_RA_SERF=ON
           -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/installdir
           -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_triplet }}
+          -SVN_TEST_CONFIGURE_FOR_PARALLEL=ON
           ${{ matrix.extra_config_opts }}
 
       - name: Build CMake
@@ -166,7 +167,7 @@ jobs:
         id: run_all_tests
         if: matrix.run_tests
         working-directory: out
-        run: ctest --output-on-failure --verbose -C Release
+        run: ctest --output-on-failure --verbose -C Release --jobs 16
 
       - name: Rerun failed tests
         if: ${{ matrix.run_tests && failure() && steps.run_all_tests.conclusion == 'failure' }}
