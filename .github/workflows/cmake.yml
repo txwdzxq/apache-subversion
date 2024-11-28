@@ -154,7 +154,7 @@ jobs:
           -DSVN_ENABLE_RA_SERF=ON
           -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/installdir
           -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_triplet }}
-          -SVN_TEST_CONFIGURE_FOR_PARALLEL=ON
+          -DSVN_TEST_CONFIGURE_FOR_PARALLEL=ON
           ${{ matrix.extra_config_opts }}
 
       - name: Build CMake
