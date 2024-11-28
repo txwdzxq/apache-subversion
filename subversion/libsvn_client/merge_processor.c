@@ -1461,14 +1461,6 @@ merge_file_added(const char *relpath,
       return SVN_NO_ERROR;
     }
 
-  if (merge_b->cb_table && merge_b->cb_table->updated_path
-      && ( !fb->parent_baton || !fb->parent_baton->added))
-    {
-      SVN_ERR(merge_b->cb_table->updated_path(merge_b->cb_baton, local_abspath,
-                                              svn_wc_notify_update_add,
-                                              scratch_pool));
-    }
-
   if (!merge_b->dry_run)
     {
       const char *copyfrom_url;
