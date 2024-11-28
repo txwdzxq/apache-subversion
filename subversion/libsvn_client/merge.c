@@ -7332,6 +7332,8 @@ apply_processor_updated_path(void *baton, const char *local_abspath,
       {
         if (! parent_added)
           store_path(merge_b->added_abspaths, local_abspath);
+
+        store_path(merge_b->merged_abspaths, local_abspath);
       }
     break;
   }
