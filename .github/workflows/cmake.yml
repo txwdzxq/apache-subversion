@@ -19,7 +19,7 @@
 # cmake.yml -- Configuration for CMake GitHub Action workflow.
 #
 
-name: Build and Test Subversion with CMake
+name: CMake
 
 on:
   push:

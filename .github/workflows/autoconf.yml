@@ -19,7 +19,7 @@
 # autoconf.yml -- Configuration for autoconf GitHub Action workflow.
 #
 
-name: Build and Test Subversion using autoconf build system
+name: autoconf
 
 on:
   push:
