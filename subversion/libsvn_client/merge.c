@@ -7251,10 +7251,13 @@ apply_processor_conflicted_path(void *baton, const char *local_abspath,
   alloc_and_store_path(&merge_b->conflicted_paths, local_abspath,
                        merge_b->pool);
 
-  if (tree_conflict)
-    alloc_and_store_path(&merge_b->tree_conflicted_abspaths, 
-                         local_abspath,
-                         merge_b->pool);
+  if ((merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
+      && tree_conflict)
+    {
+      alloc_and_store_path(&merge_b->tree_conflicted_abspaths,
+                           local_abspath,
+                           merge_b->pool);
+    }
 
   return SVN_NO_ERROR;
 }
