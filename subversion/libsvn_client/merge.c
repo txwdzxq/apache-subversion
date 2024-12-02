@@ -1395,11 +1395,11 @@ record_tree_conflict(merge_cmd_baton_t *merge_b,
 
   if (!merge_b->dry_run)
     {
-       svn_wc_conflict_description2_t *conflict;
-       const svn_wc_conflict_version_t *left;
-       const svn_wc_conflict_version_t *right;
-       apr_pool_t *result_pool = parent_baton ? parent_baton->pool
-                                              : scratch_pool;
+      svn_wc_conflict_description2_t *conflict;
+      const svn_wc_conflict_version_t *left;
+      const svn_wc_conflict_version_t *right;
+      apr_pool_t *result_pool = parent_baton ? parent_baton->pool
+                                             : scratch_pool;
 
       if (reason == svn_wc_conflict_reason_deleted)
         {
