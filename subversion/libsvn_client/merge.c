@@ -254,6 +254,9 @@ typedef struct merge_cmd_baton_t {
   /* Description of merge target node */
   const svn_client__merge_target_t *target;
 
+  /* Directory baton for the root of the operation's target */
+  struct merge_dir_baton_t *target_dir_baton;
+
   /* The left and right URLs and revs.  The value of this field changes to
      reflect the merge_source_t *currently* being merged by do_merge(). */
   svn_client__merge_source_t merge_source;
@@ -1851,7 +1854,8 @@ merge_file_opened(void **new_file_baton,
                   apr_pool_t *scratch_pool)
 {
   merge_cmd_baton_t *merge_b = processor->baton;
-  struct merge_dir_baton_t *pdb = dir_baton;
+  struct merge_dir_baton_t *pdb =
+      dir_baton ? dir_baton : merge_b->target_dir_baton;
   struct merge_file_baton_t *fb = create_file_baton(result_pool);
   const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
                                               relpath, scratch_pool);
@@ -2630,7 +2634,8 @@ merge_dir_opened(void **new_dir_baton,
 {
   merge_cmd_baton_t *merge_b = processor->baton;
   struct merge_dir_baton_t *db = create_dir_baton(result_pool);
-  struct merge_dir_baton_t *pdb = parent_dir_baton;
+  struct merge_dir_baton_t *pdb =
+      parent_dir_baton ? parent_dir_baton : merge_b->target_dir_baton;
 
   const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
                                               relpath, scratch_pool);
@@ -3512,14 +3517,6 @@ merge_apply_processor(merge_cmd_baton_t *merge_cmd_baton,
   merge_processor->node_absent = merge_node_absent;
 
   return merge_processor;
-}
-
-/* Initialize minimal dir baton to allow calculating 'R'eplace
-   from 'D'elete + 'A'dd. */
-static void *
-open_dir_for_replace_single_file(apr_pool_t *result_pool)
-{
-  return create_dir_baton(result_pool);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -7773,7 +7770,6 @@ do_file_merge(svn_mergeinfo_catalog_t result_catalog,
              do a text-n-props merge; otherwise, do a delete-n-add merge. */
           if (! (merge_b->diff_ignore_ancestry || sources_related))
             {
-              void *dir_baton = open_dir_for_replace_single_file(iterpool);
               void *file_baton;
               svn_boolean_t skip;
 
@@ -7784,7 +7780,7 @@ do_file_merge(svn_mergeinfo_catalog_t result_catalog,
                                              left_source,
                                              NULL /* right_source */,
                                              NULL /* copyfrom_source */,
-                                             dir_baton,
+                                             NULL /* dir_baton */,
                                              processor,
                                              iterpool, iterpool));
               if (! skip)
@@ -7803,7 +7799,7 @@ do_file_merge(svn_mergeinfo_catalog_t result_catalog,
                                              NULL /* left_source */,
                                              right_source,
                                              NULL /* copyfrom_source */,
-                                             dir_baton,
+                                             NULL /* dir_baton */,
                                              processor,
                                              iterpool, iterpool));
               if (! skip)
@@ -9992,6 +9988,7 @@ do_merge(apr_hash_t **modified_subtrees,
   merge_cmd_baton.ctx = ctx;
   merge_cmd_baton.reintegrate_merge = reintegrate_merge;
   merge_cmd_baton.target = target;
+  merge_cmd_baton.target_dir_baton = create_dir_baton(result_pool);
   merge_cmd_baton.pool = iterpool;
   merge_cmd_baton.merge_options = merge_options;
   merge_cmd_baton.diff3_cmd = diff3_cmd;
