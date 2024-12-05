@@ -1330,7 +1330,7 @@ record_skip(merge_cmd_baton_t *merge_b,
     return SVN_NO_ERROR; /* ### Why? - Legacy compatibility */
 
   if ((merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
-      && !(pdb && pdb->shadowed))
+      && !pdb->shadowed)
     {
       store_path(merge_b->skipped_abspaths, local_abspath);
     }
@@ -1401,8 +1401,7 @@ record_tree_conflict(merge_cmd_baton_t *merge_b,
       svn_wc_conflict_description2_t *conflict;
       const svn_wc_conflict_version_t *left;
       const svn_wc_conflict_version_t *right;
-      apr_pool_t *result_pool = parent_baton ? parent_baton->pool
-                                             : scratch_pool;
+      apr_pool_t *result_pool = parent_baton->pool;
 
       if (reason == svn_wc_conflict_reason_deleted)
         {
@@ -1491,15 +1490,12 @@ record_tree_conflict(merge_cmd_baton_t *merge_b,
       SVN_ERR(svn_wc__add_tree_conflict(merge_b->ctx->wc_ctx, conflict,
                                         scratch_pool));
 
-      if (parent_baton)
-        {
-          if (! parent_baton->new_tree_conflicts)
-            parent_baton->new_tree_conflicts = apr_hash_make(result_pool);
+      if (! parent_baton->new_tree_conflicts)
+        parent_baton->new_tree_conflicts = apr_hash_make(result_pool);
 
-          svn_hash_sets(parent_baton->new_tree_conflicts,
-                        apr_pstrdup(result_pool, local_abspath),
-                        conflict);
-        }
+      svn_hash_sets(parent_baton->new_tree_conflicts,
+                    apr_pstrdup(result_pool, local_abspath),
+                    conflict);
 
       /* ### TODO: Store in parent baton */
     }
@@ -1872,12 +1868,9 @@ merge_file_opened(void **new_file_baton,
 
   *new_file_baton = fb;
 
-  if (pdb)
-    {
-      fb->parent_baton = pdb;
-      fb->shadowed = pdb->shadowed;
-      fb->skip_reason = pdb->skip_reason;
-    }
+  fb->parent_baton = pdb;
+  fb->shadowed = pdb->shadowed;
+  fb->skip_reason = pdb->skip_reason;
 
   if (fb->shadowed)
     {
@@ -1926,9 +1919,8 @@ merge_file_opened(void **new_file_baton,
              Non-inheritable mergeinfo will be recorded, allowing
              future merges into non-shallow working copies to merge
              changes we missed this time around. */
-          if (pdb && (excluded
-                      || (parent_depth != svn_depth_unknown &&
-                          parent_depth < svn_depth_files)))
+          if (excluded || (parent_depth != svn_depth_unknown &&
+                           parent_depth < svn_depth_files))
             {
                 fb->shadowed = TRUE;
 
@@ -1978,8 +1970,7 @@ merge_file_opened(void **new_file_baton,
             }
 
           /* Comparison mode to verify for delete tree conflicts? */
-          if (pdb && pdb->delete_state
-              && pdb->delete_state->found_edit)
+          if (pdb->delete_state && pdb->delete_state->found_edit)
             {
               /* Earlier nodes found a conflict. Done. */
               *skip = TRUE;
@@ -1994,7 +1985,7 @@ merge_file_opened(void **new_file_baton,
       fb->added = TRUE;
       fb->tree_conflict_action = svn_wc_conflict_action_add;
 
-      if (pdb && pdb->pending_deletes
+      if (pdb->pending_deletes
           && svn_hash_gets(pdb->pending_deletes, local_abspath))
         {
           fb->add_is_replace = TRUE;
@@ -2003,8 +1994,7 @@ merge_file_opened(void **new_file_baton,
           svn_hash_sets(pdb->pending_deletes, local_abspath, NULL);
         }
 
-      if (pdb
-          && pdb->new_tree_conflicts
+      if (pdb->new_tree_conflicts
           && (old_tc = svn_hash_gets(pdb->new_tree_conflicts, local_abspath)))
         {
           fb->tree_conflict_action = svn_wc_conflict_action_replace;
@@ -2036,8 +2026,7 @@ merge_file_opened(void **new_file_baton,
               return SVN_NO_ERROR;
             }
         }
-      else if (! (merge_b->dry_run
-                  && ((pdb && pdb->added) || fb->add_is_replace)))
+      else if (! (merge_b->dry_run && (pdb->added || fb->add_is_replace)))
         {
           svn_wc_notify_state_t obstr_state;
           svn_boolean_t is_deleted;
@@ -2306,7 +2295,7 @@ merge_file_added(const char *relpath,
     }
 
   if ((merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
-      && ( !fb->parent_baton || !fb->parent_baton->added))
+      && !fb->parent_baton->added)
     {
       /* Store the roots of added subtrees */
       store_path(merge_b->added_abspaths, local_abspath);
@@ -2551,8 +2540,7 @@ merge_file_deleted(const char *relpath,
                          local_abspath, merge_b->ctx->wc_ctx,
                          scratch_pool));
 
-  if (fb->parent_baton
-      && fb->parent_baton->delete_state)
+  if (fb->parent_baton->delete_state)
     {
       if (same)
         {
@@ -2652,12 +2640,9 @@ merge_dir_opened(void **new_dir_baton,
   else
     db->tree_conflict_merge_right_node_kind = svn_node_none;
 
-  if (pdb)
-    {
-      db->parent_baton = pdb;
-      db->shadowed = pdb->shadowed;
-      db->skip_reason = pdb->skip_reason;
-    }
+  db->parent_baton = pdb;
+  db->shadowed = pdb->shadowed;
+  db->skip_reason = pdb->skip_reason;
 
   if (db->shadowed)
     {
@@ -2731,9 +2716,8 @@ merge_dir_opened(void **new_dir_baton,
              Non-inheritable mergeinfo will be recorded, allowing
              future merges into non-shallow working copies to merge
              changes we missed this time around. */
-          if (pdb && (excluded
-                      || (parent_depth != svn_depth_unknown &&
-                          parent_depth < svn_depth_immediates)))
+          if (excluded || (parent_depth != svn_depth_unknown &&
+                           parent_depth < svn_depth_immediates))
             {
               db->shadowed = TRUE;
 
@@ -2787,7 +2771,7 @@ merge_dir_opened(void **new_dir_baton,
               return SVN_NO_ERROR; /* Already set a tree conflict */
             }
 
-          db->delete_state = (pdb != NULL) ? pdb->delete_state : NULL;
+          db->delete_state = pdb->delete_state;
 
           if (db->delete_state && db->delete_state->found_edit)
             {
@@ -2819,7 +2803,7 @@ merge_dir_opened(void **new_dir_baton,
       db->added = TRUE;
       db->tree_conflict_action = svn_wc_conflict_action_add;
 
-      if (pdb && pdb->pending_deletes
+      if (pdb->pending_deletes
           && svn_hash_gets(pdb->pending_deletes, local_abspath))
         {
           db->add_is_replace = TRUE;
@@ -2828,8 +2812,7 @@ merge_dir_opened(void **new_dir_baton,
           svn_hash_sets(pdb->pending_deletes, local_abspath, NULL);
         }
 
-      if (pdb
-          && pdb->new_tree_conflicts
+      if (pdb->new_tree_conflicts
           && (old_tc = svn_hash_gets(pdb->new_tree_conflicts, local_abspath)))
         {
           db->tree_conflict_action = svn_wc_conflict_action_replace;
@@ -2863,8 +2846,7 @@ merge_dir_opened(void **new_dir_baton,
             }
         }
 
-      if (! (merge_b->dry_run
-             && ((pdb && pdb->added) || db->add_is_replace)))
+      if (! (merge_b->dry_run && (pdb->added || db->add_is_replace)))
         {
           svn_wc_notify_state_t obstr_state;
           svn_boolean_t is_deleted;
@@ -3141,7 +3123,7 @@ merge_dir_added(const char *relpath,
                  );
 
   if ((merge_b->merge_source.ancestral || merge_b->reintegrate_merge)
-      && ( !db->parent_baton || !db->parent_baton->added))
+      && !db->parent_baton->added)
     {
       /* Store the roots of added subtrees */
       store_path(merge_b->added_abspaths, local_abspath);
