@@ -1193,7 +1193,7 @@ struct dir_delete_baton_t
 };
 
 /* Baton for the merge_dir_*() functions. Initialized in merge_dir_opened() */
-struct merge_dir_baton_t
+typedef struct merge_dir_baton_t
 {
   /* Reference to the parent baton, unless the parent is the anchor, in which
      case PARENT_BATON is NULL */
@@ -1258,13 +1258,13 @@ struct merge_dir_baton_t
      currently in progress. Allocated in the root-directory baton, referenced
      from all descendants */
   struct dir_delete_baton_t *delete_state;
-};
+} merge_dir_baton_t;
 
 /* Allocate new #merge_dir_baton_t structure in @a result_pool */
-static struct merge_dir_baton_t *
+static merge_dir_baton_t *
 create_dir_baton(apr_pool_t *result_pool)
 {
-  struct merge_dir_baton_t *db;
+  merge_dir_baton_t *db;
 
   db = apr_pcalloc(result_pool, sizeof(*db));
   db->pool = result_pool;
@@ -1276,11 +1276,11 @@ create_dir_baton(apr_pool_t *result_pool)
 }
 
 /* Baton for the merge_dir_*() functions. Initialized in merge_file_opened() */
-struct merge_file_baton_t
+typedef struct merge_file_baton_t
 {
   /* Reference to the parent baton, unless the parent is the anchor, in which
      case PARENT_BATON is NULL */
-  struct merge_dir_baton_t *parent_baton;
+  merge_dir_baton_t *parent_baton;
 
   /* This file doesn't have a representation in the working copy, so any
      operation on it will be skipped and possibly cause a tree conflict
@@ -1307,13 +1307,13 @@ struct merge_file_baton_t
   /* TRUE if the node was added by this merge. Otherwise FALSE */
   svn_boolean_t added;
   svn_boolean_t add_is_replace; /* Add is second part of replace */
-};
+} merge_file_baton_t;
 
 /* Allocate new #merge_file_baton_t structure in @a result_pool */
-static struct merge_file_baton_t *
+static merge_file_baton_t *
 create_file_baton(apr_pool_t *result_pool)
 {
-  struct merge_file_baton_t *fb;
+  merge_file_baton_t *fb;
 
   fb = apr_pcalloc(result_pool, sizeof(*fb));
   fb->tree_conflict_reason = CONFLICT_REASON_NONE;
@@ -1331,7 +1331,7 @@ record_skip(merge_cmd_baton_t *merge_b,
             svn_node_kind_t kind,
             svn_wc_notify_action_t action,
             svn_wc_notify_state_t state,
-            struct merge_dir_baton_t *pdb,
+            merge_dir_baton_t *pdb,
             apr_pool_t *scratch_pool)
 {
   if (merge_b->record_only)
@@ -1380,7 +1380,7 @@ find_nearest_ancestor_with_intersecting_ranges(
 static svn_error_t *
 record_tree_conflict(merge_cmd_baton_t *merge_b,
                      const char *local_abspath,
-                     struct merge_dir_baton_t *parent_baton,
+                     merge_dir_baton_t *parent_baton,
                      svn_node_kind_t local_node_kind,
                      svn_node_kind_t merge_left_node_kind,
                      svn_node_kind_t merge_right_node_kind,
@@ -1593,7 +1593,7 @@ record_update_update(merge_cmd_baton_t *merge_b,
    update_delete notification */
 static svn_error_t *
 record_update_delete(merge_cmd_baton_t *merge_b,
-                     struct merge_dir_baton_t *parent_db,
+                     merge_dir_baton_t *parent_db,
                      const char *local_abspath,
                      svn_node_kind_t kind,
                      apr_pool_t *scratch_pool)
@@ -1646,7 +1646,7 @@ record_update_delete(merge_cmd_baton_t *merge_b,
    might make them a 'R'eplace. */
 static svn_error_t *
 handle_pending_notifications(merge_cmd_baton_t *merge_b,
-                             struct merge_dir_baton_t *db,
+                             merge_dir_baton_t *db,
                              apr_pool_t *scratch_pool)
 {
   if (merge_b->notify_func && db->pending_deletes)
@@ -1682,7 +1682,7 @@ handle_pending_notifications(merge_cmd_baton_t *merge_b,
  */
 static svn_error_t *
 mark_dir_edited(merge_cmd_baton_t *merge_b,
-                struct merge_dir_baton_t *db,
+                merge_dir_baton_t *db,
                 const char *local_abspath,
                 apr_pool_t *scratch_pool)
 {
@@ -1765,7 +1765,7 @@ mark_dir_edited(merge_cmd_baton_t *merge_b,
  */
 static svn_error_t *
 mark_file_edited(merge_cmd_baton_t *merge_b,
-                 struct merge_file_baton_t *fb,
+                 merge_file_baton_t *fb,
                  const char *local_abspath,
                  apr_pool_t *scratch_pool)
 {
@@ -1858,9 +1858,8 @@ merge_file_opened(void **new_file_baton,
                   apr_pool_t *scratch_pool)
 {
   merge_cmd_baton_t *merge_b = processor->baton;
-  struct merge_dir_baton_t *pdb =
-      dir_baton ? dir_baton : merge_b->target_dir_baton;
-  struct merge_file_baton_t *fb = create_file_baton(result_pool);
+  merge_dir_baton_t *pdb = dir_baton ? dir_baton : merge_b->target_dir_baton;
+  merge_file_baton_t *fb = create_file_baton(result_pool);
   const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
                                               relpath, scratch_pool);
 
@@ -2096,7 +2095,7 @@ merge_file_changed(const char *relpath,
                   apr_pool_t *scratch_pool)
 {
   merge_cmd_baton_t *merge_b = processor->baton;
-  struct merge_file_baton_t *fb = file_baton;
+  merge_file_baton_t *fb = file_baton;
   svn_client_ctx_t *ctx = merge_b->ctx;
   const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
                                               relpath, scratch_pool);
@@ -2272,7 +2271,7 @@ merge_file_added(const char *relpath,
                  apr_pool_t *scratch_pool)
 {
   merge_cmd_baton_t *merge_b = processor->baton;
-  struct merge_file_baton_t *fb = file_baton;
+  merge_file_baton_t *fb = file_baton;
   const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
                                               relpath, scratch_pool);
   apr_hash_t *pristine_props;
@@ -2513,7 +2512,7 @@ merge_file_deleted(const char *relpath,
                    apr_pool_t *scratch_pool)
 {
   merge_cmd_baton_t *merge_b = processor->baton;
-  struct merge_file_baton_t *fb = file_baton;
+  merge_file_baton_t *fb = file_baton;
   const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
                                               relpath, scratch_pool);
   svn_boolean_t same;
@@ -2629,9 +2628,9 @@ merge_dir_opened(void **new_dir_baton,
                  apr_pool_t *scratch_pool)
 {
   merge_cmd_baton_t *merge_b = processor->baton;
-  struct merge_dir_baton_t *db = create_dir_baton(result_pool);
-  struct merge_dir_baton_t *pdb =
-      parent_dir_baton ? parent_dir_baton : merge_b->target_dir_baton;
+  merge_dir_baton_t *db = create_dir_baton(result_pool);
+  merge_dir_baton_t *pdb =
+    parent_dir_baton ? parent_dir_baton : merge_b->target_dir_baton;
 
   const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
                                               relpath, scratch_pool);
@@ -3016,7 +3015,7 @@ merge_dir_changed(const char *relpath,
                   apr_pool_t *scratch_pool)
 {
   merge_cmd_baton_t *merge_b = processor->baton;
-  struct merge_dir_baton_t *db = dir_baton;
+  merge_dir_baton_t *db = dir_baton;
   const apr_array_header_t *props;
   const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
                                               relpath, scratch_pool);
@@ -3103,7 +3102,7 @@ merge_dir_added(const char *relpath,
                 apr_pool_t *scratch_pool)
 {
   merge_cmd_baton_t *merge_b = processor->baton;
-  struct merge_dir_baton_t *db = dir_baton;
+  merge_dir_baton_t *db = dir_baton;
   const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
                                               relpath, scratch_pool);
 
@@ -3270,7 +3269,7 @@ merge_dir_deleted(const char *relpath,
                   apr_pool_t *scratch_pool)
 {
   merge_cmd_baton_t *merge_b = processor->baton;
-  struct merge_dir_baton_t *db = dir_baton;
+  merge_dir_baton_t *db = dir_baton;
   const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
                                               relpath, scratch_pool);
   svn_boolean_t same;
@@ -3442,7 +3441,7 @@ merge_dir_closed(const char *relpath,
                  apr_pool_t *scratch_pool)
 {
   merge_cmd_baton_t *merge_b = processor->baton;
-  struct merge_dir_baton_t *db = dir_baton;
+  merge_dir_baton_t *db = dir_baton;
 
   SVN_ERR(handle_pending_notifications(merge_b, db, scratch_pool));
 
@@ -3469,7 +3468,7 @@ merge_node_absent(const char *relpath,
                   apr_pool_t *scratch_pool)
 {
   merge_cmd_baton_t *merge_b = processor->baton;
-  struct merge_dir_baton_t *db = dir_baton;
+  merge_dir_baton_t *db = dir_baton;
 
   const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
                                               relpath, scratch_pool);
