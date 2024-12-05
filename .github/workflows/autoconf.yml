@@ -19,7 +19,7 @@
 # autoconf.yml -- Configuration for autoconf GitHub Action workflow.
 #
 
-name: Build and Test Subversion using autoconf build system
+name: autoconf
 
 on:
   push:
@@ -75,7 +75,7 @@ jobs:
         run: make -j
 
       - name: Run tests (make check)
-        run: make check
+        run: make check PARALLEL=16
 
       - name: Install (make install)
         run: sudo make install
