@@ -83,6 +83,9 @@ typedef struct merge_apply_processor_baton_t
   /* Description of merge target node */
   const svn_client__merge_target_t *target;
 
+  /* Directory baton for the root of the operation's target */
+  struct merge_dir_baton_t *target_dir_baton;
+
   /* The left and right URLs and revs.  */
   svn_client__merge_source_t merge_source;
 
@@ -1041,7 +1044,8 @@ merge_file_opened(void **new_file_baton,
                   apr_pool_t *scratch_pool)
 {
   merge_apply_processor_baton_t *merge_b = processor->baton;
-  struct merge_dir_baton_t *pdb = dir_baton;
+  struct merge_dir_baton_t *pdb =
+      dir_baton ? dir_baton : merge_b->target_dir_baton;
   struct merge_file_baton_t *fb = create_file_baton(result_pool);
   const char *local_abspath = svn_dirent_join(merge_b->target->abspath,
                                               relpath, scratch_pool);
@@ -1837,7 +1841,8 @@ merge_dir_opened(void **new_dir_baton,
 {
   merge_apply_processor_baton_t *merge_b = processor->baton;
   struct merge_dir_baton_t *db = create_dir_baton(result_pool);
-  struct merge_dir_baton_t *pdb = parent_dir_baton;
+  struct merge_dir_baton_t *pdb =
+      parent_dir_baton ? parent_dir_baton : merge_b->target_dir_baton;
   const char *local_abspath;
 
   *new_dir_baton = db;
@@ -2743,6 +2748,7 @@ svn_client__apply_processor_create(const svn_client__merge_target_t *target,
     apr_pcalloc(result_pool, sizeof(*baton));
 
   baton->target = target;
+  baton->target_dir_baton = create_dir_baton(result_pool);
   baton->merge_source = *source;
   baton->diff3_cmd = diff3_cmd;
   baton->merge_options = merge_options;
