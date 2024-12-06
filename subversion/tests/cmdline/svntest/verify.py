@@ -852,7 +852,8 @@ def compare_dump_files(label_expected, label_actual,
     print('DIFF of raw dumpfiles (including expected differences)')
     print('--- ' + (label_expected or 'expected'))
     print('+++ ' + (label_actual or 'actual'))
-    print(''.join(ndiff(expected, actual)))
+    print(''.join(ndiff([repr(line) for line in expected], 
+                        [repr(line) for line in actual])))
     raise svntest.Failure('DIFF of parsed dumpfiles (ignoring expected differences)\n'
                           + '\n'.join(ndiff(
           pprint.pformat(parsed_expected).splitlines(),
@@ -1024,7 +1025,7 @@ def make_diff_prop_added(pname, pval):
   ] + make_diff_prop_val("+", pval)
 
 def make_diff_prop_modified(pname, pval1, pval2):
-  """Return a property diff for modification of property PNAME, old value
+  r"""Return a property diff for modification of property PNAME, old value
      PVAL1, new value PVAL2.
 
      PVAL is a single string with no embedded newlines.  A newline at the

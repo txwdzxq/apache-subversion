@@ -717,6 +717,7 @@ shelf_diff(const char *name,
   svn_client__shelf_version_t *shelf_version;
   svn_stream_t *stream, *errstream;
   svn_diff_tree_processor_t *diff_processor;
+  svn_client__diff_driver_info_t *ddi;
 
   SVN_ERR(svn_client__shelf_open_existing(&shelf, name, local_abspath,
                                          ctx, scratch_pool));
@@ -757,7 +758,7 @@ shelf_diff(const char *name,
   else
     {
       SVN_ERR(svn_client__get_diff_writer_svn(
-                &diff_processor,
+                &diff_processor, &ddi,
                 NULL /*anchor*/,
                 "", "", /*orig_path_1, orig_path_2,*/
                 NULL /*options*/,
@@ -769,6 +770,7 @@ shelf_diff(const char *name,
                 FALSE /*ignore_properties*/,
                 FALSE /*properties_only*/,
                 TRUE /*pretty_print_mergeinfo*/,
+                FALSE /*use_git_diff_format*/,
                 svn_cmdline_output_encoding(scratch_pool),
                 stream, errstream,
                 ctx, scratch_pool));

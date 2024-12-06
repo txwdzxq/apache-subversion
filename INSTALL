@@ -20,6 +20,7 @@ Contents:
        C. Building under Unix in Different Directories
        D. Installing from a Zip or Installer File under Windows
        E. Building the Latest Source under Windows
+       F. Building using CMake
 
    III. BUILDING A SUBVERSION SERVER
        A. Setting Up Apache Httpd
@@ -28,11 +29,7 @@ Contents:
        D. Running and Testing
        E. Alternative:  'svnserve' and ra_svn
 
-    IV. PLATFORM-SPECIFIC ISSUES
-       A. Windows XP
-       B. Mac OS X
-
-     V. PROGRAMMING LANGUAGE BINDINGS (PYTHON, PERL, RUBY, JAVA)
+    IV. PROGRAMMING LANGUAGE BINDINGS (PYTHON, PERL, RUBY, JAVA)
 
 
 
@@ -242,22 +239,42 @@ I.    INTRODUCTION
           $ ./configure --with-apr=/usr/local/apache2 \
             --with-apr-util=/usr/local/apache2  ...
 
-      Be sure to use a native Windows SVN client (as opposed to
-      Cygwin's version) so that the .dsp files get carriage-returns at
-      the ends of their lines.  Otherwise Visual Studio will complain
-      that it doesn't recognize the .dsp files.
+      Notes on Windows platforms:
 
-      If you use APR libraries checked out from svn in an Unix
-      environment, you need to run the 'buildconf' script in each
-      library's directory, to regenerate the configure scripts and
-      other files required for compiling the libraries:
+      * Do not use APR version 1.7.3 as that release contains a bug that
+        makes it impossible for Subversion to use it properly. This issue
+        only affects APR builds on Windows. This issue was fixed in APR
+        version 1.7.4. See:
+        https://lists.apache.org/thread/xd5t922jvb9423ph4j84rsp5fxks1k0z
 
-      $ cd apr; ./buildconf; ./configure ...; make; make install; cd ..
+      * If you check out APR and APR-util sources from their Subversion
+        repository, be sure to use a native Windows SVN client (as opposed
+        to Cygwin's version) so that the .dsp files get carriage-returns at
+        the ends of their lines. Otherwise Visual Studio will complain that
+        it doesn't recognize the .dsp files.
 
-      $ cd apr-util; ./buildconf; ./configure ...; make; make install; cd ..
+      Notes on Unix platforms:
 
-      Configure build and install both libraries before running Subversion's
-      configure script.
+      * If you check out APR and APR-util sources from their Subversion
+        repository, you need to run the 'buildconf' script in each library's
+        directory to regenerate the configure scripts and other files
+        required for compiling the libraries. Afterwards, configure, build,
+        and install both libraries before running Subversion's configure
+        script. For example:
+
+          $ cd apr
+          $ ./buildconf
+          $ ./configure <options...>
+          $ make
+          $ make install
+          $ cd ..
+
+          $ cd apr-util
+          $ ./buildconf
+          $ ./configure <options...>
+          $ make
+          $ make install
+          $ cd ..
 
 
       2.  SQLite  (REQUIRED)
@@ -425,14 +442,6 @@ I.    INTRODUCTION
       need to use a different path, of course.  Note that in order for
       the detection to succeed, the dynamic linker must be able to find
       the libraries at configure time.
-
-      If you are on the Windows platform and want to build Subversion,
-      a precompiled version of the Berkeley DB library is available for
-      download at the Subversion web site "Documents & files" area:
-
-          http://subversion.tigris.org/servlets/ProjectDocumentList?folderID=688
-
-      Look in the "Releases > Windows > Windows BDB" section.
 
 
       10. Cyrus SASL library (OPTIONAL)
@@ -656,6 +665,19 @@ I.    INTRODUCTION
 II.   INSTALLATION
       ============
 
+      Subversion support three different build systems:
+      - Autoconf/make, for Unix builds
+      - Visual Studio vcproj, for Windows builds
+      - CMake, for both Unix and Windows
+
+      The first two have been in use since 2001. Sections A-E below describe
+      the classic build system.
+
+      The CMake build system was created in 2024 and is still under
+      development. It will be included in Subversion 1.15 and is expected to
+      be the default build system starting with Subversion 1.16. Section F
+      below describes the CMake build system.
+
   A.  Building from a Tarball
       ------------------------------
 
@@ -834,9 +856,8 @@ II.   INSTALLATION
       * Python 2.7 or higher, downloaded from https://www.python.org/ which is
         used to generate the project files.
       * Perl 5.8 or higher from https://www.perl.org/get.html
-      * Awk (from https://www.cs.princeton.edu/~bwk/btl.mirror/awk95.exe) is
-        needed to compile Apache.  Note that this is the actual awk program,
-        not an installer - just rename it to awk.exe and it is ready to use.
+      * Awk is needed to compile Apache. Source code is available in 
+        tools\dev\awk, run the buildwin.bat program to compile.
       * Apache apr, apr-util, and optionally apr-iconv libraries, version
         1.4 or later (1.2 for apr-iconv). If you are building from a Subversion
         checkout and have not downloaded Apache 2, then get these 3 libraries
@@ -859,7 +880,7 @@ II.   INSTALLATION
         are available from
         http://www.oracle.com/technetwork/database/database-technologies/berkeleydb/downloads/index-082944.html
         (Version 4.4.20 or in specific cases some higher version recommended)
-        For more information see Section I.C.7.
+        For more information see Section I.C.9.
       * [Optional] Openssl can be obtained from https://www.openssl.org/source/
       * [Optional] NASM can be obtained from http://www.nasm.us/
       * [Optional] A modified version of GNU libintl, called
@@ -877,7 +898,7 @@ II.   INSTALLATION
       The Apache Serf library supports secure connections with OpenSSL
       and on-the-wire compression with zlib. If you want to use the
       secure connections feature, you should pass the option
-      "--with-openssl" to the gen-make.py script. See Section I.C.6 for
+      "--with-openssl" to the gen-make.py script. See Section I.C.7 for
       more details.
 
   E.3 Preparation
@@ -1168,6 +1189,66 @@ II.   INSTALLATION
 
       C:>python win-tests.py -c -r -v -u http://localhost
       C:>cd ..
+
+
+  F.  Building using CMake
+      --------------------
+
+      Get the sources, either a release tarball or by checking out the
+      official repository. The CMake build system currently only exists in
+      /trunk and it will be included in the 1.15 release.
+
+      The process for building on Unix and Windows is the same.
+
+          $ python gen-make.py -t cmake
+          $ cmake -B out [build options]
+          $ cmake --build out
+
+      "out" in the commands above is the build directory used by CMake.
+
+      Build options can be added, for example:
+
+          $ cmake -B out -DCMAKE_INSTALL_PREFIX=/usr/local/subversion -DSVN_ENABLE_RA_SERF=ON
+
+      Build options can be listed using:
+
+          $ cmake -LH
+
+      Windows tricks:
+
+      - Modern versions of Microsoft Visual Studio provide support for
+        CMake projects out-of-box, including intellisense, integrated
+        options editor, test explorer, and more.
+
+        In order to use it for Subversion, open the source directory with
+        Visual Studio, and the configuration should start automatically.
+        For editing the cache (options), do right-click to the CMakeLists.txt
+        file and clicking `CMake Settings for Subversion` will open the
+        editor. After the required settings are configured, hit `F7` in
+        order to build. For more info, check the article bellow:
+
+            https://learn.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio
+
+      - There is a useful tool for bootstrapping the dependencies,
+        vcpkg. It provides ports for the most of the Subversion's
+        dependencies, which then could be installed via a single
+        command.
+
+        To start using it, download the registry from GitHub, bootstrap
+        vcpkg, and install the dependencies:
+
+            $ git clone https://github.com/microsoft/vcpkg
+            $ cd vcpkg && .\bootstrap-vcpkg.bat -disableMetrics
+            $ .\vcpkg install apr apr-util expat zlib sqlite3 [any other dependency]
+
+        After this is done, vcpkg can be integrated into CMake by passing
+        the vcpkg toolchain to CMAKE_TOOLCHAIN_FILE option. In order to do
+        it with Visual Studio, open the CMake cache editor as explained in
+        the previous step, and put the following into `CMake toolchain
+        file` field, where VCPKG_ROOT is the path to vcpkg registry:
+
+            <VCPKG_ROOT>/scripts/buildsystems/vcpkg.cmake
+
 
 III.  BUILDING A SUBVERSION SERVER
       ============================
@@ -1220,7 +1301,7 @@ III.  BUILDING A SUBVERSION SERVER
       line.  Make sure this is the same db as the one Subversion uses.
       This note assumes you have installed Berkeley DB 4.2.52
       at its default locations.  For more info about the db requirement,
-      see section I.C.7.
+      see section I.C.9.
 
       You may also want to include other modules in your build. Add
       --enable-ssl to turn on SSL support, and --enable-deflate to turn on
@@ -1433,38 +1514,7 @@ III.  BUILDING A SUBVERSION SERVER
 
 
 
-IV.   PLATFORM-SPECIFIC ISSUES
-      ========================
-
-  A.  Windows XP
-      ----------
-
-      There is an error in the Windows XP TCP/IP stack which causes
-      corruption in certain cases.  This problem is exposed only
-      through ra_dav.
-
-      The root of the matter is caused by duplicating file handles
-      between parent and child processes.  The httpd Apache group
-      explains this a lot better:
-
-          https://www.apache.org/dist/httpd/binaries/win32/#xpbug
-
-      And there's an item about this in the Subversion FAQ:
-
-          https://subversion.apache.org/faq.html#windows-xp-server
-
-      The only known workaround for now is to update to Windows XP
-      SP1 (or higher).
-
-
-  B.  Mac OS X
-      --------
-
-      [TBD: Describe BDB 4.0.x problem]
-
-
-
-V.    PROGRAMMING LANGUAGE BINDINGS (PYTHON, PERL, RUBY, JAVA)
+IV.   PROGRAMMING LANGUAGE BINDINGS (PYTHON, PERL, RUBY, JAVA)
       ========================================================
 
       For Python, Perl and Ruby bindings, see the file

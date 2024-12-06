@@ -646,11 +646,16 @@ debian_release(apr_pool_t *pool)
 static const char *
 linux_release_name(apr_pool_t *pool)
 {
-  const char *uname_release = release_name_from_uname(pool);
+  const char *uname_release = NULL;
+  const char *release_name;
+
+#if HAVE_UNAME
+  uname_release = release_name_from_uname(pool);
+#endif
 
   /* Try anything that has /usr/bin/lsb_release.
      Covers, for example, Debian, Ubuntu and SuSE.  */
-  const char *release_name = lsb_release(pool);
+  release_name = lsb_release(pool);
 
   /* Try the systemd way (covers Arch). */
   if (!release_name)
@@ -1404,13 +1409,10 @@ release_name_from_version(int major, int minor, const char* product_name)
             }
           break;
 
-        case 11:
-          return "Big Sur";
-          break;
-
-        case 12:
-          return "Monterey";
-          break;
+        case 11: return "Big Sur";
+        case 12: return "Monterey";
+        case 13: return "Ventura";
+        case 14: return "Sonoma";
         }
     }
   return NULL;

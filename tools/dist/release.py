@@ -97,7 +97,7 @@ dist_dev_url = dist_repos + '/dev/subversion'
 dist_release_url = dist_repos + '/release/subversion'
 dist_archive_url = 'https://archive.apache.org/dist/subversion'
 buildbot_repos = os.getenv('SVN_RELEASE_BUILDBOT_REPOS',
-                           'https://svn.apache.org/repos/infra/infrastructure/buildbot/aegis/buildmaster')
+                           'https://svn.apache.org/repos/infra/infrastructure/buildbot2')
 extns = ['zip', 'tar.gz', 'tar.bz2']
 
 
@@ -630,7 +630,8 @@ def create_status_file_on_branch(args):
     ver = args.version
     branch_wc = get_workdir(args.base_dir)
     branch_url = get_branch_url(ver)
-    run_svn(['checkout', branch_url, branch_wc, '--depth=immediates'])
+    run_svn(['checkout', branch_url, branch_wc, '--depth=immediates'],
+            dry_run=args.dry_run)
 
     status_local_path = os.path.join(branch_wc, 'STATUS')
     template_filename = 'STATUS.ezt'
@@ -641,9 +642,14 @@ def create_status_file_on_branch(args):
     template = ezt.Template(compress_whitespace=False)
     template.parse(get_tmplfile(template_filename).read())
 
-    with open(status_local_path, 'wx') as g:
+    if args.dry_run:
+      print('\nNew STATUS file:')
+      print(template.generate(sys.stdout, data))
+    else:
+      with open(status_local_path, 'wx') as g:
         template.generate(g, data)
-    run_svn(['add', status_local_path])
+    run_svn(['add', status_local_path],
+            dry_run=args.dry_run)
     run_svn(['commit', status_local_path,
              '-m', '* branches/' + ver.branch + '.x/STATUS: New file.'],
             dry_run=args.dry_run)
@@ -675,9 +681,9 @@ def update_buildbot_config(args):
     prev_ver = Version('1.%d.0' % (ver.minor - 1,))
     next_ver = Version('1.%d.0' % (ver.minor + 1,))
 
-    relpath = 'master1/projects/subversion.conf'
+    relpath = 'projects/subversion.py'
     edit_file(get_buildbot_wc_path(args.base_dir, relpath),
-              r'(MINOR_LINES=\[.*%s)(\])' % (prev_ver.minor,),
+              r'(MINOR_LINES = \[.*%s)(\])' % (prev_ver.minor,),
               r'\1, %s\2' % (ver.minor,))
 
     log_msg = '''\
@@ -824,6 +830,10 @@ def roll_tarballs(args):
         exclude += ['STATUS']
         if args.version.minor < 7:
             exclude += ['packages', 'www']
+    if os.path.exists('.github'):
+        exclude += ['.github']
+    if os.path.exists('.asf.yaml'):
+        exclude += ['.asf.yaml']
     cwd = os.getcwd()
     os.chdir(get_workdir(args.base_dir))
     run_svn(['update', '--set-depth=exclude'] + exclude,
@@ -896,6 +906,12 @@ def roll_tarballs(args):
                 if dname.startswith('autom4te') and dname.endswith('.cache'):
                     shutil.rmtree(os.path.join(root, dname))
 
+    def clean_pycache():
+        for root, dirs, files in os.walk(exportdir):
+            for dname in dirs:
+                if dname == '__pycache__':
+                    shutil.rmtree(os.path.join(root, dname))
+
     logging.info('Building Windows tarballs')
     export(windows=True)
     os.chdir(exportdir)
@@ -904,6 +920,10 @@ def roll_tarballs(args):
     # line endings and won't run, so use the one in the working copy.
     run_script(args.verbose,
                '%s/tools/po/po-update.sh pot' % get_workdir(args.base_dir))
+    if not args.version < Version("1.15.0"):
+      run_script(args.verbose,
+                 'python gen-make.py -t cmake --release')
+    clean_pycache()  # as with clean_autom4te, is this pointless on Windows?
     os.chdir(cwd)
     clean_autom4te() # dist.sh does it but pointless on Windows?
     os.chdir(get_tempdir(args.base_dir))
@@ -919,6 +939,10 @@ def roll_tarballs(args):
                '''tools/po/po-update.sh pot
                   ./autogen.sh --release''',
                hide_stderr=True) # SWIG is noisy
+    if not args.version < Version("1.15.0"):
+      run_script(args.verbose,
+                 'python gen-make.py -t cmake --release')
+    clean_pycache()  # without this, tarballs contain empty __pycache__ dirs
     os.chdir(cwd)
     clean_autom4te() # dist.sh does it but probably pointless
 
@@ -983,7 +1007,7 @@ def roll_tarballs(args):
         # complete wc, not a shallow wc as indicated in HACKING as one option.
         # We /could/ download COMMITTERS from /trunk if it doesn't exist...
         subprocess.check_call([os.path.dirname(__file__) + '/make-keys.sh',
-                               '-c', os.path.dirname(__file__) + '/../..',
+                               '-c', os.path.dirname(__file__) + '/../../COMMITTERS',
                                '-o', filepath])
         shutil.move(filepath, get_target(args))
 
@@ -1567,7 +1591,7 @@ def write_changelog(args):
     mergeinfo = mergeinfo.splitlines()
 
     separator_pattern = re.compile('^-{72}$')
-    revline_pattern = re.compile('^r(\d+) \| [^\|]+ \| [^\|]+ \| \d+ lines?$')
+    revline_pattern = re.compile(r'^r(\d+) \| [^|]+ \| [^|]+ \| \d+ lines?$')
     changes_prefix_pattern = re.compile(r'^\[(U|D)?:?([^\]]+)?\](.+)$')
     changes_suffix_pattern = re.compile(r'^(.+)\[(U|D)?:?([^\]]+)?\]$')
     # TODO: push this into backport.status as a library function

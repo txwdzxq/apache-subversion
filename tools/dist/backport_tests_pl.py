@@ -50,4 +50,5 @@ def run_conflicter(sbox, error_expected=False):
   return run_backport(sbox, error_expected, ["MAY_COMMIT=0"])
 
 
-execfile("backport_tests.py")
+with open("backport_tests.py", "rb") as file:
+  exec(compile(file.read(), "backport_tests.py", "exec"))

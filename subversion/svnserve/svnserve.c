@@ -191,7 +191,7 @@ void winservice_notify_stop(void)
   if (winservice_svnserve_accept_socket != INVALID_SOCKET)
     closesocket(winservice_svnserve_accept_socket);
 }
-#endif /* _WIN32 */
+#endif /* WIN32 */
 
 
 /* Option codes and descriptions for svnserve.
@@ -574,9 +574,14 @@ accept_connection(connection_t **connection,
     || APR_STATUS_IS_ECONNABORTED(status)
     || APR_STATUS_IS_ECONNRESET(status));
 
-  return status
-       ? svn_error_wrap_apr(status, _("Can't accept client connection"))
-       : SVN_NO_ERROR;
+  if (!status)
+    return SVN_NO_ERROR;
+#if APR_HAVE_SIGACTION
+  else if (sigtermint_seen)
+    return SVN_NO_ERROR;
+#endif
+  else
+    return svn_error_wrap_apr(status, _("Can't accept client connection"));
 }
 
 /* Add a reference to CONNECTION, i.e. keep it and it's pool valid unless
@@ -716,7 +721,10 @@ check_lib_versions(void)
  * return SVN_NO_ERROR.
  */
 static svn_error_t *
-sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
+sub_main(int *exit_code,
+         int argc,
+         const svn_cmdline__argv_char_t *cmdline_argv[],
+         apr_pool_t *pool)
 {
   enum run_mode run_mode = run_mode_unspecified;
   svn_boolean_t foreground = FALSE;
@@ -755,12 +763,16 @@ sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
   svn_node_kind_t kind;
   apr_size_t min_thread_count = THREADPOOL_MIN_SIZE;
   apr_size_t max_thread_count = THREADPOOL_MAX_SIZE;
+  const char **argv;
+
 #ifdef SVN_HAVE_SASL
   SVN_ERR(cyrus_init(pool));
 #endif
 
   /* Check library versions */
   SVN_ERR(check_lib_versions());
+
+  SVN_ERR(svn_cmdline__get_cstring_argv(&argv, argc, cmdline_argv, pool));
 
   /* Initialize the FS library. */
   SVN_ERR(svn_fs_initialize(pool));
@@ -1417,7 +1429,7 @@ sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
 }
 
 int
-main(int argc, const char *argv[])
+SVN_CMDLINE__MAIN(int argc, const svn_cmdline__argv_char_t *argv[])
 {
   apr_pool_t *pool;
   int exit_code = EXIT_SUCCESS;

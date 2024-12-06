@@ -140,10 +140,7 @@ else:
 if windows:
   svneditor_script = os.path.join(sys.path[0], 'svneditor.bat')
 else:
-  # This script is in the build tree, not in the source tree.  
-  svneditor_script = os.path.join(os.path.dirname(
-                                      os.path.dirname(os.path.abspath('.'))),
-                                  'tests/cmdline/svneditor.sh')
+  svneditor_script = os.path.join(sys.path[0], 'svneditor.sh')
 
 # Username and password used by the working copies
 wc_author = 'jrandom'
@@ -209,7 +206,6 @@ svnauthz_binary = os.path.abspath('../../../tools/server-side/svnauthz' + _exe)
 svnauthz_validate_binary = os.path.abspath(
     '../../../tools/server-side/svnauthz-validate' + _exe
 )
-svnmover_binary = os.path.abspath('../../../tools/dev/svnmover/svnmover' + _exe)
 
 # Where to find the libtool script created during build
 libtool_script = os.path.abspath('../../../libtool')
@@ -905,12 +901,6 @@ def run_svnversion(*varargs):
   as list of lines (including line terminators)."""
   return run_command(svnversion_binary, 1, False, *varargs)
 
-def run_svnmover(*varargs):
-  """Run svnmover with VARARGS, returns exit code as int; stdout, stderr as
-  list of lines (including line terminators)."""
-  return run_command(svnmover_binary, 1, False,
-                     *(_with_auth(_with_config_dir(varargs))))
-
 def run_svnmucc(*varargs):
   """Run svnmucc with VARARGS, returns exit code as int; stdout, stderr as
   list of lines (including line terminators).  Use binary mode for output."""
@@ -1511,7 +1501,7 @@ def merge_notify_line(revstart=None, revend=None, same_URL=True,
   merge operation on revisions REVSTART through REVEND.  Omit both
   REVSTART and REVEND for the case where the left and right sides of
   the merge are from different URLs."""
-  from_foreign_phrase = foreign and "\(from foreign repository\) " or ""
+  from_foreign_phrase = foreign and r"\(from foreign repository\) " or ""
   if target:
     target_re = re.escape(target)
   else:
@@ -1877,7 +1867,7 @@ class TestSpawningThread(threading.Thread):
 
 class TestRunner:
   """Encapsulate a single test case (predicate), including logic for
-  runing the test and test list output."""
+  running the test and test list output."""
 
   def __init__(self, func, index):
     self.pred = svntest.testcase.create_test_case(func)
@@ -2188,13 +2178,12 @@ def _create_parser(usage=None):
   if logger.getEffectiveLevel() == logging.NOTSET:
     logger.setLevel(logging.WARN)
 
-  def set_log_level(option, opt, value, parser, level=None):
-    if level:
-      # called from --verbose
-      logger.setLevel(level)
+  def set_log_level(option, opt, value, parser):
+    if value.isdigit():
+      level = int(value)
     else:
-      # called from --set-log-level
-      logger.setLevel(getattr(logging, value, None) or int(value))
+      level = getattr(logging, value)
+    logger.setLevel(level)
 
   # Set up the parser.
   # If you add new options, consider adding them in
@@ -2213,10 +2202,10 @@ def _create_parser(usage=None):
                     help='Print test doc strings instead of running them')
   parser.add_option('--milestone-filter', action='store', dest='milestone_filter',
                     help='Limit --list to those with target milestone specified')
-  parser.add_option('-v', '--verbose', action='callback',
-                    callback=set_log_level, callback_args=(logging.DEBUG, ),
+  parser.add_option('-v', '--verbose', action='store_const',
+                    dest='set_log_level', const=logging.DEBUG,
                     help='Print binary command-lines (same as ' +
-                         '"--set-log-level logging.DEBUG")')
+                         '"--set-log-level DEBUG")')
   parser.add_option('-q', '--quiet', action='store_true',
                     help='Print only unexpected results (not with --verbose)')
   parser.add_option('-p', '--parallel', action='store_const',
@@ -2501,10 +2490,15 @@ def execute_tests(test_list, serial_only = False, test_name = None,
   global svnsync_binary
   global svndumpfilter_binary
   global svnversion_binary
-  global svnmover_binary
   global svnmucc_binary
   global svnauthz_binary
   global svnauthz_validate_binary
+  global svnfsfs_binary
+  global entriesdump_binary
+  global lock_helper_binary
+  global atomic_ra_revprop_change_binary
+  global wc_lock_tester_binary
+  global wc_incomplete_tester_binary
   global options
 
   if test_name:
@@ -2606,12 +2600,20 @@ def execute_tests(test_list, serial_only = False, test_name = None,
                                           'svndumpfilter' + _exe)
       svnversion_binary = os.path.join(options.svn_bin, 'svnversion' + _exe)
       svnmucc_binary = os.path.join(options.svn_bin, 'svnmucc' + _exe)
+      svnfsfs_binary = os.path.join(options.svn_bin, 'svnfsfs' + _exe)
 
   if options.tools_bin:
     svnauthz_binary = os.path.join(options.tools_bin, 'svnauthz' + _exe)
     svnauthz_validate_binary = os.path.join(options.tools_bin,
                                             'svnauthz-validate' + _exe)
-    svnmover_binary = os.path.join(options.tools_bin, 'svnmover' + _exe)
+    entriesdump_binary = os.path.join(options.tools_bin, 'entries-dump' + _exe)
+    lock_helper_binary = os.path.join(options.tools_bin, 'lock-helper' + _exe)
+    atomic_ra_revprop_change_binary = os.path.join(options.tools_bin,
+                                                   'atomic-ra-revprop-change' + _exe)
+    wc_lock_tester_binary = os.path.join(options.tools_bin,
+                                         'wc-lock-tester' + _exe)
+    wc_incomplete_tester_binary = os.path.join(options.tools_bin,
+                                               'wc-incomplete-tester' + _exe)
 
   ######################################################################
 

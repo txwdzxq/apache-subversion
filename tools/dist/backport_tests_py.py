@@ -51,4 +51,5 @@ def run_conflicter(sbox, error_expected=False):
   with chdir(sbox.ospath('branch')):
     return svntest.main.run_command(args[0], error_expected, False, *(args[1:]))
 
-execfile("backport_tests.py")
+with open("backport_tests.py", "rb") as file:
+  exec(compile(file.read(), "backport_tests.py", "exec"))

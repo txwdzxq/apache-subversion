@@ -286,7 +286,9 @@ help(FILE *stream, apr_pool_t *pool)
       "  mv SRC-URL DST-URL     : move SRC-URL to DST-URL\n"
       "  rm URL                 : delete URL\n"
       "  put SRC-FILE URL       : add or modify file URL with contents copied from\n"
-      "                           SRC-FILE (use \"-\" to read from standard input)\n"
+      "                           SRC-FILE (to read from standard input, use \"--\"\n"
+      "                           to stop option processing followed by \"-\" to\n"
+      "                           indicate standard input)\n"
       "  propset NAME VALUE URL : set property NAME on URL to VALUE\n"
       "  propsetf NAME FILE URL : set property NAME on URL to value read from FILE\n"
       "  propdel NAME URL       : delete property NAME from URL\n"
@@ -465,7 +467,10 @@ log_message_func(const char **log_msg,
  * return SVN_NO_ERROR.
  */
 static svn_error_t *
-sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
+sub_main(int *exit_code,
+         int argc,
+         const svn_cmdline__argv_char_t *cmdline_argv[],
+         apr_pool_t *pool)
 {
   apr_array_header_t *actions = apr_array_make(pool, 1,
                                                sizeof(struct action *));
@@ -531,9 +536,12 @@ sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
   struct log_message_baton lmb;
   int i;
   svn_boolean_t read_pass_from_stdin = FALSE;
+  const char **argv;
 
   /* Check library versions */
   SVN_ERR(check_lib_versions());
+
+  SVN_ERR(svn_cmdline__get_cstring_argv(&argv, argc, cmdline_argv, pool));
 
   /* Initialize the RA library. */
   SVN_ERR(svn_ra_initialize(pool));
@@ -978,7 +986,7 @@ sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
 }
 
 int
-main(int argc, const char *argv[])
+SVN_CMDLINE__MAIN(int argc, const svn_cmdline__argv_char_t *argv[])
 {
   apr_pool_t *pool;
   int exit_code = EXIT_SUCCESS;

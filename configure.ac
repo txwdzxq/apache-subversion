@@ -872,21 +872,18 @@ fi
 
 dnl plaintext passwords -------------------
 AC_ARG_ENABLE(plaintext-password-storage,
-AS_HELP_STRING([--enable-plaintext-password-storage],
-               [Enable on-disk caching of plaintext passwords and passphrases.
-                (Enabling this functionality will not force Subversion
+AS_HELP_STRING([--disable-plaintext-password-storage],
+               [Disable on-disk caching of plaintext passwords and passphrases.
+                (Leaving this functionality enabled will not force Subversion
                 to store passwords in plaintext, but does permit users to
                 explicitly allow that behavior via runtime configuration.)]),
-[plaintext_passwordd_storage="$enableval"],
-[plaintext_passwordd_storage="no"])
-
-if test "$plaintext_passwordd_storage" = "yes"; then
-  AC_MSG_WARN([Enabling plaintext password/passphrase storage])
-else
-  AC_MSG_NOTICE([Disabling plaintext password/passphrase storage])
-  AC_DEFINE(SVN_DISABLE_PLAINTEXT_PASSWORD_STORAGE, 1,
-            [Defined if plaintext password/passphrase storage is disabled])
-fi
+[
+   if test "$enableval" = "no"; then
+      AC_MSG_NOTICE([Disabling plaintext password/passphrase storage])
+      AC_DEFINE(SVN_DISABLE_PLAINTEXT_PASSWORD_STORAGE, 1,
+                [Defined if plaintext password/passphrase storage is disabled])
+   fi
+])
 
 dnl Build and install rules -------------------
 
@@ -1028,6 +1025,7 @@ AC_SUBST([libsvn_diff_LDFLAGS])
 AC_SUBST([libsvn_fs_LDFLAGS])
 AC_SUBST([libsvn_fs_base_LDFLAGS])
 AC_SUBST([libsvn_fs_fs_LDFLAGS])
+AC_SUBST([libsvn_fs_x_LDFLAGS])
 AC_SUBST([libsvn_fs_util_LDFLAGS])
 AC_SUBST([libsvn_ra_LDFLAGS])
 AC_SUBST([libsvn_ra_local_LDFLAGS])
@@ -1494,21 +1492,21 @@ AS_HELP_STRING([--enable-runtime-module-search],
       fi
       AC_DEFINE(SVN_USE_DSO, 1,
                 [Defined if svn should try to load DSOs])
-
-      dnl Mac OS X uses libname.MAJOR.SOVERSION.dylib
-      dnl Most other unixes use libname.MAJOR.so.SOVERSION
-      case "$host" in
-        *-*-darwin*)
-          AC_DEFINE(SVN_DSO_SUFFIX_FMT, ["%d.%d.dylib"],
-                    [Shared library file name suffix format])
-          ;;
-        *)
-          AC_DEFINE(SVN_DSO_SUFFIX_FMT, ["%d.so.%d"],
-                    [Shared library file name suffix format])
-          ;;
-      esac
     fi
 ])
+
+dnl Mac OS X uses libname.MAJOR.SOVERSION.dylib
+dnl Most other unixes use libname.MAJOR.so.SOVERSION
+case "$host" in
+  *-*-darwin*)
+    AC_DEFINE(SVN_DSO_SUFFIX_FMT, ["%d.%d.dylib"],
+              [Shared library file name suffix format])
+    ;;
+  *)
+    AC_DEFINE(SVN_DSO_SUFFIX_FMT, ["%d.so.%d"],
+              [Shared library file name suffix format])
+    ;;
+esac
 
 if test "$svn_enable_shared" = "no" || test "$use_dso" != "yes"; then
   AC_DEFINE(SVN_LIBSVN_RA_LINKS_RA_LOCAL, 1,
@@ -1766,7 +1764,6 @@ done
 
 SVN_CONFIG_SCRIPT(tools/backup/hot-backup.py)
 SVN_CONFIG_SCRIPT(tools/hook-scripts/commit-access-control.pl)
-SVN_CONFIG_SCRIPT(subversion/tests/cmdline/svneditor.sh)
 SVN_CONFIG_SCRIPT(subversion/bindings/swig/perl/native/Makefile.PL)
 if test -e packages/solaris/pkginfo.in; then
   SVN_CONFIG_SCRIPT(packages/solaris/pkginfo)

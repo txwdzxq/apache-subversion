@@ -23,35 +23,8 @@
 #    under the License.
 ######################################################################
 
+import errno
 from libsvn.fs import *
-
-######################################################################
-# Any adjustment of SWIG generated wrapper functions on svn.fs module
-# should be placed before adding alternative names for them.
-
-# fs.commit_txn() should return a 2-tupple of conflict_p and new_rev.
-# However if conflict_p is None, SWIG generated wrapper function
-# libsvn.fs.svn_fs_commit_txn returns an integer value of new_rev.
-# This is a bug of SWIG generated wrapper function, so we fix it here.
-#
-# (There was discussion about this behavior because C API
-# svn_fs_commit_txn() always set NULL to conflict_p if it returns
-# SVN_NO_ERROR and so it seems to be reasonable that fs.commit_txn()
-# returns only rev_new value. However for compatibility, we decided
-# that fs.commit_txn always returns 2-tuple if it does not raises
-# an exception.)
-
-_svn_fs_commit_txn = svn_fs_commit_txn
-
-def svn_fs_commit_txn(*args):
-    r"""svn_fs_commit_txn(svn_fs_txn_t txn, apr_pool_t pool) -> svn_error_t"""
-    ret = _svn_fs_commit_txn(*args)
-    if not isinstance(ret, tuple):
-      ret = (None, ret)
-    return ret
-
-######################################################################
-
 from svn.core import _unprefix_names, Pool, _as_list
 _unprefix_names(locals(), 'svn_fs_')
 _unprefix_names(locals(), 'SVN_FS_')
@@ -158,6 +131,18 @@ class FileDiff:
     return self.tempfile1, self.tempfile2
 
   def get_pipe(self):
+    """Perform diff and return a file object from which the output can
+    be read.
+
+    When DIFFOPTIONS is None (the default), use svn's internal diff.
+
+    With any other DIFFOPTIONS, exec the external diff found on PATH,
+    passing it DIFFOPTIONS. On Windows, exec diff.exe rather than
+    diff. If a diff utility is not installed or found on PATH, throws
+    FileNotFoundError. Caveat: On some systems, including Windows, an
+    external diff may not be available unless installed and added to
+    PATH manually.
+    """
     self.get_files()
 
     # If diffoptions were provided, then the diff command needs to be
@@ -170,8 +155,17 @@ class FileDiff:
             + [self.tempfile1, self.tempfile2]
 
       # open the pipe, and return the file object for reading from the child.
-      p = _subprocess.Popen(cmd, stdout=_subprocess.PIPE, bufsize=-1,
-                            close_fds=_sys.platform != "win32")
+      try:
+        p = _subprocess.Popen(cmd, stdout=_subprocess.PIPE, bufsize=-1,
+                              close_fds=_sys.platform != "win32")
+      # When removing Python 2 support: Change to FileNotFoundError and 
+      # remove check for ENOENT (FileNotFoundError "Corresponds to errno
+      # ENOENT" according to documentation)
+      except OSError as err:
+        if err.errno == errno.ENOENT:
+          err.strerror = "External diff command not found in PATH"
+        raise err
+
       return _PopenStdoutWrapper(p)
 
     else:

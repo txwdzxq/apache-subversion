@@ -363,7 +363,7 @@ struct svnlook_opt_state
   const char *txn;
   svn_boolean_t version;          /* --version */
   svn_boolean_t show_ids;         /* --show-ids */
-  apr_size_t limit;               /* --limit */
+  int limit;                      /* --limit */
   svn_boolean_t help;             /* --help */
   svn_boolean_t no_diff_deleted;  /* --no-diff-deleted */
   svn_boolean_t no_diff_added;    /* --no-diff-added */
@@ -391,7 +391,7 @@ typedef struct svnlook_ctxt_t
   svn_fs_t *fs;
   svn_boolean_t is_revision;
   svn_boolean_t show_ids;
-  apr_size_t limit;
+  int limit;
   svn_boolean_t no_diff_deleted;
   svn_boolean_t no_diff_added;
   svn_boolean_t diff_copy_from;
@@ -1579,7 +1579,7 @@ struct print_history_baton
 {
   svn_fs_t *fs;
   svn_boolean_t show_ids;    /* whether to show node IDs */
-  apr_size_t limit;          /* max number of history items */
+  int limit;                 /* max number of history items */
   apr_size_t count;          /* number of history items processed */
 };
 
@@ -2466,7 +2466,10 @@ subcommand_uuid(apr_getopt_t *os, void *baton, apr_pool_t *pool)
  * return SVN_NO_ERROR.
  */
 static svn_error_t *
-sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
+sub_main(int *exit_code,
+         int argc,
+         const svn_cmdline__argv_char_t *cmdline_argv[],
+         apr_pool_t *pool)
 {
   svn_error_t *err;
   apr_status_t apr_err;
@@ -2477,11 +2480,14 @@ sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
   int opt_id;
   apr_array_header_t *received_opts;
   int i;
+  const char **argv;
 
   received_opts = apr_array_make(pool, SVN_OPT_MAX_OPTIONS, sizeof(int));
 
   /* Check library versions */
   SVN_ERR(check_lib_versions());
+
+  SVN_ERR(svn_cmdline__get_cstring_argv(&argv, argc, cmdline_argv, pool));
 
   /* Initialize the FS library. */
   SVN_ERR(svn_fs_initialize(pool));
@@ -2582,11 +2588,12 @@ sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
 
         case 'l':
           {
-            char *end;
-            opt_state.limit = strtol(opt_arg, &end, 10);
-            if (end == opt_arg || *end != '\0')
+            const char *utf8_opt_arg;
+            SVN_ERR(svn_utf_cstring_to_utf8(&utf8_opt_arg, opt_arg, pool));
+            err = svn_cstring_atoi(&opt_state.limit, utf8_opt_arg);
+            if (err)
               {
-                return svn_error_create(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
+                return svn_error_create(SVN_ERR_CL_ARG_PARSING_ERROR, err ,
                                         _("Non-numeric limit argument given"));
               }
             if (opt_state.limit <= 0)
@@ -2849,7 +2856,7 @@ sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
 }
 
 int
-main(int argc, const char *argv[])
+SVN_CMDLINE__MAIN(int argc, const svn_cmdline__argv_char_t *argv[])
 {
   apr_pool_t *pool;
   int exit_code = EXIT_SUCCESS;

@@ -55,7 +55,6 @@
 #include "shelf2-cmd.h"
 #include "shelf-cmd.h"
 
-#include "private/svn_opt_private.h"
 #include "private/svn_cmdline_private.h"
 #include "private/svn_subr_private.h"
 #include "private/svn_utf_private.h"
@@ -424,7 +423,7 @@ svn_cl__cmd_table_main[] =
 {
   { "add", svn_cl__add, {0}, {N_(
      "Put new files and directories under version control.\n"
-     "usage: add PATH...\n"
+     "usage: add PATH[@]...\n"
      "\n"), N_(
      "  Schedule unversioned PATHs for addition, so they will become versioned and\n"
      "  be added to the repository in the next commit. Recurse into directories by\n"
@@ -444,7 +443,9 @@ svn_cl__cmd_table_main[] =
      "\n"), N_(
      "  The selection of items to add may be influenced by the 'ignores' feature.\n"
      "  Properties may be attached to the items as configured by the 'auto-props'\n"
-     "  feature.\n"
+     "  feature.\n"), N_(
+     "  If PATH contains an @ character, an additional @ must be specified at the\n"
+     "  end of PATH to avoid interpreting the first @ as a peg revision indicator.\n"
     )},
     {opt_targets, 'N', opt_depth, 'q', opt_force, opt_no_ignore, opt_autoprops,
      opt_no_autoprops, opt_parents },
@@ -516,8 +517,11 @@ svn_cl__cmd_table_main[] =
   { "changelist", svn_cl__changelist, {"cl"}, {N_(
      "Associate (or dissociate) changelist CLNAME with the named\n"
      "files.\n"
-     "usage: 1. changelist CLNAME PATH...\n"
-     "       2. changelist --remove PATH...\n"
+     "usage: 1. changelist CLNAME PATH[@]...\n"
+     "       2. changelist --remove PATH[@]...\n"
+    ), N_(
+     "  If PATH contains an @ character, an additional @ must be specified at the\n"
+     "  end of PATH to avoid interpreting the first @ as a peg revision indicator.\n"
     )},
     { 'q', 'R', opt_depth, opt_remove, opt_targets, opt_changelist} },
 
@@ -539,6 +543,8 @@ svn_cl__cmd_table_main[] =
      "  out into a sub-directory of PATH, with the name of the sub-directory\n"
      "  being the basename of the URL.\n"
      "\n"), N_(
+     "  If PATH contains an @ character, an additional @ must be specified at the\n"
+     "  end of PATH to avoid interpreting the first @ as a peg revision indicator.\n"), N_(
      "  If --force is used, unversioned obstructing paths in the working\n"
      "  copy destination do not automatically cause the check out to fail.\n"
      "  If the obstructing path is the same type (file or directory) as the\n"
@@ -560,10 +566,10 @@ svn_cl__cmd_table_main[] =
   { "cleanup", svn_cl__cleanup, {0}, {N_(
      "Either recover from an interrupted operation that left the working\n"
      "copy locked, or remove unwanted files.\n"
-     "usage: 1. cleanup [WCPATH...]\n"
-     "       2. cleanup --remove-unversioned [WCPATH...]\n"
-     "          cleanup --remove-ignored [WCPATH...]\n"
-     "       3. cleanup --vacuum-pristines [WCPATH...]\n"
+     "usage: 1. cleanup [WCPATH[@]...]\n"
+     "       2. cleanup --remove-unversioned [WCPATH[@]...]\n"
+     "          cleanup --remove-ignored [WCPATH[@]...]\n"
+     "       3. cleanup --vacuum-pristines [WCPATH[@]...]\n"
      "\n"), N_(
      "  1. When none of the options --remove-unversioned, --remove-ignored, and\n"
      "    --vacuum-pristines is specified, remove all write locks (shown as 'L' by\n"
@@ -583,7 +589,9 @@ svn_cl__cmd_table_main[] =
      "\n"), N_(
      "  3. If the --vacuum-pristines option is given, remove pristine copies of\n"
      "    files which are stored inside the .svn directory and which are no longer\n"
-     "    referenced by any file in the working copy.\n"
+     "    referenced by any file in the working copy.\n"), N_(
+     "  If WCPATH contains an @ character, an additional @ must be specified at the\n"
+     "  end of WCPATH to avoid interpreting the first @ as a peg revision indicator.\n"
     )},
     { opt_remove_unversioned, opt_remove_ignored, opt_vacuum_pristines,
       opt_include_externals, 'q', opt_merge_cmd },
@@ -591,7 +599,7 @@ svn_cl__cmd_table_main[] =
 
   { "commit", svn_cl__commit, {"ci"}, {N_(
      "Send changes from your working copy to the repository.\n"
-     "usage: commit [PATH...]\n"
+     "usage: commit [PATH[@]...]\n"
      "\n"), N_(
      "  A log message must be provided, but it can be empty.  If it is not\n"
      "  given by a --message or --file option, an editor will be started.\n"
@@ -601,7 +609,9 @@ svn_cl__cmd_table_main[] =
      "\n"), N_(
      "  If --include-externals is given, also commit file and directory\n"
      "  externals reached by recursion. Do not commit externals with a\n"
-     "  fixed revision.\n"
+     "  fixed revision.\n"), N_(
+     "  If PATH contains an @ character, an additional @ must be specified at the\n"
+     "  end of PATH to avoid interpreting the first @ as a peg revision indicator.\n"
     )},
     {'q', 'N', opt_depth, opt_targets, opt_no_unlock, SVN_CL__LOG_MSG_OPTIONS,
      opt_changelist, opt_keep_changelists, opt_include_externals},
@@ -609,7 +619,7 @@ svn_cl__cmd_table_main[] =
 
   { "copy", svn_cl__copy, {"cp"}, {N_(
      "Copy files and directories in a working copy or repository.\n"
-     "usage: copy SRC[@REV]... DST\n"
+     "usage: copy SRC[@REV]... DST[@]\n"
      "\n"), N_(
      "  SRC and DST can each be either a working copy (WC) path or URL:\n"
      "    WC  -> WC:   copy and schedule for addition (with history)\n"
@@ -620,6 +630,8 @@ svn_cl__cmd_table_main[] =
      "  the sources will be added as children of DST. When copying multiple\n"
      "  sources, DST must be an existing directory.\n"
      "\n"), N_(
+     "  If DST contains an @ character, an additional @ must be specified at the\n"
+     "  end of DST to avoid interpreting the first @ as a peg revision indicator.\n"), N_(
      "  WARNING: For compatibility with previous versions of Subversion,\n"
      "  copies performed using two working copy paths (WC -> WC) will not\n"
      "  contact the repository.  As such, they may not, by default, be able\n"
@@ -631,8 +643,8 @@ svn_cl__cmd_table_main[] =
 
   { "delete", svn_cl__delete, {"del", "remove", "rm"}, {N_(
      "Remove files and directories from version control.\n"
-     "usage: 1. delete PATH...\n"
-     "       2. delete URL...\n"
+     "usage: 1. delete PATH[@]...\n"
+     "       2. delete URL[@]...\n"
      "\n"), N_(
      "  1. Each item specified by a PATH is scheduled for deletion upon\n"
      "    the next commit.  Files, and directories that have not been\n"
@@ -642,7 +654,10 @@ svn_cl__cmd_table_main[] =
      "    not be removed unless the --force or --keep-local option is given.\n"
      "\n"), N_(
      "  2. Each item specified by a URL is deleted from the repository\n"
-     "    via an immediate commit.\n"
+     "    via an immediate commit.\n"), N_(
+     "  If PATH or URL contains an @ character, an additional @ must be specified\n"
+     "  at the end of PATH to avoid interpreting the first @ as a peg revision\n"
+     "  indicator.\n"
     )},
     {opt_force, 'q', opt_targets, SVN_CL__LOG_MSG_OPTIONS, opt_keep_local} },
 
@@ -692,23 +707,26 @@ svn_cl__cmd_table_main[] =
 
   { "export", svn_cl__export, {0}, {N_(
      "Create an unversioned copy of a tree.\n"
-     "usage: 1. export [-r REV] URL[@PEGREV] [PATH]\n"
-     "       2. export [-r REV] PATH1[@PEGREV] [PATH2]\n"
+     "usage: 1. export [-r REV] URL[@PEGREV] [UNVERSIONED_PATH[@]]\n"
+     "       2. export [-r REV] WCPATH[@PEGREV] [UNVERSIONED_PATH[@]]\n"
      "\n"), N_(
      "  1. Exports a clean directory tree from the repository specified by\n"
      "     URL, at revision REV if it is given, otherwise at HEAD, into\n"
-     "     PATH. If PATH is omitted, the last component of the URL is used\n"
-     "     for the local directory name.\n"
+     "     UNVERSIONED_PATH. If UNVERSIONED_PATH is omitted, the last\n"
+     "     component of the URL is used for the local directory name.\n"
      "\n"), N_(
      "  2. Exports a clean directory tree from the working copy specified by\n"
-     "     PATH1, at revision REV if it is given, otherwise at WORKING, into\n"
-     "     PATH2.  If PATH2 is omitted, the last component of the PATH1 is used\n"
-     "     for the local directory name. If REV is not specified, all local\n"
-     "     changes will be preserved.  Files not under version control will\n"
-     "     not be copied.\n"
+     "     WCPATH, at revision REV if it is given, otherwise at WORKING, into\n"
+     "     UNVERSIONED_PATH. If UNVERSIONED_PATH is omitted, the last\n"
+     "     component of the WCPATH is used for the local directory name. If\n"
+     "     REV is not specified, all local changes will be preserved. Files\n"
+     "     not under version control will not be copied.\n"
      "\n"), N_(
      "  If specified, PEGREV determines in which revision the target is first\n"
-     "  looked up.\n"
+     "  looked up.\n"), N_(
+     "  If UNVERSIONED_PATH contains an @ character, an additional @ must be\n"
+     "  specified at the end of UNVERSIONED_PATH to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     {'r', 'q', 'N', opt_depth, opt_force, opt_native_eol, opt_ignore_externals,
      opt_ignore_keywords},
@@ -1356,8 +1374,8 @@ svn_cl__cmd_table_main[] =
 
   { "mkdir", svn_cl__mkdir, {0}, {N_(
      "Create a new directory under version control.\n"
-     "usage: 1. mkdir PATH...\n"
-     "       2. mkdir URL...\n"
+     "usage: 1. mkdir PATH[@]...\n"
+     "       2. mkdir URL[@]...\n"
      "\n"), N_(
      "  Create version controlled directories.\n"
      "\n"), N_(
@@ -1369,12 +1387,16 @@ svn_cl__cmd_table_main[] =
      "\n"), N_(
      "  In both cases, all the intermediate directories must already exist,\n"
      "  unless the --parents option is given.\n"
+    ), N_(
+     "  If PATH or URL contains an @ character, an additional @ must be\n"
+     "  specified at the end of PATH/URL to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     {'q', opt_parents, SVN_CL__LOG_MSG_OPTIONS} },
 
   { "move", svn_cl__move, {"mv", "rename", "ren"}, {N_(
      "Move (rename) an item in a working copy or repository.\n"
-     "usage: move SRC... DST\n"
+     "usage: move SRC[@]... DST\n"
      "\n"), N_(
      "  SRC and DST can both be working copy (WC) paths or URLs:\n"
      "    WC  -> WC:  move an item in a working copy, as a local change to\n"
@@ -1390,6 +1412,10 @@ svn_cl__cmd_table_main[] =
      "  To avoid unnecessary conflicts, it is recommended to run 'svn update'\n"
      "  to update the subtree to a single revision before moving it.\n"
      "  The --allow-mixed-revisions option is provided for backward compatibility.\n"
+    ), N_(
+     "  If any SRC contains an @ character, an additional @ must be\n"
+     "  specified at the end of that SRC to avoid interpreting the\n"
+     "  first @ as a peg revision indicator. This does not apply to DST.\n"
     )},
     {'q', opt_force, opt_parents, opt_allow_mixed_revisions,
      SVN_CL__LOG_MSG_OPTIONS, 'r'},
@@ -1397,7 +1423,7 @@ svn_cl__cmd_table_main[] =
 
   { "patch", svn_cl__patch, {0}, {N_(
      "Apply a patch to a working copy.\n"
-     "usage: patch PATCHFILE [WCPATH]\n"
+     "usage: patch PATCHFILE [WCPATH[@]]\n"
      "\n"), N_(
      "  Apply a unidiff patch in PATCHFILE to the working copy WCPATH.\n"
      "  If WCPATH is omitted, '.' is assumed.\n"
@@ -1439,40 +1465,52 @@ svn_cl__cmd_table_main[] =
      "        To avoid rejects, first update to the revision N using\n"
      "        'svn update -r N', apply the patch, and then update back to the\n"
      "        HEAD revision. This way, conflicts can be resolved interactively.\n"
+    ), N_(
+     "  If WCPATH contains an @ character, an additional @ must be\n"
+     "  specified at the end of WCPATH to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     {'q', opt_dry_run, opt_strip, opt_reverse_diff,
      opt_ignore_whitespace} },
 
   { "propdel", svn_cl__propdel, {"pdel", "pd"}, {N_(
      "Remove a property from files, dirs, or revisions.\n"
-     "usage: 1. propdel PROPNAME [PATH...]\n"
-     "       2. propdel PROPNAME --revprop -r REV [TARGET]\n"
+     "usage: 1. propdel PROPNAME [PATH[@]...]\n"
+     "       2. propdel PROPNAME --revprop -r REV [TARGET[@]]\n"
      "\n"), N_(
      "  1. Removes versioned props in working copy.\n"
      "  2. Removes unversioned remote prop on repos revision.\n"
      "     TARGET only determines which repository to access.\n"
      "\n"), N_(
      "  See 'svn help propset' for descriptions of the svn:* special properties.\n"
+    ), N_(
+     "  If PATH or TARGET contains an @ character, an additional @ must be\n"
+     "  specified at the end of PATH or TARGET to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     {'q', 'R', opt_depth, 'r', opt_revprop, opt_changelist} },
 
   { "propedit", svn_cl__propedit, {"pedit", "pe"}, {N_(
      "Edit a property with an external editor.\n"
-     "usage: 1. propedit PROPNAME TARGET...\n"
-     "       2. propedit PROPNAME --revprop -r REV [TARGET]\n"
+     "usage: 1. propedit PROPNAME TARGET[@]...\n"
+     "       2. propedit PROPNAME --revprop -r REV [TARGET[@]]\n"
      "\n"), N_(
      "  1. Edits versioned prop in working copy or repository.\n"
      "  2. Edits unversioned remote prop on repos revision.\n"
      "     TARGET only determines which repository to access.\n"
      "\n"), N_(
      "  See 'svn help propset' for descriptions of the svn:* special properties.\n"
+    ), N_(
+     "  If TARGET contains an @ character, an additional @ must be\n"
+     "  specified at the end of TARGET to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     {'r', opt_revprop, SVN_CL__LOG_MSG_OPTIONS, opt_force} },
 
   { "propget", svn_cl__propget, {"pget", "pg"}, {N_(
      "Print the value of a property on files, dirs, or revisions.\n"
      "usage: 1. propget PROPNAME [TARGET[@REV]...]\n"
-     "       2. propget PROPNAME --revprop -r REV [TARGET]\n"
+     "       2. propget PROPNAME --revprop -r REV [TARGET[@]]\n"
      "\n"), N_(
      "  1. Prints versioned props. If specified, REV determines in which\n"
      "     revision the target is first looked up.\n"
@@ -1490,6 +1528,10 @@ svn_cl__cmd_table_main[] =
      "  (useful when redirecting a binary property value to a file, for example).\n"
      "\n"), N_(
      "  See 'svn help propset' for descriptions of the svn:* special properties.\n"
+    ), N_(
+     "  If TARGET contains an @ character, an additional @ must be\n"
+     "  specified at the end of TARGET to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     {'v', 'R', opt_depth, 'r', opt_revprop, opt_strict, opt_no_newline, opt_xml,
      opt_changelist, opt_show_inherited_props },
@@ -1499,7 +1541,7 @@ svn_cl__cmd_table_main[] =
   { "proplist", svn_cl__proplist, {"plist", "pl"}, {N_(
      "List all properties on files, dirs, or revisions.\n"
      "usage: 1. proplist [TARGET[@REV]...]\n"
-     "       2. proplist --revprop -r REV [TARGET]\n"
+     "       2. proplist --revprop -r REV [TARGET[@]]\n"
      "\n"), N_(
      "  1. Lists versioned props. If specified, REV determines in which\n"
      "     revision the target is first looked up.\n"
@@ -1510,6 +1552,10 @@ svn_cl__cmd_table_main[] =
      "  --verbose'.  With --quiet, the paths are not printed.\n"
      "\n"), N_(
      "  See 'svn help propset' for descriptions of the svn:* special properties.\n"
+    ), N_(
+     "  If TARGET contains an @ character, an additional @ must be\n"
+     "  specified at the end of TARGET to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     {'v', 'R', opt_depth, 'r', 'q', opt_revprop, opt_xml, opt_changelist,
      opt_show_inherited_props },
@@ -1518,8 +1564,8 @@ svn_cl__cmd_table_main[] =
 
   { "propset", svn_cl__propset, {"pset", "ps"}, {N_(
      "Set the value of a property on files, dirs, or revisions.\n"
-     "usage: 1. propset PROPNAME PROPVAL PATH...\n"
-     "       2. propset PROPNAME --revprop -r REV PROPVAL [TARGET]\n"
+     "usage: 1. propset PROPNAME PROPVAL PATH[@]...\n"
+     "       2. propset PROPNAME --revprop -r REV PROPVAL [TARGET[@]]\n"
      "\n"), N_(
      "  1. Changes a versioned file or directory property in a working copy.\n"
      "  2. Changes an unversioned property on a repository revision.\n"
@@ -1602,6 +1648,10 @@ svn_cl__cmd_table_main[] =
      "      The ambiguous format 'relative_path relative_path' is taken as\n"
      "      'relative_url relative_path' with peg revision support.\n"
      "      Lines starting with a '#' character are ignored.\n"
+    ), N_(
+     "  If PATH or TARGET contains an @ character, an additional @ must be\n"
+     "  specified at the end of PATH or TARGET to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     {'F', opt_encoding, 'q', 'r', opt_targets, 'R', opt_depth, opt_revprop,
      opt_force, opt_changelist },
@@ -1633,7 +1683,7 @@ svn_cl__cmd_table_main[] =
 
   { "resolve", svn_cl__resolve, {0}, {N_(
      "Resolve conflicts on working copy files or directories.\n"
-     "usage: resolve [PATH...]\n"
+     "usage: resolve [PATH[@]...]\n"
      "\n"), N_(
      "  By default, perform interactive conflict resolution on PATH.\n"
      "  In this mode, the command is recursive by default (depth 'infinity').\n"
@@ -1682,6 +1732,10 @@ svn_cl__cmd_table_main[] =
      "  files manually or with 'svn merge'. It may be necessary to discard some\n"
      "  local changes with 'svn revert'. Files or directories might have to be\n"
      "  copied, deleted, or moved.\n"
+    ), N_(
+     "  If PATH contains an @ character, an additional @ must be\n"
+     "  specified at the end of PATH to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     {opt_targets, 'R', opt_depth, 'q', opt_accept},
     {{opt_accept, N_("specify automatic conflict resolution source\n"
@@ -1692,18 +1746,22 @@ svn_cl__cmd_table_main[] =
 
   { "resolved", svn_cl__resolved, {0}, {N_(
      "Remove 'conflicted' state on working copy files or directories.\n"
-     "usage: resolved PATH...\n"
+     "usage: resolved PATH[@]...\n"
      "\n"), N_(
      "  Note:  this subcommand does not semantically resolve conflicts or\n"
      "  remove conflict markers; it merely removes the conflict-related\n"
      "  artifact files and allows PATH to be committed again.  It has been\n"
      "  deprecated in favor of running 'svn resolve --accept working'.\n"
+    ), N_(
+     "  If PATH contains an @ character, an additional @ must be\n"
+     "  specified at the end of PATH to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     {opt_targets, 'R', opt_depth, 'q'} },
 
   { "revert", svn_cl__revert, {0}, {N_(
      "Restore pristine working copy state (undo local changes).\n"
-     "usage: revert PATH...\n"
+     "usage: revert PATH[@]...\n"
      "\n"), N_(
      "  Revert changes in the working copy at or within PATH, and remove\n"
      "  conflict markers as well, if any.\n"
@@ -1711,13 +1769,17 @@ svn_cl__cmd_table_main[] =
      "  This subcommand does not revert already committed changes.\n"
      "  For information about undoing already committed changes, search\n"
      "  the output of 'svn help merge' for 'undo'.\n"
+    ), N_(
+     "  If PATH contains an @ character, an additional @ must be\n"
+     "  specified at the end of PATH to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     {opt_targets, 'R', opt_depth, 'q', opt_changelist,
      opt_remove_added} },
 
   { "status", svn_cl__status, {"stat", "st"}, {N_(
      "Print the status of working copy files and directories.\n"
-     "usage: status [PATH...]\n"
+     "usage: status [PATH[@]...]\n"
      "\n"), N_(
      "  With no args, print only locally modified items (no network access).\n"
      "  With -q, print only summary information about locally modified items.\n"
@@ -1807,6 +1869,10 @@ svn_cl__cmd_table_main[] =
      "    !     C wc/qaz.c\n"
      "          >   local missing, incoming edit upon update\n"
      "    D       wc/qax.c\n"
+    ), N_(
+     "  If PATH contains an @ character, an additional @ must be\n"
+     "  specified at the end of PATH to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     { 'u', 'v', 'N', opt_depth, 'r', 'q', opt_no_ignore, opt_incremental,
       opt_xml, opt_ignore_externals, opt_changelist},
@@ -1865,16 +1931,20 @@ svn_cl__cmd_table_main[] =
 
   { "unlock", svn_cl__unlock, {0}, {N_(
      "Unlock working copy paths or URLs.\n"
-     "usage: unlock TARGET...\n"
+     "usage: unlock TARGET[@]...\n"
      "\n"), N_(
      "  Use --force to break a lock held by another user or working copy.\n"
+    ), N_(
+     "  If TARGET contains an @ character, an additional @ must be\n"
+     "  specified at the end of TARGET to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     { opt_targets, opt_force, 'q' },
     {{opt_force, N_("break locks")}} },
 
   { "update", svn_cl__update, {"up"},  {N_(
      "Bring changes from the repository into the working copy.\n"
-     "usage: update [PATH...]\n"
+     "usage: update [PATH[@]...]\n"
      "\n"), N_(
      "  If no revision is given, bring working copy up-to-date with HEAD rev.\n"
      "  Else synchronize working copy to revision given by -r.\n"
@@ -1918,6 +1988,10 @@ svn_cl__cmd_table_main[] =
      "\n"), N_(
      "  Use the --set-depth option to set a new working copy depth on the\n"
      "  targets of this operation.\n"
+    ), N_(
+     "  If PATH contains an @ character, an additional @ must be\n"
+     "  specified at the end of PATH to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     {'r', 'N', opt_depth, opt_set_depth, 'q', opt_merge_cmd, opt_force,
      opt_ignore_externals, opt_changelist, opt_editor_cmd, opt_accept,
@@ -1928,7 +2002,7 @@ svn_cl__cmd_table_main[] =
 
   { "upgrade", svn_cl__upgrade, {0}, {N_(
      "Upgrade the metadata storage format for a working copy.\n"
-     "usage: upgrade [WCPATH...]\n"
+     "usage: upgrade [WCPATH[@]...]\n"
      "\n"), N_(
      "  The upgraded working copy will be compatible with Subversion 1.8 and\n"
      "  newer (this default may change in the future). To upgrade to a different\n"
@@ -1939,6 +2013,10 @@ svn_cl__cmd_table_main[] =
      "  Only upgrades are supported, not downgrades.\n"
      "\n"), N_(
      "  Local modifications are preserved.\n"
+    ), N_(
+     "  If WCPATH contains an @ character, an additional @ must be\n"
+     "  specified at the end of WCPATH to avoid interpreting the\n"
+     "  first @ as a peg revision indicator.\n"
     )},
     { 'q', opt_compatible_version } },
 
@@ -2122,7 +2200,10 @@ parse_compatible_version(svn_cl__opt_state_t* opt_state,
  * return SVN_NO_ERROR.
  */
 static svn_error_t *
-sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
+sub_main(int *exit_code,
+         int argc,
+         const svn_cmdline__argv_char_t *cmdline_argv[],
+         apr_pool_t *pool)
 {
   svn_error_t *err;
   int opt_id;
@@ -2148,11 +2229,14 @@ sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
   apr_hash_t *cfg_hash;
   svn_membuf_t buf;
   svn_boolean_t read_pass_from_stdin = FALSE;
+  const char **argv;
 
   received_opts = apr_array_make(pool, SVN_OPT_MAX_OPTIONS, sizeof(int));
 
   /* Check library versions */
   SVN_ERR(check_lib_versions());
+
+  SVN_ERR(svn_cmdline__get_cstring_argv(&argv, argc, cmdline_argv, pool));
 
 #if defined(WIN32) || defined(__CYGWIN__)
   /* Set the working copy administrative directory name. */
@@ -2265,81 +2349,18 @@ sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
 
           for (i = 0; i < change_revs->nelts; i++)
             {
-              char *end;
-              svn_revnum_t changeno, changeno_end;
               const char *change_str =
                 APR_ARRAY_IDX(change_revs, i, const char *);
-              const char *s = change_str;
-              svn_boolean_t is_negative;
 
-              /* Check for a leading minus to allow "-c -r42".
-               * The is_negative flag is used to handle "-c -42" and "-c -r42".
-               * The "-c r-42" case is handled by strtol() returning a
-               * negative number. */
-              is_negative = (*s == '-');
-              if (is_negative)
-                s++;
-
-              /* Allow any number of 'r's to prefix a revision number. */
-              while (*s == 'r')
-                s++;
-              changeno = changeno_end = strtol(s, &end, 10);
-              if (end != s && *end == '-')
-                {
-                  if (changeno < 0 || is_negative)
-                    {
-                      return svn_error_createf(SVN_ERR_CL_ARG_PARSING_ERROR,
-                                               NULL,
-                                               _("Negative number in range (%s)"
-                                                 " not supported with -c"),
-                                               change_str);
-                    }
-                  s = end + 1;
-                  while (*s == 'r')
-                    s++;
-                  changeno_end = strtol(s, &end, 10);
-                }
-              if (end == change_str || *end != '\0')
+              if (svn_opt_parse_change_to_range(opt_state.revision_ranges,
+                                                change_str, pool) != 0)
                 {
                   return svn_error_createf(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
-                                           _("Non-numeric change argument (%s) "
-                                             "given to -c"), change_str);
-                }
-
-              if (changeno == 0)
-                {
-                  return svn_error_create(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
-                                          _("There is no change 0"));
-                }
-
-              if (is_negative)
-                changeno = -changeno;
-
-              /* Figure out the range:
-                    -c N  -> -r N-1:N
-                    -c -N -> -r N:N-1
-                    -c M-N -> -r M-1:N for M < N
-                    -c M-N -> -r M:N-1 for M > N
-                    -c -M-N -> error (too confusing/no valid use case)
-              */
-              if (changeno > 0)
-                {
-                  if (changeno <= changeno_end)
-                    changeno--;
-                  else
-                    changeno_end--;
-                }
-              else
-                {
-                  changeno = -changeno;
-                  changeno_end = changeno - 1;
+                                           _("Syntax error in change argument "
+                                             "'%s'"), change_str);
                 }
 
               opt_state.used_change_arg = TRUE;
-              APR_ARRAY_PUSH(opt_state.revision_ranges,
-                             svn_opt_revision_range_t *)
-                = svn_opt__revision_range_from_revnums(changeno, changeno_end,
-                                                       pool);
             }
         }
         break;
@@ -3429,7 +3450,7 @@ sub_main(int *exit_code, int argc, const char *argv[], apr_pool_t *pool)
 }
 
 int
-main(int argc, const char *argv[])
+SVN_CMDLINE__MAIN(int argc, const svn_cmdline__argv_char_t *argv[])
 {
   apr_pool_t *pool;
   int exit_code = EXIT_SUCCESS;

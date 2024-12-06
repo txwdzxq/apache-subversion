@@ -435,8 +435,8 @@ svn_ ## TYPE ## _swig_rb_closed(VALUE self)
             svn_error_clear($1);
         SWIG_fail;
     }
-    Py_INCREF(Py_None);
-    $result = Py_None;
+    Py_XDECREF($result);
+    $result = PyList_New(0);
 }
 
 %typemap(out) svn_error_t * SVN_ERR_WITH_ATTRS (apr_status_t apr_err,
@@ -470,11 +470,31 @@ svn_ ## TYPE ## _swig_rb_closed(VALUE self)
             SWIG_fail;
           }
       }
-    else
-      {
-        Py_INCREF(Py_None);
-        $result = Py_None;
+    Py_XDECREF($result);
+    $result = PyList_New(0);
+}
+
+%typemap(ret) svn_error_t * {
+    if ($result == NULL) {
+      $result = Py_None;
+      Py_INCREF($result);
+    }
+    else {
+      switch (PyList_Size($result)) {
+        case 0:
+          $result = Py_None;
+          Py_INCREF($result);
+          break;
+        case 1:
+          {
+            PyObject *tmp = $result;
+            $result = PyList_GetItem(tmp, 0);
+            Py_INCREF($result);
+            Py_DECREF(tmp);
+          }
+          break;
       }
+    }
 }
 
 %typemap(ret) svn_error_t * SVN_ERR_WITH_ATTRS {
@@ -486,6 +506,7 @@ svn_ ## TYPE ## _swig_rb_closed(VALUE self)
         Py_XDECREF($result);
         SWIG_fail;
       }
+    $typemap(ret, svn_error_t *);
 }
 #endif
 
@@ -511,14 +532,29 @@ svn_ ## TYPE ## _swig_rb_closed(VALUE self)
 #endif
 
 #ifdef SWIGRUBY
-%typemap(out) svn_error_t *
+%typemap(out) svn_error_t * (VALUE *svn_presult = NULL)
 {
   if ($1) {
     svn_swig_rb_destroy_pool(_global_svn_swig_rb_pool);
     svn_swig_rb_pop_pool(_global_svn_swig_rb_pool);
     svn_swig_rb_handle_svn_error($1);
   }
-  $result = Qnil;
+  $result = rb_ary_new();
+  svn_presult = &$result;
+}
+
+%typemap(ret) svn_error_t *
+{
+  if (TYPE(*svn_presult) == T_ARRAY) {
+    switch (rb_array_len(*svn_presult)) {
+      case 0:
+        *svn_presult = Qnil;
+        break;
+      case 1:
+        *svn_presult = rb_ary_entry(*svn_presult, 0);
+        break;
+    }
+  }
 }
 #endif
 
@@ -1262,7 +1298,7 @@ svn_ ## TYPE ## _swig_rb_closed(VALUE self)
   if (NIL_P($input)) {
     $1 = NULL;
   } else if (RSTRING_LEN($input) != APR_MD5_DIGESTSIZE) {
-    rb_raise(rb_eArgError, "digest size (%d) must be %d",
+    rb_raise(rb_eArgError, "digest size (%" PRIuSIZE ") must be %d",
              RSTRING_LEN($input), APR_MD5_DIGESTSIZE);
   } else {
     $1 = ($1_ltype)StringValuePtr($input);
