@@ -594,7 +594,7 @@ record_skip(merge_apply_processor_baton_t *merge_b,
   if (merge_b->record_only)
     return SVN_NO_ERROR; /* ### Why? - Legacy compatibility */
 
-  if (pdb->shadowed)
+  if (!(pdb && pdb->shadowed))
     SVN_ERR(notify_skipped_path(merge_b, local_abspath, scratch_pool));
 
   if (merge_b->notify_func)
@@ -647,7 +647,8 @@ record_tree_conflict(merge_apply_processor_baton_t *merge_b,
       svn_wc_conflict_description2_t *conflict;
       const svn_wc_conflict_version_t *left;
       const svn_wc_conflict_version_t *right;
-      apr_pool_t *result_pool = parent_baton->pool;
+      apr_pool_t *result_pool = parent_baton ? parent_baton->pool
+                                            : scratch_pool;
       svn_client__merge_source_t *source;
 
       if (reason == svn_wc_conflict_reason_deleted)
@@ -711,12 +712,15 @@ record_tree_conflict(merge_apply_processor_baton_t *merge_b,
       SVN_ERR(svn_wc__add_tree_conflict(merge_b->ctx->wc_ctx, conflict,
                                         scratch_pool));
 
-      if (! parent_baton->new_tree_conflicts)
-        parent_baton->new_tree_conflicts = apr_hash_make(result_pool);
+      if (parent_baton)
+        {
+          if (! parent_baton->new_tree_conflicts)
+            parent_baton->new_tree_conflicts = apr_hash_make(result_pool);
 
-      svn_hash_sets(parent_baton->new_tree_conflicts,
-                    apr_pstrdup(result_pool, local_abspath),
-                    conflict);
+          svn_hash_sets(parent_baton->new_tree_conflicts,
+                        apr_pstrdup(result_pool, local_abspath),
+                        conflict);
+        }
 
       /* ### TODO: Store in parent baton */
     }
