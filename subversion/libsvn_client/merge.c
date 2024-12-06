@@ -233,22 +233,27 @@ struct notify_begin_state_t
 
 typedef struct merge_cmd_baton_t {
   svn_boolean_t dry_run;
-  svn_boolean_t record_only;          /* Whether to merge only mergeinfo
-                                         differences. */
-  svn_boolean_t same_repos;           /* Whether the merge source repository
-                                         is the same repository as the
-                                         target.  Defaults to FALSE if DRY_RUN
-                                         is TRUE.*/
-  svn_boolean_t mergeinfo_capable;    /* Whether the merge source server
-                                         is capable of Merge Tracking. */
-  svn_boolean_t ignore_mergeinfo;     /* Don't honor mergeinfo; see
-                                         doc string of do_merge().  FALSE if
-                                         MERGE_SOURCE->ancestral is FALSE. */
-  svn_boolean_t diff_ignore_ancestry; /* Diff unrelated nodes as if related; see
-                                         doc string of do_merge().  FALSE if
-                                         MERGE_SOURCE->ancestral is FALSE. */
-  svn_boolean_t reintegrate_merge;    /* Whether this is a --reintegrate
-                                         merge or not. */
+
+  /* Whether to merge only mergeinfo differences. */
+  svn_boolean_t record_only;
+
+  /* Whether the merge source repository is the same repository as the target.
+     Defaults to FALSE if DRY_RUN is TRUE.*/
+  svn_boolean_t same_repos;
+
+  /* Whether the merge source server is capable of Merge Tracking. */
+  svn_boolean_t mergeinfo_capable;
+
+  /* Don't honor mergeinfo; see doc string of do_merge().  FALSE if
+     MERGE_SOURCE->ancestral is FALSE. */
+  svn_boolean_t ignore_mergeinfo;
+
+  /* Diff unrelated nodes as if related; see doc string of do_merge().  FALSE
+     if MERGE_SOURCE->ancestral is FALSE. */
+  svn_boolean_t diff_ignore_ancestry;
+
+  /* Whether this is a --reintegrate merge or not. */
+  svn_boolean_t reintegrate_merge;
 
   /* Description of merge target node */
   const svn_client__merge_target_t *target;
@@ -268,7 +273,8 @@ typedef struct merge_cmd_baton_t {
      comment) or a similar list for single-file-merges */
   apr_array_header_t *children_with_mergeinfo;
 
-  svn_client_ctx_t *ctx;              /* Client context for callbacks, etc. */
+  /* Client context for callbacks, etc. */
+  svn_client_ctx_t *ctx;
 
   /* The list of any paths which remained in conflict after a
      resolution attempt was made.  We track this in-memory, rather
