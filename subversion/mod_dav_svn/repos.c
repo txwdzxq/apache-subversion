@@ -2928,6 +2928,16 @@ open_stream(const dav_resource *resource,
 
   if (kind == svn_node_none) /* No existing file. */
     {
+      serr = svn_repos__validate_new_path(resource->info->repos_path,
+                                          resource->pool);
+
+      if (serr != NULL)
+        {
+          return dav_svn__convert_err(serr, HTTP_BAD_REQUEST,
+                                      "Request specifies an invalid path.",
+                                      resource->pool);
+        }
+
       serr = svn_fs_make_file(resource->info->root.root,
                               resource->info->repos_path,
                               resource->pool);
@@ -4120,6 +4130,14 @@ create_collection(dav_resource *resource)
         return err;
     }
 
+  if ((serr = svn_repos__validate_new_path(resource->info->repos_path,
+                                           resource->pool)) != NULL)
+    {
+      return dav_svn__convert_err(serr, HTTP_BAD_REQUEST,
+                                  "Request specifies an invalid path.",
+                                  resource->pool);
+    }
+
   if ((serr = svn_fs_make_dir(resource->info->root.root,
                               resource->info->repos_path,
                               resource->pool)) != NULL)
@@ -4193,6 +4211,12 @@ copy_resource(const dav_resource *src,
       if (err)
         return err;
     }
+
+  serr = svn_repos__validate_new_path(dst->info->repos_path, dst->pool);
+  if (serr)
+    return dav_svn__convert_err(serr, HTTP_BAD_REQUEST,
+                                "Request specifies an invalid path.",
+                                dst->pool);
 
   src_repos_path = svn_repos_path(src->info->repos->repos, src->pool);
   dst_repos_path = svn_repos_path(dst->info->repos->repos, dst->pool);
@@ -4429,6 +4453,12 @@ move_resource(dav_resource *src,
                           0, 0, 0, NULL, NULL);
   if (err)
     return err;
+
+  serr = svn_repos__validate_new_path(dst->info->repos_path, dst->pool);
+  if (serr)
+    return dav_svn__convert_err(serr, HTTP_BAD_REQUEST,
+                                "Request specifies an invalid path.",
+                                dst->pool);
 
   /* Copy the src to the dst. */
   serr = svn_fs_copy(src->info->root.root,  /* the root object of src rev*/
