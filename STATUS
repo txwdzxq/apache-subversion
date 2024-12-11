@@ -22,15 +22,15 @@ Candidate changes:
    Votes:
      +1: rhuijben
 
- * r1922418
-   Restore swig-rb to be compatible with Ruby 1.9 through 2.2.
-   Justification:
-     Fix incompatible with old versions of Ruby in 1.14.5.
-   Votes:
-     +1: jun66j5
-
 Veto-blocked changes:
 =====================
 
 Approved changes:
 =================
+
+ * r1922418
+   Restore swig-rb to be compatible with Ruby 1.9 through 2.2.
+   Justification:
+     Fix incompatible with old versions of Ruby in 1.14.5.
+   Votes:
+     +1: jun66j5, futatuki
