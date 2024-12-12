@@ -499,7 +499,7 @@ svn_ ## TYPE ## _swig_rb_closed(VALUE self)
 %typemap(ret) svn_error_t *
 {
   if (TYPE(*svn_presult) == T_ARRAY) {
-    switch (rb_array_len(*svn_presult)) {
+    switch (RARRAY_LEN(*svn_presult)) {
       case 0:
         *svn_presult = Qnil;
         break;
