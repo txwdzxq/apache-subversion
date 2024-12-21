@@ -377,6 +377,26 @@ test_xml_parse_stream_invalid_xml(apr_pool_t *pool)
   return SVN_NO_ERROR;
 }
 
+static svn_error_t *
+test_xml_simple_cdata_escape(apr_pool_t *pool)
+{
+  svn_stringbuf_t *str = svn_stringbuf_create_empty(pool);
+  svn_xml_escape_cdata_cstring(&str, "safetext <nonsafe&amp;>", pool);
+  SVN_TEST_STRING_ASSERT(str->data, "safetext &lt;nonsafe&amp;amp;&gt;");
+
+  return SVN_NO_ERROR;
+}
+
+static svn_error_t *
+test_xml_simple_attr_escape(apr_pool_t *pool)
+{
+  svn_stringbuf_t *str = svn_stringbuf_create_empty(pool);
+  svn_xml_escape_attr_cstring(&str, "safetext <nonsafe&amp;>", pool);
+  SVN_TEST_STRING_ASSERT(str->data, "safetext &lt;nonsafe&amp;amp;&gt;");
+
+  return SVN_NO_ERROR;
+}
+
 /* The test table.  */
 static int max_threads = 1;
 
@@ -403,6 +423,10 @@ static struct svn_test_descriptor_t test_funcs[] =
                    "test XML's svn_stream_t wrapper"),
     SVN_TEST_PASS2(test_xml_parse_stream_invalid_xml,
                    "test XML's svn_stream_t wrapper for invalid XML"),
+    SVN_TEST_PASS2(test_xml_simple_cdata_escape,
+                   "simple XML cdata escaping test"),
+    SVN_TEST_PASS2(test_xml_simple_attr_escape,
+                   "simple XML attribute escaping test"),
     SVN_TEST_NULL
   };
 
