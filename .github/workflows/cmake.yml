@@ -169,8 +169,3 @@ jobs:
         if: matrix.run_tests
         working-directory: out
         run: ctest --output-on-failure --verbose -C Release --parallel 16
-
-      - name: Rerun failed tests
-        if: ${{ matrix.run_tests && failure() && steps.run_all_tests.conclusion == 'failure' }}
-        working-directory: out
-        run: ctest --output-on-failure --verbose -C Release --rerun-failed
