@@ -88,6 +88,7 @@ jobs:
     env:
       VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
       CMAKE_GENERATOR: ${{ matrix.cmake_generator }}
+      SVN_EXPERIMENTAL_COMMANDS: shelf3
 
     steps:
       - name: Prepare Environment (Windows)
