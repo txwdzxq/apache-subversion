@@ -88,7 +88,6 @@ jobs:
     env:
       VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
       CMAKE_GENERATOR: ${{ matrix.cmake_generator }}
-      SVN_EXPERIMENTAL_COMMANDS: shelf3
 
     steps:
       - name: Prepare Environment (Windows)
@@ -169,3 +168,17 @@ jobs:
         if: matrix.run_tests
         working-directory: out
         run: ctest --output-on-failure --verbose -C Release --parallel 16
+
+      - name: Test shelf2
+        if: matrix.run_tests
+        working-directory: out
+        env:
+          SVN_EXPERIMENTAL_COMMANDS: shelf2
+        run: ctest -R shelf2 --verbose -C Release
+
+      - name: Test shelf3
+        if: matrix.run_tests
+        working-directory: out
+        env:
+          SVN_EXPERIMENTAL_COMMANDS: shelf3
+        run: ctest -R shelf3 --verbose -C Release
