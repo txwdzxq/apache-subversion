@@ -169,7 +169,16 @@ jobs:
         working-directory: out
         run: ctest --output-on-failure --verbose -C Release --parallel 16
 
-      - name: Rerun failed tests
-        if: ${{ matrix.run_tests && failure() && steps.run_all_tests.conclusion == 'failure' }}
+      - name: Test shelf2
+        if: matrix.run_tests
         working-directory: out
-        run: ctest --output-on-failure --verbose -C Release --rerun-failed
+        env:
+          SVN_EXPERIMENTAL_COMMANDS: shelf2
+        run: ctest -R shelf2 --verbose -C Release
+
+      - name: Test shelf3
+        if: matrix.run_tests
+        working-directory: out
+        env:
+          SVN_EXPERIMENTAL_COMMANDS: shelf3
+        run: ctest -R shelf3 --verbose -C Release

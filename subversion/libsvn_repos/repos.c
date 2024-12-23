@@ -2092,3 +2092,13 @@ svn_repos__fs_type(const char **fs_type,
                      svn_dirent_join(repos_path, SVN_REPOS__DB_DIR, pool),
                      pool);
 }
+
+svn_error_t *
+svn_repos__validate_new_path(const char *path,
+                             apr_pool_t *scratch_pool)
+{
+  /* Reject paths which contain control characters (related to issue #4340). */
+  SVN_ERR(svn_path_check_valid(path, scratch_pool));
+
+  return SVN_NO_ERROR;
+}
