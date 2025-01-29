@@ -56,6 +56,12 @@ if(POLICY CMP0086)
   cmake_policy(SET CMP0086 NEW)
 endif()
 
+# Enable support for MSVC runtime library selection by abstraction
+# if supported by CMake.
+if(POLICY CMP0091)
+  cmake_policy(SET CMP0091 NEW)
+endif()
+
 read_version(
   "subversion/include/svn_version.h" SVN_VERSION
   SVN_VER_MAJOR SVN_VER_MINOR SVN_VER_PATCH
