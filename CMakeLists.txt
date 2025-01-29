@@ -75,7 +75,7 @@ option(SVN_ENABLE_SVNXX "Enable compilation of the C++ bindings (requires C++)" 
 option(SVN_ENABLE_PROGRAMS "Build Subversion programs (such as svn.exe)" ON)
 cmake_dependent_option(SVN_ENABLE_TOOLS "Build Subversion tools" ON "SVN_ENABLE_TESTS" OFF)
 option(SVN_ENABLE_TESTS "Build Subversion test-suite" OFF)
-option(EXPAND_TESTS "Expand tests; This will slow-down configuration, but you will have an ability to run any subtest" OFF)
+option(SVN_TEST_EXPAND "Expand tests; This will slow-down configuration, but you will have an ability to run any subtest" OFF)
 option(SVN_TEST_CONFIGURE_FOR_PARALLEL "Configures tests for parallel run execution" OFF)
 option(SVN_ENABLE_APACHE_MODULES "Build modules for Apache HTTPD" OFF)
 
@@ -809,7 +809,7 @@ if(SVN_ENABLE_TESTS)
     file(RELATIVE_PATH py_test_relpath ${CMAKE_CURRENT_SOURCE_DIR} ${py_test_abspath})
     set(binary_dir $<TARGET_FILE_DIR:svn>)
 
-    if(EXPAND_TESTS)
+    if(SVN_TEST_EXPAND)
       message("Listing tests in ${py_test_name}")
       execute_process(
         COMMAND
