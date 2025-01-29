@@ -771,6 +771,7 @@ include("build/cmake/targets.cmake")
 if(SVN_ENABLE_TESTS)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
   set(run_tests_script "${CMAKE_CURRENT_SOURCE_DIR}/build/run_tests.py")
+  set(list_tests_script "${CMAKE_CURRENT_SOURCE_DIR}/build/list_tests.py")
 
   function(add_py_test name prog)
     if(SVN_TEST_CONFIGURE_FOR_PARALLEL)
@@ -803,41 +804,50 @@ if(SVN_ENABLE_TESTS)
      "subversion/tests/cmdline/*_tests.py"
   )
 
-  foreach(py_test_abspath ${PYTHON_TESTS})
-    # Keep `.py'.
-    get_filename_component(py_test_name ${py_test_abspath} NAME_WLE)
-    file(RELATIVE_PATH py_test_relpath ${CMAKE_CURRENT_SOURCE_DIR} ${py_test_abspath})
-    set(binary_dir $<TARGET_FILE_DIR:svn>)
+  set(binary_dir $<TARGET_FILE_DIR:svn>)
 
-    if(SVN_TEST_EXPAND)
-      message("Listing tests in ${py_test_name}")
-      execute_process(
-        COMMAND
-          "${Python3_EXECUTABLE}" "${run_tests_script}"
-          --log-to-stdout
-          --list
-          ${CMAKE_CURRENT_SOURCE_DIR}
-          ${binary_dir}
-          ${py_test_abspath}
-          OUTPUT_VARIABLE tests_list_output
-      )
-      string(REGEX MATCHALL "\n *([0-9]+)" tests_list ${tests_list_output})
+  if(SVN_TEST_EXPAND)
+    execute_process(
+      COMMAND
+        "${Python3_EXECUTABLE}" "${list_tests_script}"
+        ${PYTHON_TESTS}
+        OUTPUT_VARIABLE tests_list_output
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        RESULT_VARIABLE command_result
+    )
 
-      foreach(test_num ${tests_list})
-        string(REGEX MATCH "([0-9]+)" test_num ${test_num})
+    if (command_result)
+      message(FATAL_ERROR "list_tests.py failed.")
+    endif()
+
+    string(REGEX MATCHALL "[^\n\r]+" tests_list "${tests_list_output}")
+
+    foreach(test_case ${tests_list})
+      if(test_case MATCHES "(.+)#(.+)")
+        set(py_test_abspath "${CMAKE_MATCH_1}")
+        set(py_test_num "${CMAKE_MATCH_2}")
+
+        get_filename_component(py_test_name ${py_test_abspath} NAME_WLE)
+        file(RELATIVE_PATH py_test_relpath ${CMAKE_CURRENT_SOURCE_DIR} ${py_test_abspath})
 
         add_py_test(
-          "cmdline.${py_test_name}.${test_num}"
-          "${py_test_relpath}#${test_num}"
+          "cmdline.${py_test_name}.${py_test_num}"
+          "${py_test_relpath}#${py_test_num}"
         )
-      endforeach()
-    else()
+      endif()
+    endforeach()
+  else()
+    foreach(py_test_abspath ${PYTHON_TESTS})
+      # Keep `.py'.
+      get_filename_component(py_test_name ${py_test_abspath} NAME_WLE)
+      file(RELATIVE_PATH py_test_relpath ${CMAKE_CURRENT_SOURCE_DIR} ${py_test_abspath})
+
       add_py_test(
         "cmdline.${py_test_name}"
         "${py_test_relpath}"
       )
-    endif()
-  endforeach()
+    endforeach()
+  endif()
 endif()
 
 if (SVN_ENABLE_SVNXX)
