@@ -21,6 +21,8 @@ Version 1.14.5
 (7 Dec 2024, from /branches/1.14.x)
 https://svn.apache.org/repos/asf/subversion/tags/1.14.5
  User-visible changes:
+  - Server-side bugfixes:
+    * Fix CVE-2024-46901: mod_dav_svn denial-of-service via control chars
  Developer-visible changes:
     * Fix detection of zlib version 1.3 in gen-make.py on Windows (r1921266)
     * Supress gen-make.py errors on Windows without Perl or Ruby (r1921267)
