@@ -80,5 +80,12 @@ jobs:
       - name: Run tests
         run: make ${{matrix.check-target}} PARALLEL=16 APACHE_MPM=event
 
+      - name: Archive test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests.log
+          path: tests.log
+
       - name: Install (make install)
         run: sudo make install
