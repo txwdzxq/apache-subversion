@@ -286,7 +286,7 @@ install_stream_seek_fn(void *baton, const svn_stream_mark_t *mark)
 {
   svn_wc__db_install_data_t *install_data = baton;
 
-  if (!mark)
+  if (mark)
     return svn_error_create(SVN_ERR_STREAM_SEEK_NOT_SUPPORTED, NULL, NULL);
 
   if (install_data->inner_stream)
