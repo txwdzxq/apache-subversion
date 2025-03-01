@@ -141,12 +141,17 @@ class Paragraph:
 
   def unparse(self, stream):
     "Write this paragraph to STREAM, an open file-like object."
+    stream.write(self.__str__())
+    
+  def __str__(self):
+    s = ""
     if self.kind in (Kind.preamble, Kind.section_header, Kind.unknown):
-      stream.write(self.text + "\n")
+      s += self.text + "\n"
     elif self.kind is Kind.nomination:
-      self.entry().unparse(stream)
+      s += self.entry().__str__() + '\n'
     else:
       assert False, "Unknown paragraph kind"
+    return s
 
   def __repr__(self):
     return "<Paragraph({!r}, {!r}, {!r}, {!r})>".format(
@@ -241,9 +246,13 @@ class StatusFile:
 
   def unparse(self, stream):
     "Write the STATUS file to STREAM, an open file-like object."
-    for para in self.paragraphs:
-      para.unparse(stream)
+    stream.write(self.__str__())
 
+  def __str__(self):
+    s = ""
+    for para in self.paragraphs:
+      s += para.__str__()
+    return s
 
 class Test_StatusFile(unittest.TestCase):
   def test__paragraph_is_header(self):
@@ -519,7 +528,11 @@ class StatusEntry:
   def unparse(self, stream):
     "Write this entry to STREAM, an open file-like object."
     # For now, this is simple.. until we add interactive editing.
-    stream.write(self.raw + "\n")
+    stream.write(self.__str__())
+
+  def __str__(self):
+    s = self.raw
+    return s
 
 class Test_StatusEntry(unittest.TestCase):
   def test___init__(self):
@@ -538,6 +551,7 @@ class Test_StatusEntry(unittest.TestCase):
           +1: jrandom
     """
     entry = StatusEntry(s)
+    self.assertEqual(entry.__str__(), s)
     self.assertEqual(entry.branch, "1.8.x-rfourty-two")
     self.assertEqual(entry.revisions, [42, 43, 44])
     self.assertEqual(entry.logsummary, ["This is the logsummary."])
@@ -562,6 +576,7 @@ class Test_StatusEntry(unittest.TestCase):
           -1: jconstant
     """
     entry = StatusEntry(s)
+    self.assertEqual(entry.__str__(), s)
     self.assertIsNone(entry.branch)
     self.assertEqual(entry.revisions, [42])
     self.assertEqual(entry.logsummary,
@@ -584,6 +599,7 @@ class Test_StatusEntry(unittest.TestCase):
           -1 (see <message-id>): jconstant
     """
     entry = StatusEntry(s)
+    self.assertEqual(entry.__str__(), s)
     self.assertEqual(entry.branch, "1.8.x-fixes")
     self.assertEqual(entry.revisions, [])
     self.assertTrue(entry.is_vetoed())
@@ -596,6 +612,7 @@ class Test_StatusEntry(unittest.TestCase):
           +1: jrandom
     """
     entry = StatusEntry(s)
+    self.assertEqual(entry.__str__(), s)
     self.assertEqual(entry.branch, "on-the-same-line")
     self.assertEqual(entry.revisions, [42])
 
@@ -609,6 +626,7 @@ class Test_StatusEntry(unittest.TestCase):
           +1: jrandom
     """
     entry = StatusEntry(s)
+    self.assertEqual(entry.__str__(), s)
     self.assertEqual(entry.branch, "1.8.x-fixes")
 
     s = """\
@@ -651,6 +669,7 @@ class Test_StatusEntry(unittest.TestCase):
           +1: jrandom
     """
     entry = StatusEntry(s)
+    self.assertEqual(entry.__str__(), s)
     self.assertEqual(entry.revisions, [42])
     self.assertEqual(entry.logsummary, ["svnversion: Fix typo in output."])
 
