@@ -18,9 +18,8 @@ F4. Adding new entries to STATUS.
 The scripts are:
 
 backport.pl:
-    oldest script, implements [F1], [F2], and [F3].  As of Aug 2023, used in
-    production by svn-role (running on svn-qavm) and by the buildbot jobs
-    svn-backport-conflicts-* (see https://ci2.apache.org/).
+    oldest script, implements [F1], [F2], and [F3].  Deprecated, not used
+    in production.
 
 nominate.pl:
     Symlink to backport.pl.  Implements [F4].  (The script inspects its argv[0].)
@@ -41,12 +40,13 @@ backport/*.py:
     backport_tests_py.py blackbox/regression tests.
 
 detect-conflicting-backports.py:
-    Implementation of [F2] using backport.py.
-    Not currently used in production.
+    Implementation of [F2] using backport.py.  Used by GitHub Actions, see
+    ../../.github/workflows/detect-backport-conflicts.yml
 
 merge-approved-backports.py:
-    Implementation of [F1] using backport.py.
-    Not currently used in production.
+    Implementation of [F1] using backport.py.  Used on svn-qavm to
+    automatically merge approved backports, see documentation in PMC private
+    repo.
 
 backport_tests_py.py:
     Regression tests for detect-conflicting-backports.py and merge-approved-backports.py
@@ -71,8 +71,8 @@ All scripts can be run with '--help' to display their usage messages.
 
 backport.pl is considered deprecated since backport.py is better architected
 and is written in a language that many more active developers are comfortable
-with.  The unattended jobs [F1] and [F2] should be converted to using
-backport.py whenever someone gets around to do the legwork.  The interactive
+with.  The unattended jobs [F1] and [F2] have been converted to using
+backport.py.  The interactive
 versions [F3] and [F4] are still in active use, however, so the physical
 backport.pl script should be kept around until Python versions of these are
 available.
