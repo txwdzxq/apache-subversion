@@ -336,8 +336,11 @@ class StatusEntry:
   branch - the backport branch's basename, or None.
   revisions - the revisions to nominated, as iterable of int.
   logsummary - the text before the justification, as an array of lines.
+  justification_str - the justification, as an array of lines. An unparsed string.
   depends - true if a "Depends:" entry was found, False otherwise.
+  depends_str - everything after the "Depends:" subheader. An unparsed string.
   accept - the value to pass to 'svn merge --accept=%s', or None.
+  notes_str - everything after the "Notes:" subheader. An unparsed string.
   votes_str - everything after the "Votes:" subheader.  An unparsed string.
   """
 
@@ -348,10 +351,14 @@ class StatusEntry:
     STATUS_FILE is the StatusFile object containing this entry, if any.
     """
     self.branch = None
+    self.branch_on_first_line = False
     self.revisions = []
     self.logsummary = []
+    self.justification_str = None
     self.depends = False
+    self.depends_str = None
     self.accept = None
+    self.notes_str = None
     self.votes_str = None
     self.status_file = status_file
 
@@ -366,8 +373,8 @@ class StatusEntry:
     match = _re_entry_indentation.match(lines[0])
     if not match:
       raise ParseException("Entry found with no ' * ' line")
-    indentation = len(match.group(1))
-    lines = (line[indentation:] for line in lines)
+    self.indentation = len(match.group(1))
+    lines = (line[self.indentation:] for line in lines)
     lines = (line.rstrip() for line in lines)
 
     # Consume the generator.
@@ -378,6 +385,7 @@ class StatusEntry:
     if match:
       # Parse whichever group matched.
       self.branch = self.parse_branch(match.group(1) or match.group(2))
+      self.branch_on_first_line = True
     else:
       while _re_revisions_line.match(lines[0]):
         self.revisions.extend(map(int, re.compile(r'(\d+)').findall(lines[0])))
@@ -403,12 +411,24 @@ class StatusEntry:
     else:
       self.votes_str = None
 
-    # depends, branch, notes
+    # depends, justification, branch, notes
     while lines:
 
       if lines[0].strip().startswith('Depends:'):
         self.depends = True
+        self.depends_str = lines[0].strip()[8:].strip()
         lines = lines[1:]
+        continue
+
+      if lines[0].strip().startswith('Justification:'):
+        self.justification_str = lines[0].strip().split(':', 1)[1] + "\n"
+        lines = lines[1:]
+
+        # Consume the indented body of the "Justification" field.
+        while lines and not lines[0][0].isalnum():
+          self.justification_str += lines[0] + "\n"
+          lines  = lines[1:]
+
         continue
 
       if lines[0].strip().startswith('Branch:'):
@@ -427,16 +447,16 @@ class StatusEntry:
           continue
 
       if lines[0].strip().startswith('Notes:'):
-        notes = lines[0].strip().split(':', 1)[1] + "\n"
+        self.notes_str = lines[0].strip().split(':', 1)[1] + "\n"
         lines = lines[1:]
 
         # Consume the indented body of the "Notes" field.
         while lines and not lines[0][0].isalnum():
-          notes += lines[0] + "\n"
+          self.notes_str += lines[0] + "\n"
           lines = lines[1:]
 
         # Look for possible --accept directives.
-        matches = re.compile(r'--accept[ =]([a-z-]+)').findall(notes)
+        matches = re.compile(r'--accept[ =]([a-z-]+)').findall(self.notes_str)
         if len(matches) > 1:
           raise ParseException("Too many --accept values at %s" % (self,))
         elif len(matches) == 1:
@@ -527,19 +547,42 @@ class StatusEntry:
 
   def unparse(self, stream):
     "Write this entry to STREAM, an open file-like object."
-    # For now, this is simple.. until we add interactive editing.
     stream.write(self.__str__())
 
   def __str__(self):
-    s = self.raw
+    indent = ''.ljust(self.indentation-2)
+    s = indent + '* '
+    if (len(self.revisions) > 0):
+      s += 'r' + ', r'.join(map(str, self.revisions)) + \
+        ('\n' + indent + '  ').join([""] + self.logsummary) + '\n'
+    else:
+      s += ('\n' + indent + '  ').join(self.logsummary) + '\n'
+    if self.justification_str is not None:
+      s += indent + '  Justification:' + \
+        ('\n' + indent + '  ').join(self.justification_str.split("\n")[:-1]) + \
+        '\n'
+    if self.branch is not None and not self.branch_on_first_line:
+      s += indent + '  Branch:' + \
+        '\n' + indent + '    ' + self.branch + \
+        '\n'
+    if self.depends:
+      s += indent + '  Depends: ' + self.depends_str + '\n'
+    if self.notes_str is not None:
+      s += indent + '  Notes:' + \
+        ('\n' + indent + '  ').join(self.notes_str.split("\n")[:-1]) + \
+        '\n'
+    if self.votes_str is not None:
+      s += indent + '  Votes:' + \
+        ('\n' + indent + '  ').join([""] + self.votes_str.split("\n")[:-1]) + "\n"
     return s
 
 class Test_StatusEntry(unittest.TestCase):
   def test___init__(self):
     "Test the entry parser"
 
-    # All these entries actually have a "four spaces" line as their last line,
-    # but the parser doesn't care.
+    # An entry may have spaces on its last line, the parser doesn't care.
+    # However unparse() will not replicate this, causing a failure on
+    # assertEqual(entry.unparse())
 
     s = """\
       * r42, r43,
@@ -550,8 +593,17 @@ class Test_StatusEntry(unittest.TestCase):
         Votes:
           +1: jrandom
     """
+    # Revision list will be normalized to one line
+    sExpected = """\
+      * r42, r43, r44
+        This is the logsummary.
+        Branch:
+          1.8.x-rfourty-two
+        Votes:
+          +1: jrandom
+"""
     entry = StatusEntry(s)
-    self.assertEqual(entry.__str__(), s)
+    self.assertEqual(entry.__str__(), sExpected)
     self.assertEqual(entry.branch, "1.8.x-rfourty-two")
     self.assertEqual(entry.revisions, [42, 43, 44])
     self.assertEqual(entry.logsummary, ["This is the logsummary."])
@@ -574,7 +626,7 @@ class Test_StatusEntry(unittest.TestCase):
         Votes:
           +1: jrandom
           -1: jconstant
-    """
+"""
     entry = StatusEntry(s)
     self.assertEqual(entry.__str__(), s)
     self.assertIsNone(entry.branch)
@@ -597,7 +649,7 @@ class Test_StatusEntry(unittest.TestCase):
         Votes:
           +1: jrandom
           -1 (see <message-id>): jconstant
-    """
+"""
     entry = StatusEntry(s)
     self.assertEqual(entry.__str__(), s)
     self.assertEqual(entry.branch, "1.8.x-fixes")
@@ -611,8 +663,17 @@ class Test_StatusEntry(unittest.TestCase):
         Votes:
           +1: jrandom
     """
+    # Normalizes branch (without path) to separate line
+    sExpected = """\
+      * r42
+        This is the logsummary.
+        Branch:
+          on-the-same-line
+        Votes:
+          +1: jrandom
+"""
     entry = StatusEntry(s)
-    self.assertEqual(entry.__str__(), s)
+    self.assertEqual(entry.__str__(), sExpected)
     self.assertEqual(entry.branch, "on-the-same-line")
     self.assertEqual(entry.revisions, [42])
 
@@ -624,7 +685,7 @@ class Test_StatusEntry(unittest.TestCase):
         This is the logsummary.
         Votes:
           +1: jrandom
-    """
+"""
     entry = StatusEntry(s)
     self.assertEqual(entry.__str__(), s)
     self.assertEqual(entry.branch, "1.8.x-fixes")
@@ -667,7 +728,7 @@ class Test_StatusEntry(unittest.TestCase):
           Fixes output that scripts depend on.
         Votes:
           +1: jrandom
-    """
+"""
     entry = StatusEntry(s)
     self.assertEqual(entry.__str__(), s)
     self.assertEqual(entry.revisions, [42])
