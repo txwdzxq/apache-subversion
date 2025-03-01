@@ -88,7 +88,8 @@ class Paragraph:
 
     KIND is one of the Kind.* enumerators.
 
-    TEXT is the physical text in the file, used by unparsing.
+    TEXT is the physical text in the file, used by unparsing unless kind is
+    Kind.nomination.
 
     ENTRY is the StatusEntry object, if Kind.nomination, else None.
 
@@ -235,6 +236,30 @@ class StatusFile:
         for para in entry_paras:
           para.kind = Kind.unknown
 
+  def insert(self, entry, containing_section):
+    p = Paragraph(Kind.nomination,
+                  "",
+                  entry,
+                  containing_section)
+
+    # Find an existing section header to insert the new entry
+    i = 0
+    while i < len(self.paragraphs):
+      if self.paragraphs[i].kind is Kind.section_header \
+         and self.paragraphs[i]._containing_section == containing_section:
+        self.paragraphs.insert(i+1, p)
+        return
+      i += 1
+
+    # None found so we need to append a new header followed by the new entry
+    self.paragraphs.append(Paragraph(Kind.section_header,
+                                     containing_section + ":\n" \
+                                     + '=' * (len(containing_section)+1) + "\n",
+                                     None,
+                                     containing_section)
+                           )
+    self.paragraphs.append(p)
+
   def remove(self, entry):
     "Remove ENTRY from SELF."
     for para in self.entries_paras():
@@ -361,8 +386,12 @@ class StatusEntry:
     self.notes_str = None
     self.votes_str = None
     self.status_file = status_file
+    self.indentation = 0
 
     self.raw = para_text
+
+    if para_text is None:
+      return
 
     _re_entry_indentation = re.compile(r'^( *\* )')
     _re_revisions_line = re.compile(r'^(?:r?\d+[,; ]*)+$')
