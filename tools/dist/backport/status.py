@@ -510,11 +510,6 @@ class StatusEntry:
   def _is_subheader(string):
     """Given a single line from an entry, is that line a subheader (such as
     "Justification:" or "Notes:")?"""
-    # TODO: maybe change the 'subheader' heuristic?  Perhaps "line starts with
-    # an uppercase letter and ends with a colon".
-    #
-    # This is currently only used for finding the end of logsummary, and all
-    # explicitly special-cased headers (e.g., "Depends:") match this, though.
     subheaders = "Justification: Notes: Depends: Branch: Votes:".split()
     for subheader in subheaders:
       if string.strip().startswith(subheader):
