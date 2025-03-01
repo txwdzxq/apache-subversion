@@ -361,7 +361,6 @@ test_xml_parse_stream_invalid_xml(apr_pool_t *pool)
   xml_callbacks_baton_t b;
   svn_stream_t *stream;
   svn_error_t *err;
-  apr_status_t status;
 
   /* Test parsing XML in one chunk.*/
   b.buf = svn_stringbuf_create_empty(pool);
