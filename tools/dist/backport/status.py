@@ -380,10 +380,10 @@ class StatusEntry:
 
     # Parse the logsummary.
     while True:
-      self.logsummary.append(lines[0])
-      lines = lines[1:]
       if (not lines) or self._is_subheader(lines[0]):
         break
+      self.logsummary.append(lines[0])
+      lines = lines[1:]
 
     # Parse votes.
     if "Votes:" in lines:
@@ -515,7 +515,11 @@ class StatusEntry:
     #
     # This is currently only used for finding the end of logsummary, and all
     # explicitly special-cased headers (e.g., "Depends:") match this, though.
-    return re.compile(r'^\s*[A-Z]\w*:').match(string)
+    subheaders = "Justification: Notes: Depends: Branch: Votes:".split()
+    for subheader in subheaders:
+      if string.strip().startswith(subheader):
+        return True
+    return False
 
   def unparse(self, stream):
     "Write this entry to STREAM, an open file-like object."
@@ -691,6 +695,9 @@ class Test_StatusEntry(unittest.TestCase):
     for subheader in subheaders:
       self.assertTrue(StatusEntry._is_subheader(subheader))
       self.assertTrue(StatusEntry._is_subheader(subheader + " with value"))
+    self.assertFalse(StatusEntry._is_subheader("UnknownSubheader: with value"))
+    self.assertFalse(StatusEntry._is_subheader("UnknownSubheader:"))
+    self.assertFalse(StatusEntry._is_subheader("regular text"))
 
 
 def setUpModule():
