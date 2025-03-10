@@ -48,6 +48,9 @@ merge-approved-backports.py:
     automatically merge approved backports, see documentation in PMC private
     repo.
 
+nominate-backport.py:
+    Implementation of [F4] using backport.py.
+
 backport_tests_py.py:
     Regression tests for detect-conflicting-backports.py and merge-approved-backports.py
 
