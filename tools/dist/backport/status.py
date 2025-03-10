@@ -244,20 +244,25 @@ class StatusFile:
 
     # Find an existing section header to insert the new entry
     i = 0
+    correct_header = False
     while i < len(self.paragraphs):
-      if self.paragraphs[i].kind is Kind.section_header \
-         and self.paragraphs[i]._containing_section == containing_section:
-        self.paragraphs.insert(i+1, p)
-        return
+      if self.paragraphs[i].kind is Kind.section_header:
+        if self.paragraphs[i]._containing_section == containing_section:
+          correct_header = True
+        elif correct_header:
+          self.paragraphs.insert(i, p)
+          correct_header = False
+          return
       i += 1
 
-    # None found so we need to append a new header followed by the new entry
-    self.paragraphs.append(Paragraph(Kind.section_header,
-                                     containing_section + ":\n" \
-                                     + '=' * (len(containing_section)+1) + "\n",
-                                     None,
-                                     containing_section)
-                           )
+    if not correct_header:
+      # None found so we need to append a new header followed by the new entry
+      self.paragraphs.append(Paragraph(Kind.section_header,
+                                       containing_section + ":\n" \
+                                       + '=' * (len(containing_section)+1) + "\n",
+                                       None,
+                                       containing_section)
+                             )
     self.paragraphs.append(p)
 
   def remove(self, entry):
