@@ -44,12 +44,8 @@ import backport.status
 STATUS = './STATUS'
 LINELENGTH = 79
 
-def subprocess_output(args):
-  result = subprocess.run(args, capture_output = True, text = True)
-  return result.stdout
-
 def check_local_mods_to_STATUS():
-  status = subprocess_output(['svn', 'diff', './STATUS'])
+  (exit_code, status, stderr) = backport.merger.run_svn(['diff', './STATUS'])
   if status != "":
     print(f"Local mods to STATUS file {STATUS}")
     print(status)
@@ -72,7 +68,7 @@ def get_availid():
   except KeyError:
     try:
       # Failing, try executing svn auth
-      auth = subprocess_output(['svn', 'auth', 'svn.apache.org:443'])
+      (exitcode, auth, stderr) = backport.merger.run_svn(['auth', 'svn.apache.org:443'])
       correct_realm = False
       for line in auth.split('\n'):
         line = line.strip()
@@ -154,18 +150,11 @@ def main():
   justification = sys.argv[2]
 
   # Get some WC info
-  info = subprocess_output(['svn', 'info'])
-  BASE_revision = ""
-  URL = ""
-  for line in info.split('\n'):
-    if line.startswith('URL:'):
-      URL = line.split('URL:')[1]
-    elif line.startswith('Revision:'):
-      BASE_revision = line.split('Revision:')[1]
+  wcinfo = backport.wc.get_wc_info()
 
   # To save typing, require just the last three digits if they're unambiguous.
-  if BASE_revision != "":
-    BASE_revision = int(BASE_revision)
+  if wcinfo["BASE_revision"] != "":
+    BASE_revision = int(wcinfo["BASE_revision"])
     if BASE_revision > 1000:
       residue = BASE_revision % 1000
       thousands = BASE_revision - residue
@@ -176,12 +165,13 @@ def main():
   revisions.sort()
 
   # Determine whether a backport branch exists
-  branch = subprocess_output(['svn', 'info', '--show-item', 'url', '--', URL+'-r'+str(revisions[0])]).replace('\n', '')
+  (exit_code, branch, stderr) = backport.merger.run_svn(['info', '--show-item', 'url', '--',
+                              wcinfo["URL"] + '-r'+str(revisions[0])]).replace('\n', '')
   if branch == "":
     branch = None
 
   # Get log message from first revision
-  logmsg = subprocess_output(['svn', 'propget', '--revprop', '-r',
+  (exit_code, logmsg, stderr) = backport.merger.run_svn(['propget', '--revprop', '-r',
                               str(revisions[0]), '--strict', 'svn:log', '^/'])
   if (logmsg == ""):
     print("Can't fetch log message of r" + revisions[0])
@@ -225,17 +215,17 @@ def main():
     sf.unparse(f)
 
   # Check for changes to commit
-  diff = subprocess_output(['svn', 'diff', STATUS])
+  (exit_code, diff , stderr) = backport.merger.run_svn(['diff', STATUS])
   print(diff)
   answer = input("Commit this nomination [y/N]? ")
   if answer.lower() == "y":
-    subprocess_output(['svn', 'commit', STATUS, '-m',
+    backport.merger.run_svn_quiet(['commit', STATUS, '-m',
                        '* STATUS: Nominate r' + 
                        ', r'.join(map(str, revisions))])
   else:
     answer = input("Revert STATUS (destroying local mods) [y/N]? ")
     if answer.lower() == "y":
-      subprocess_output(['svn', 'revert', STATUS])
+      backport.merger.run_svn_quiet(['revert', STATUS])
   
   sys.exit(0)
   
