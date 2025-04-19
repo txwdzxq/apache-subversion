@@ -251,7 +251,6 @@ class StatusFile:
           correct_header = True
         elif correct_header:
           self.paragraphs.insert(i, p)
-          correct_header = False
           return
       i += 1
 
