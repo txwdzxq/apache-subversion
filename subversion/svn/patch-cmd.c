@@ -51,8 +51,10 @@ svn_cl__patch(apr_getopt_t *os,
   apr_array_header_t *targets;
   const char *abs_patch_path;
   const char *patch_path;
+  apr_file_t *patch_file;
   const char *abs_target_path;
   const char *target_path;
+  svn_node_kind_t kind;
 
   opt_state = ((svn_cl__cmd_baton_t *)baton)->opt_state;
   ctx = ((svn_cl__cmd_baton_t *)baton)->ctx;
@@ -74,6 +76,19 @@ svn_cl__patch(apr_getopt_t *os,
 
   SVN_ERR(svn_dirent_get_absolute(&abs_patch_path, patch_path, pool));
 
+  SVN_ERR(svn_io_check_path(abs_patch_path, &kind, pool));
+  if (kind == svn_node_none)
+    return svn_error_createf(SVN_ERR_ILLEGAL_TARGET, NULL,
+                             _("'%s' does not exist"),
+                             svn_dirent_local_style(abs_patch_path, pool));
+  if (kind != svn_node_file)
+    return svn_error_createf(SVN_ERR_ILLEGAL_TARGET, NULL,
+                             _("'%s' is not a file"),
+                             svn_dirent_local_style(abs_patch_path, pool));
+
+  SVN_ERR(svn_io_file_open(&patch_file, abs_patch_path,
+                           APR_READ | APR_BUFFERED, APR_OS_DEFAULT, pool));
+
   if (targets->nelts == 1)
     target_path = ""; /* "" is the canonical form of "." */
   else
@@ -84,12 +99,13 @@ svn_cl__patch(apr_getopt_t *os,
     }
   SVN_ERR(svn_dirent_get_absolute(&abs_target_path, target_path, pool));
 
-  SVN_ERR(svn_client_patch(abs_patch_path, abs_target_path,
-                           opt_state->dry_run, opt_state->strip,
-                           opt_state->reverse_diff,
-                           opt_state->ignore_whitespace,
-                           TRUE, NULL, NULL, ctx, pool));
+  SVN_ERR(svn_client_patch2(patch_file, abs_target_path,
+                            opt_state->dry_run, opt_state->strip,
+                            opt_state->reverse_diff,
+                            opt_state->ignore_whitespace,
+                            TRUE, NULL, NULL, ctx, pool));
 
+  SVN_ERR(svn_io_file_close(patch_file, pool));
 
   if (! opt_state->quiet)
     SVN_ERR(svn_cl__notifier_print_conflict_stats(ctx->notify_baton2, pool));

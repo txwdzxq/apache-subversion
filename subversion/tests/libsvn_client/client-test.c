@@ -348,6 +348,8 @@ test_patch(const svn_test_opts_t *opts,
   const char *reject_tempfile_path;
   const char *key;
   int i;
+  apr_off_t off;
+
 #define NL APR_EOL_STR
 #define UNIDIFF_LINES 7
   const char *unidiff_patch[UNIDIFF_LINES] =  {
@@ -401,8 +403,8 @@ test_patch(const svn_test_opts_t *opts,
       pool, svn_test_data_path("test-patch", pool),
       "test-patch.diff", SVN_VA_NULL);
   SVN_ERR(svn_io_file_open(&patch_file, patch_file_path,
-                           (APR_READ | APR_WRITE | APR_CREATE | APR_TRUNCATE),
-                           APR_OS_DEFAULT, pool));
+                           (APR_READ | APR_WRITE | APR_CREATE | APR_TRUNCATE
+                            | APR_BUFFERED), APR_OS_DEFAULT, pool));
   for (i = 0; i < UNIDIFF_LINES; i++)
     {
       apr_size_t len = strlen(unidiff_patch[i]);
@@ -415,9 +417,12 @@ test_patch(const svn_test_opts_t *opts,
   pcb.patched_tempfiles = apr_hash_make(pool);
   pcb.reject_tempfiles = apr_hash_make(pool);
   pcb.state_pool = pool;
-  SVN_ERR(svn_client_patch(patch_file_path, wc_path, FALSE, 0, FALSE,
-                           FALSE, FALSE, patch_collection_func, &pcb,
-                           ctx, pool));
+
+  off = 0;
+  SVN_ERR(svn_io_file_seek(patch_file, APR_SET, &off, pool));
+  SVN_ERR(svn_client_patch2(patch_file, wc_path, FALSE, 0, FALSE,
+                            FALSE, FALSE, patch_collection_func, &pcb,
+                            ctx, pool));
   SVN_ERR(svn_io_file_close(patch_file, pool));
 
   SVN_TEST_ASSERT(apr_hash_count(pcb.patched_tempfiles) == 1);

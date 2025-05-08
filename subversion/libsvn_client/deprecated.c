@@ -3290,3 +3290,46 @@ svn_client_upgrade(const char *path,
   return svn_error_trace(svn_client_upgrade2(NULL, path, NULL, ctx,
                                              NULL, scratch_pool));
 }
+
+svn_error_t *
+svn_client_patch(const char *patch_abspath,
+                 const char *wc_dir_abspath,
+                 svn_boolean_t dry_run,
+                 int strip_count,
+                 svn_boolean_t reverse,
+                 svn_boolean_t ignore_whitespace,
+                 svn_boolean_t remove_tempfiles,
+                 svn_client_patch_func_t patch_func,
+                 void *patch_baton,
+                 svn_client_ctx_t *ctx,
+                 apr_pool_t *scratch_pool)
+{
+  svn_node_kind_t kind;
+  apr_file_t *apr_file;
+
+  SVN_ERR(svn_io_check_path(patch_abspath, &kind, scratch_pool));
+  if (kind == svn_node_none)
+    return svn_error_createf(SVN_ERR_ILLEGAL_TARGET, NULL,
+                             _("'%s' does not exist"),
+                             svn_dirent_local_style(patch_abspath,
+                                                    scratch_pool));
+  if (kind != svn_node_file)
+    return svn_error_createf(SVN_ERR_ILLEGAL_TARGET, NULL,
+                             _("'%s' is not a file"),
+                             svn_dirent_local_style(patch_abspath,
+                                                    scratch_pool));
+
+  SVN_ERR(svn_io_file_open(&apr_file, patch_abspath,
+                           APR_READ | APR_BUFFERED, APR_OS_DEFAULT,
+                           scratch_pool));
+
+  SVN_ERR(svn_client_patch2(apr_file, wc_dir_abspath,
+                            dry_run, strip_count, reverse,
+                            ignore_whitespace, remove_tempfiles,
+                            patch_func, patch_baton,
+                            ctx, scratch_pool));
+
+  SVN_ERR(svn_io_file_close(apr_file, scratch_pool));
+
+  return SVN_NO_ERROR;
+}
