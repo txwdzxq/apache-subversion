@@ -7718,9 +7718,8 @@ typedef svn_error_t *(*svn_client_patch_func_t)(
   apr_pool_t *scratch_pool);
 
 /**
- * Apply a unidiff patch, described in @a apr_file which should have
- * @c APR_READ and @c APR_BUFFERED capabilities to the working copy
- * directory at @a wc_dir_abspath.
+ * Apply a unidiff patch that's located at absolute path
+ * @a patch_abspath to the working copy directory at @a wc_dir_abspath.
  *
  * This function makes a best-effort attempt at applying the patch.
  * It might skip patch targets which cannot be patched (e.g. targets
@@ -7757,26 +7756,7 @@ typedef svn_error_t *(*svn_client_patch_func_t)(
  *
  * Use @a scratch_pool for temporary allocations.
  *
- * @since New in 1.15.
- */
-svn_error_t *
-svn_client_patch2(apr_file_t *apr_file,
-                  const char *wc_dir_abspath,
-                  svn_boolean_t dry_run,
-                  int strip_count,
-                  svn_boolean_t reverse,
-                  svn_boolean_t ignore_whitespace,
-                  svn_boolean_t remove_tempfiles,
-                  svn_client_patch_func_t patch_func,
-                  void *patch_baton,
-                  svn_client_ctx_t *ctx,
-                  apr_pool_t *scratch_pool);
-
-/**
- * Similar to svn_client_patch2(), but accessing the patch by an absolute
- * path.
- *
- * @deprecated Provided for backward compatibility with the 1.7 API.
+ * @since New in 1.7.
  */
 svn_error_t *
 svn_client_patch(const char *patch_abspath,

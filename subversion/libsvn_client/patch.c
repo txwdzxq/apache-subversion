@@ -3613,8 +3613,8 @@ check_ancestor_delete(const char *deleted_target,
 
 /* This function is the main entry point into the patch code. */
 static svn_error_t *
-apply_patches(/* The patch file. */
-              apr_file_t *apr_file,
+apply_patches(/* The path to the patch file. */
+              const char *patch_abspath,
               /* The abspath to the working copy the patch should be applied to. */
               const char *root_abspath,
               /* Indicates whether we're doing a dry run. */
@@ -3636,10 +3636,11 @@ apply_patches(/* The patch file. */
 {
   svn_patch_t *patch;
   apr_pool_t *iterpool;
-  svn_diff_patch_parser_t *patch_parser;
+  svn_patch_file_t *patch_file;
   apr_array_header_t *targets_info;
 
-  patch_parser = svn_diff_patch_parser_create(apr_file, scratch_pool);
+  /* Try to open the patch file. */
+  SVN_ERR(svn_diff_open_patch_file(&patch_file, patch_abspath, scratch_pool));
 
   /* Apply patches. */
   targets_info = apr_array_make(scratch_pool, 0,
@@ -3652,9 +3653,9 @@ apply_patches(/* The patch file. */
       if (ctx->cancel_func)
         SVN_ERR(ctx->cancel_func(ctx->cancel_baton));
 
-      SVN_ERR(svn_diff_patch_parser_next(&patch, patch_parser,
-                                         reverse, ignore_whitespace,
-                                         iterpool, iterpool));
+      SVN_ERR(svn_diff_parse_next_patch(&patch, patch_file,
+                                        reverse, ignore_whitespace,
+                                        iterpool, iterpool));
       if (patch)
         {
           patch_target_t *target;
@@ -3719,23 +3720,24 @@ apply_patches(/* The patch file. */
     }
   while (patch);
 
+  SVN_ERR(svn_diff_close_patch_file(patch_file, iterpool));
   svn_pool_destroy(iterpool);
 
   return SVN_NO_ERROR;
 }
 
 svn_error_t *
-svn_client_patch2(apr_file_t *apr_file,
-                  const char *wc_dir_abspath,
-                  svn_boolean_t dry_run,
-                  int strip_count,
-                  svn_boolean_t reverse,
-                  svn_boolean_t ignore_whitespace,
-                  svn_boolean_t remove_tempfiles,
-                  svn_client_patch_func_t patch_func,
-                  void *patch_baton,
-                  svn_client_ctx_t *ctx,
-                  apr_pool_t *scratch_pool)
+svn_client_patch(const char *patch_abspath,
+                 const char *wc_dir_abspath,
+                 svn_boolean_t dry_run,
+                 int strip_count,
+                 svn_boolean_t reverse,
+                 svn_boolean_t ignore_whitespace,
+                 svn_boolean_t remove_tempfiles,
+                 svn_client_patch_func_t patch_func,
+                 void *patch_baton,
+                 svn_client_ctx_t *ctx,
+                 apr_pool_t *scratch_pool)
 {
   svn_node_kind_t kind;
 
@@ -3747,6 +3749,18 @@ svn_client_patch2(apr_file_t *apr_file,
     return svn_error_createf(SVN_ERR_ILLEGAL_TARGET, NULL,
                              _("'%s' is not a local path"),
                              svn_dirent_local_style(wc_dir_abspath,
+                                                    scratch_pool));
+
+  SVN_ERR(svn_io_check_path(patch_abspath, &kind, scratch_pool));
+  if (kind == svn_node_none)
+    return svn_error_createf(SVN_ERR_ILLEGAL_TARGET, NULL,
+                             _("'%s' does not exist"),
+                             svn_dirent_local_style(patch_abspath,
+                                                    scratch_pool));
+  if (kind != svn_node_file)
+    return svn_error_createf(SVN_ERR_ILLEGAL_TARGET, NULL,
+                             _("'%s' is not a file"),
+                             svn_dirent_local_style(patch_abspath,
                                                     scratch_pool));
 
   SVN_ERR(svn_io_check_path(wc_dir_abspath, &kind, scratch_pool));
@@ -3762,7 +3776,7 @@ svn_client_patch2(apr_file_t *apr_file,
                                                     scratch_pool));
 
   SVN_WC__CALL_WITH_WRITE_LOCK(
-    apply_patches(apr_file, wc_dir_abspath, dry_run, strip_count,
+    apply_patches(patch_abspath, wc_dir_abspath, dry_run, strip_count,
                   reverse, ignore_whitespace, remove_tempfiles,
                   patch_func, patch_baton, ctx, scratch_pool),
     ctx->wc_ctx, wc_dir_abspath, FALSE /* lock_anchor */, scratch_pool);
