@@ -3613,8 +3613,8 @@ check_ancestor_delete(const char *deleted_target,
 
 /* This function is the main entry point into the patch code. */
 static svn_error_t *
-apply_patches(/* The descriptor of the patch file. */
-              svn_patch_file_t *patch_file,
+apply_patches(/* The patch parser to read patch from. */
+              svn_diff_patch_parser_t *patch_parser,
               /* The abspath to the working copy the patch should be applied to. */
               const char *root_abspath,
               /* Indicates whether we're doing a dry run. */
@@ -3649,9 +3649,9 @@ apply_patches(/* The descriptor of the patch file. */
       if (ctx->cancel_func)
         SVN_ERR(ctx->cancel_func(ctx->cancel_baton));
 
-      SVN_ERR(svn_diff_parse_next_patch(&patch, patch_file,
-                                        reverse, ignore_whitespace,
-                                        iterpool, iterpool));
+      SVN_ERR(svn_diff_patch_parser_next(&patch, patch_parser,
+                                         reverse, ignore_whitespace,
+                                         iterpool, iterpool));
       if (patch)
         {
           patch_target_t *target;
@@ -3735,7 +3735,8 @@ svn_client_patch(const char *patch_abspath,
                  apr_pool_t *scratch_pool)
 {
   svn_node_kind_t kind;
-  svn_patch_file_t *patch_file;
+  apr_file_t *patch_file;
+  svn_diff_patch_parser_t *patch_parser;
 
   if (strip_count < 0)
     return svn_error_create(SVN_ERR_INCORRECT_PARAMS, NULL,
@@ -3771,15 +3772,17 @@ svn_client_patch(const char *patch_abspath,
                              svn_dirent_local_style(wc_dir_abspath,
                                                     scratch_pool));
 
-  SVN_ERR(svn_diff_open_patch_file(&patch_file, patch_abspath, scratch_pool));
+  SVN_ERR(svn_io_file_open(&patch_file, patch_abspath, APR_READ | APR_BUFFERED,
+                           APR_OS_DEFAULT, scratch_pool));
+  patch_parser = svn_diff_patch_parser_create(patch_file, scratch_pool);
 
   SVN_WC__CALL_WITH_WRITE_LOCK(
-    apply_patches(patch_file, wc_dir_abspath, dry_run, strip_count,
+    apply_patches(patch_parser, wc_dir_abspath, dry_run, strip_count,
                   reverse, ignore_whitespace, remove_tempfiles,
                   patch_func, patch_baton, ctx, scratch_pool),
     ctx->wc_ctx, wc_dir_abspath, FALSE /* lock_anchor */, scratch_pool);
 
-  SVN_ERR(svn_diff_close_patch_file(patch_file, scratch_pool));
+  SVN_ERR(svn_io_file_close(patch_file, scratch_pool));
 
   return SVN_NO_ERROR;
 }
