@@ -418,7 +418,6 @@ test_patch(const svn_test_opts_t *opts,
   SVN_ERR(svn_client_patch(patch_file_path, wc_path, FALSE, 0, FALSE,
                            FALSE, FALSE, patch_collection_func, &pcb,
                            ctx, pool));
-  SVN_ERR(svn_io_file_close(patch_file, pool));
 
   SVN_TEST_ASSERT(apr_hash_count(pcb.patched_tempfiles) == 1);
   key = "A/D/gamma";
@@ -432,6 +431,27 @@ test_patch(const svn_test_opts_t *opts,
                                      APR_HASH_KEY_STRING);
   SVN_ERR(check_patch_result(reject_tempfile_path, expected_gamma_reject,
                              APR_EOL_STR, EXPECTED_GAMMA_REJECT_LINES, pool));
+
+  /* svn_client_patch_stream() test */
+  apr_hash_clear(pcb.patched_tempfiles);
+  apr_hash_clear(pcb.reject_tempfiles);
+
+  SVN_ERR(svn_client_patch_stream(patch_file, wc_path, FALSE, 0, FALSE,
+                                  FALSE, FALSE, patch_collection_func, &pcb,
+                                  ctx, pool));
+
+  SVN_TEST_ASSERT(apr_hash_count(pcb.patched_tempfiles) == 1);
+  patched_tempfile_path = apr_hash_get(pcb.patched_tempfiles, key,
+                                       APR_HASH_KEY_STRING);
+  SVN_ERR(check_patch_result(patched_tempfile_path, expected_gamma, "\n",
+                             EXPECTED_GAMMA_LINES, pool));
+  SVN_TEST_ASSERT(apr_hash_count(pcb.reject_tempfiles) == 1);
+  reject_tempfile_path = apr_hash_get(pcb.reject_tempfiles, key,
+                                     APR_HASH_KEY_STRING);
+  SVN_ERR(check_patch_result(reject_tempfile_path, expected_gamma_reject,
+                             APR_EOL_STR, EXPECTED_GAMMA_REJECT_LINES, pool));
+
+  SVN_ERR(svn_io_file_close(patch_file, pool));
 
   return SVN_NO_ERROR;
 }
