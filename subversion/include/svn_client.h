@@ -7775,7 +7775,7 @@ svn_client_patch(const char *patch_abspath,
  * Similar to svn_client_patch(), but the patch is read from a file handle,
  * described in @a patch_file.
  *
- * In feature versions, this function may be used to apply a patch directly
+ * In future versions, this function may be used to apply a patch directly
  * from an svn_stream_t.
  *
  * @since New in 1.15.
