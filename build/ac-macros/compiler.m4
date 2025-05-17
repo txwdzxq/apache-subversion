@@ -82,6 +82,7 @@ AC_DEFUN([SVN_CC_MODE_SETUP],
   CNOWARNFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS_KEEP"
 
+  SVN_DOT_CLANGD([$CMODEFLAGS])
   AC_SUBST(CMODEFLAGS)
   AC_SUBST(CNOWARNFLAGS)
   AC_SUBST(CMAINTAINERFLAGS)
@@ -103,9 +104,11 @@ AC_DEFUN([SVN_CXX_MODE_SETUP],
     dnl Find flags to force C++ mode
                   dnl g++ and clang++
     if test "$cxx_language_level" = "any"; then
-      SVN_CXXFLAGS_ADD_IFELSE([-std=c++20],[],[
-        SVN_CXXFLAGS_ADD_IFELSE([-std=c++17],[],[
-          SVN_CXXFLAGS_ADD_IFELSE([-std=c++11])
+      SVN_CXXFLAGS_ADD_IFELSE([-std=c++23],[],[
+        SVN_CXXFLAGS_ADD_IFELSE([-std=c++20],[],[
+          SVN_CXXFLAGS_ADD_IFELSE([-std=c++17],[],[
+            SVN_CXXFLAGS_ADD_IFELSE([-std=c++11])
+          ])
         ])
       ])
     else
@@ -140,6 +143,7 @@ AC_DEFUN([SVN_CXX_MODE_SETUP],
   CXXNOWARNFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS_KEEP"
 
+  SVN_DOT_CLANGDXX([$CXXMODEFLAGS])
   AC_SUBST(CXXMODEFLAGS)
   AC_SUBST(CXXNOWARNFLAGS)
   AC_SUBST(CXXMAINTAINERFLAGS)

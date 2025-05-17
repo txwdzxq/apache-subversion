@@ -46,6 +46,80 @@ AC_SUBST([SWIG_LDFLAGS])
 # Generate config.nice early (before the arguments are munged)
 SVN_CONFIG_NICE(config.nice)
 
+# ==== Construcet .clangd ====================================================
+
+svn_dot_clangd_file="$abs_srcdir/.clangd"
+AC_ARG_ENABLE([dot-clangd],
+AC_HELP_STRING([--enable-dot-clangd],
+               [Generate a .clangd file at the root of the source tree]),
+[
+  AC_MSG_NOTICE([Creating $svn_dot_clangd_file])
+  svn_dot_clangd_contents='---
+If:
+  PathMatch: .*\.c
+  PathMatch: .*\.h
+  PathExclude: subversion/bindings/javahl/native/.*
+
+CompileFlags:
+  Add:'
+
+  svn_dot_clangdxx_contents='---
+If:
+  PathMatch: .*\.cpp
+  PathMatch: .*\.hpp
+  PathMatch: subversion/bindings/javahl/native/.*\.h
+
+CompileFlags:
+  Add:'
+],
+[])
+
+AC_DEFUN([SVN_DOT_CLANGD],
+[
+  if test "x$svn_dot_clangd_contents" != "x"; then
+    indent="    -"
+    dnl Split multiple flags to one per line.
+    set fake [$1]
+    while test "${#}" -gt 1; do
+      line="${2}"; shift
+      svn_dot_clangd_contents=`cat <<EOF
+$svn_dot_clangd_contents
+$indent $line
+EOF
+      `
+    done
+  fi
+])
+
+AC_DEFUN([SVN_DOT_CLANGDXX],
+[
+  if test "x$svn_dot_clangdxx_contents" != "x"; then
+    indent="    -"
+    dnl Split multiple flags to one per line.
+    set fake [$1]
+    while test "${#}" -gt 1; do
+      line="${2}"; shift
+svn_dot_clangdxx_contents=`cat <<EOF
+$svn_dot_clangdxx_contents
+$indent $line
+EOF
+      `
+    done
+  fi
+])
+
+
+dnl Add well-known source and build paths to .clangd
+SVN_DOT_CLANGD([-I$abs_builddir/subversion])
+SVN_DOT_CLANGD([-I$abs_srcdir/subversion/include])
+SVN_DOT_CLANGD([-I$abs_srcdir/subversion/tests])
+SVN_DOT_CLANGDXX([-I$abs_srcdir/subversion/bindings/cxx/include])
+SVN_DOT_CLANGDXX([-I$abs_srcdir/subversion/bindings/cxx/tests])
+SVN_DOT_CLANGDXX([-I$abs_srcdir/subversion/bindings/javahl/native])
+SVN_DOT_CLANGD([-I$abs_srcdir/subversion/bindings/swig/perl/libsvn_swig_perl])
+SVN_DOT_CLANGD([-I$abs_srcdir/subversion/bindings/swig/python/libsvn_swig_py])
+SVN_DOT_CLANGD([-I$abs_srcdir/subversion/bindings/swig/ruby/libsvn_swig_ruby])
+
 # ==== Check for programs ====================================================
 
 # Look for a C compiler (before anything can set CFLAGS)
@@ -1782,6 +1856,18 @@ AC_DEFINE_UNQUOTED([SVN_BUILD_TARGET], "${target}",
                    [Defined to the config.guess name of the build target])
 
 AC_OUTPUT
+
+# ==== Generate the .clangd file =============================================
+if test "x$svn_dot_clangd_contents$svn_dot_clangdxx_contents" = "x" ; then
+   if test -f "$svn_dot_clangd_file"; then
+      AC_MSG_NOTICE([Removing $svn_dot_clangd_file])
+      rm -f "$svn_dot_clangd_file"
+   fi
+else
+  AC_MSG_NOTICE([Writing $svn_dot_clangd_file])
+  echo "$svn_dot_clangd_contents" > "$svn_dot_clangd_file"
+  echo "$svn_dot_clangdxx_contents" >> "$svn_dot_clangd_file"
+fi
 
 # ==== Print final messages to user ==========================================
 
