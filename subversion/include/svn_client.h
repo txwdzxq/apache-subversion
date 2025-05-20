@@ -1197,6 +1197,20 @@ svn_client_args_to_target_array(apr_array_header_t **targets_p,
                                 svn_client_ctx_t *ctx,
                                 apr_pool_t *pool);
 
+/**
+ * Similar to svn_client_args_to_target_array2() but assuming that the targets
+ * in @a os are already UTF-8 encoded.
+ *
+ * @since New in 1.15.0
+ */
+svn_error_t *
+svn_client_args_to_target_array_utf8(apr_array_header_t **targets_p,
+                                     apr_getopt_t *os,
+                                     const apr_array_header_t *known_targets,
+                                     svn_client_ctx_t *ctx,
+                                     svn_boolean_t keep_last_origpath_on_truepath_collision,
+                                     apr_pool_t *pool);
+
 /** @} group end: Client command-line processing */
 
 /** @} */
