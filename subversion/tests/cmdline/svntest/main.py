@@ -38,19 +38,11 @@ import logging
 import hashlib
 import zipfile
 import codecs
+import queue
 
-try:
-  # Python >=3.0
-  import queue
-  from urllib.parse import quote as urllib_parse_quote
-  from urllib.parse import unquote as urllib_parse_unquote
-  from urllib.parse import urlparse
-except ImportError:
-  # Python <3.0
-  import Queue as queue
-  from urllib import quote as urllib_parse_quote
-  from urllib import unquote as urllib_parse_unquote
-  from urlparse import urlparse
+from urllib.parse import quote as urllib_parse_quote
+from urllib.parse import unquote as urllib_parse_unquote
+from urllib.parse import urlparse
 
 import svntest
 from svntest import Failure
@@ -462,9 +454,8 @@ def run_command(command, error_expected, binary_mode=False, *varargs):
 # then we can assume that the on-disk repository path was leaked to the
 # client.  Having these here as constants means we don't need to construct
 # them over and over again.
-_repos_diskpath1 = os.path.join('cmdline', 'svn-test-work', 'repositories')
-_repos_diskpath2 = os.path.join('cmdline', 'svn-test-work', 'local_tmp',
-                                'repos')
+_repos_diskpath1 = os.path.join('cmdline', general_repo_dir)
+_repos_diskpath2 = os.path.join('cmdline', pristine_greek_repos_dir)
 _repos_diskpath1_bytes = _repos_diskpath1.encode()
 _repos_diskpath2_bytes = _repos_diskpath2.encode()
 
