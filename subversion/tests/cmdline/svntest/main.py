@@ -39,6 +39,7 @@ import hashlib
 import zipfile
 import codecs
 import queue
+import venv
 
 from urllib.parse import quote as urllib_parse_quote
 from urllib.parse import unquote as urllib_parse_unquote
@@ -119,11 +120,13 @@ class SVNRepositoryCreateFailure(Failure):
 if sys.platform == 'win32':
   windows = True
   file_scheme_prefix = 'file:///'
+  venv_bin = 'Scripts'
   _exe = '.exe'
   _bat = '.bat'
   os.environ['SVN_DBG_STACKTRACES_TO_STDERR'] = 'y'
 else:
   windows = False
+  venv_bin = 'bin'
   file_scheme_prefix = 'file://'
   _exe = ''
   _bat = ''
@@ -170,7 +173,7 @@ S_ALL_RWX = S_ALL_READ | S_ALL_WRITE | S_ALL_EXEC
 def P(relpath,
       head=os.path.dirname(os.path.dirname(os.path.abspath('.')))
       ):
-  if sys.platform=='win32':
+  if windows:
     return os.path.join(head, relpath + '.exe')
   else:
     return os.path.join(head, relpath)
@@ -216,6 +219,14 @@ options = None
 # All temporary repositories and working copies are created underneath
 # this dir, so there's one point at which to mount, e.g., a ramdisk.
 work_dir = "svn-test-work"
+
+# Directory for the Python virtual environment where we install
+# external dependencies of the test environment
+venv_dir = os.path.join(work_dir, "__venv__")
+
+# List of dependencies
+SVN_TESTS_REQUIRE = ["lxml", "rnc2rng"]
+dependencies_ensured = False
 
 # Constant for the merge info property.
 SVN_PROP_MERGEINFO = "svn:mergeinfo"
@@ -859,7 +870,7 @@ def run_svnadmin(*varargs):
   exit_code, stdout_lines, stderr_lines = \
                        run_command(svnadmin_binary, 1, use_binary, *varargs)
 
-  if use_binary and sys.platform == 'win32':
+  if use_binary and windows:
     # Callers don't expect binary output on stderr
     stderr_lines = [x.replace('\r', '') for x in stderr_lines]
 
@@ -2406,7 +2417,49 @@ def run_tests(test_list, serial_only = False):
         appropriate exit code.
   """
 
+  ensure_dependencies()
   sys.exit(execute_tests(test_list, serial_only))
+
+def ensure_dependencies():
+  """Install the dependencies we need for running the tests.
+
+  NOTE: this function des not handle the case where the Python
+        version has changed. In theory, we could automagically
+        upgrade the venv in that case. In practice, we won't.
+  """
+
+  global dependencies_ensured
+  if dependencies_ensured:
+    return
+
+  package_path = os.path.join(venv_dir, "lib",
+                              "python%d.%d" % sys.version_info[:2],
+                              "site-packages")
+  package_path = os.path.abspath(package_path)
+  if package_path in sys.path:
+    dependencies_ensured = True
+    return
+
+  try:
+    # Create the virtual environment
+    if not os.path.isdir(venv_dir):
+      if os.path.exists(venv_dir):
+        safe_rmtree(venv_dir)
+      venv.create(venv_dir, with_pip=True)
+
+    # Install any (new) dependencies
+    pip = os.path.join(venv_dir, venv_bin, "pip"+_exe)
+    pip_options = ("--disable-pip-version-check", "--require-virtualenv")
+    subprocess.run([pip, *pip_options, "install", *SVN_TESTS_REQUIRE],
+                   check=True)
+
+    sys.path.append(package_path)
+    dependencies_ensured = True
+    return package_path
+  except Exception as ex:
+    print("WARNING: Could not install test dependencies,"
+          " some tests will be skipped", file=sys.stderr)
+    print(ex, file=sys.stderr)
 
 def get_issue_details(issue_numbers):
   """For each issue number in ISSUE_NUMBERS query the issue

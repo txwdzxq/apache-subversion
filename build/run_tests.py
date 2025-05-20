@@ -326,8 +326,16 @@ class TestHarness:
 
       global svntest
       svntest = importlib.import_module('svntest')
+      extra_packages = svntest.main.ensure_dependencies()
       svntest.main.parse_options(cmdline, optparse.SUPPRESS_USAGE)
       svntest.testcase.TextColors.disable()
+
+      # We have to update PYTHONPATH, otherwise the whole setting up of a
+      # virtualenv and installing dependencies will happen for every test case.
+      python_path = os.environ.get("PYTHONPATH")
+      python_path = (extra_packages if not python_path
+                     else "%s:%s" % (extra_packages, python_path))
+      os.environ["PYTHONPATH"] = python_path
     finally:
       os.chdir(old_cwd)
 
