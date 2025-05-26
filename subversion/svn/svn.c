@@ -2468,7 +2468,7 @@ sub_main(int *exit_code,
         read_pass_from_stdin = TRUE;
         break;
       case opt_encoding:
-        opt_state.encoding = apr_pstrdup(pool, opt_arg);
+        opt_state.encoding = apr_pstrdup(pool, utf8_opt_arg);
         break;
       case opt_xml:
         opt_state.xml = TRUE;

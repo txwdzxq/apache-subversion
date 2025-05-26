@@ -185,7 +185,7 @@ typedef struct svn_cl__opt_state_t
   svn_stringbuf_t *filedata;     /* contents of file used as option data
                                     (not converted to UTF-8) */
   const char *encoding;          /* the locale/encoding of 'message' and of
-                                    'filedata' (not converted to UTF-8) */
+                                    'filedata' */
   svn_boolean_t help;            /* print usage message */
   const char *auth_username;     /* auth username */
   const char *auth_password;     /* auth password */
