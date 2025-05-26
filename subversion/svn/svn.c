@@ -2140,10 +2140,9 @@ add_commands(const svn_opt_subcommand_desc3_t *cmds_add,
  */
 static svn_error_t *
 parse_compatible_version(svn_cl__opt_state_t* opt_state,
-                         const char *opt_arg,
+                         const char *utf8_opt_arg,
                          apr_pool_t *result_pool)
 {
-  const char *utf8_opt_arg;
   svn_version_t *target;
 
   const svn_version_t *oldest = svn_client_oldest_wc_version(result_pool);
@@ -2156,7 +2155,6 @@ parse_compatible_version(svn_cl__opt_state_t* opt_state,
                                        oldest->major, oldest->minor, 0));
 
   /* Parse the requested version. */
-  SVN_ERR(svn_utf_cstring_to_utf8(&utf8_opt_arg, opt_arg, result_pool));
   SVN_ERR(svn_version__parse_version_string(&target, utf8_opt_arg,
                                             result_pool));
   /* Quietly ignore 'patch' and 'tag' fields. */
@@ -2742,7 +2740,7 @@ sub_main(int *exit_code,
         SVN_ERR(viewspec_from_word(&opt_state.viewspec, utf8_opt_arg));
         break;
       case opt_compatible_version:
-        SVN_ERR(parse_compatible_version(&opt_state, opt_arg, pool));
+        SVN_ERR(parse_compatible_version(&opt_state, utf8_opt_arg, pool));
         break;
       case opt_store_pristine:
         opt_state.store_pristine = svn_tristate__from_word(utf8_opt_arg);
