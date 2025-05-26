@@ -632,8 +632,9 @@ sub_main(int *exit_code,
         opt_state.no_revprops = TRUE;
         break;
       case opt_with_revprop:
-        SVN_ERR(svn_opt_parse_revprop(&opt_state.revprop_table,
-                                          opt_arg, pool));
+        SVN_ERR(svn_utf_cstring_to_utf8(&utf8_opt_arg, opt_arg, pool));
+        SVN_ERR(svn_opt_parse_revprop_utf8(&opt_state.revprop_table,
+                                           utf8_opt_arg, pool));
         break;
       case 'g':
         opt_state.use_merge_history = TRUE;

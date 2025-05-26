@@ -1071,26 +1071,38 @@ svn_error_t *
 svn_opt_parse_revprop(apr_hash_t **revprop_table_p, const char *revprop_spec,
                       apr_pool_t *pool)
 {
+  const char *revprop_spec_utf8;
+
+  SVN_ERR(svn_utf_cstring_to_utf8(&revprop_spec_utf8, revprop_spec, pool));
+
+  return svn_error_trace(svn_opt_parse_revprop_utf8(revprop_table_p,
+                                                    revprop_spec_utf8, pool));
+}
+
+svn_error_t *
+svn_opt_parse_revprop_utf8(apr_hash_t **revprop_table_p,
+                           const char *revprop_spec_utf8, apr_pool_t *pool)
+{
   const char *sep, *propname;
   svn_string_t *propval;
 
-  if (! *revprop_spec)
+  if (!*revprop_spec_utf8)
     return svn_error_create(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
                             _("Revision property pair is empty"));
 
-  if (! *revprop_table_p)
+  if (!*revprop_table_p)
     *revprop_table_p = apr_hash_make(pool);
 
-  sep = strchr(revprop_spec, '=');
+  sep = strchr(revprop_spec_utf8, '=');
   if (sep)
     {
-      propname = apr_pstrndup(pool, revprop_spec, sep - revprop_spec);
-      SVN_ERR(svn_utf_cstring_to_utf8(&propname, propname, pool));
+      propname =
+          apr_pstrndup(pool, revprop_spec_utf8, sep - revprop_spec_utf8);
       propval = svn_string_create(sep + 1, pool);
     }
   else
     {
-      SVN_ERR(svn_utf_cstring_to_utf8(&propname, revprop_spec, pool));
+      propname = apr_pstrdup(pool, revprop_spec_utf8);
       propval = svn_string_create_empty(pool);
     }
 
