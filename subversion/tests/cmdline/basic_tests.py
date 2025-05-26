@@ -3346,6 +3346,40 @@ def argv_with_best_fit_chars(sbox):
   if count == 0:
     raise svntest.Skip('No best fit characters in code page %r' % codepage)
 
+def unicode_arguments_test(sbox: svntest.sandbox.Sandbox):
+  """test unicode arguments"""
+
+  UNICODE_TEST_STRING = '\U0001f449\U0001f448'
+  sbox.build(read_only=False, empty=True)
+
+  unicode_item = sbox.ospath(UNICODE_TEST_STRING)
+  test_item = sbox.ospath("test")
+
+  svntest.actions.run_and_verify_svn2(None, [], 0, "mkdir", unicode_item)
+  svntest.actions.run_and_verify_svn2(None, [], 0, "mkdir", test_item)
+  svntest.actions.run_and_verify_svn2(None, [], 0, "propset",
+                                      "name", UNICODE_TEST_STRING, unicode_item)
+  svntest.actions.run_and_verify_svn2(None, [], 0, "ci", sbox.wc_dir,
+                                      "-m", UNICODE_TEST_STRING,
+                                      "--with-revprop",
+                                      "revprop=" + UNICODE_TEST_STRING)
+
+  expected_disk = wc.State("", {
+    UNICODE_TEST_STRING: Item(props={ "name": UNICODE_TEST_STRING }),
+    "test"             : Item(),
+  })
+
+  svntest.actions.verify_disk(sbox.wc_dir, expected_disk, check_props=True)
+  os.chdir(sbox.wc_dir)
+  svntest.actions.run_and_verify_log_xml(
+    expected_revprops=[{
+      "svn:author": "jrandom",
+      "svn:date": "",
+      "svn:log": UNICODE_TEST_STRING,
+      "revprop": UNICODE_TEST_STRING
+    }],
+    args=["-r1", "--with-all-revprops"])
+
 
 ########################################################################
 # Run the tests
@@ -3424,6 +3458,7 @@ test_list = [ None,
               filtered_ls_top_level_path,
               keep_local_reverted_properly,
               argv_with_best_fit_chars,
+              unicode_arguments_test,
              ]
 
 if __name__ == '__main__':
