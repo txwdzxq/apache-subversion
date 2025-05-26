@@ -2130,7 +2130,7 @@ add_commands(const svn_opt_subcommand_desc3_t *cmds_add,
   svn_cl__cmd_table = cmds_new;
 }
 
-/* Parse OPT_ARG as a version number, into OPT_STATE->compatible_version.
+/* Parse UTF8_OPT_ARG as a version number, into OPT_STATE->compatible_version.
  *
  * Ensure it is between the oldest and newest supported WC formats.
  *
