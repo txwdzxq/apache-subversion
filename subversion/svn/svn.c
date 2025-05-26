@@ -2234,7 +2234,7 @@ sub_main(int *exit_code,
   /* Check library versions */
   SVN_ERR(check_lib_versions());
 
-  SVN_ERR(svn_cmdline__get_cstring_argv(&argv, argc, cmdline_argv, pool));
+  SVN_ERR(svn_cmdline__get_utf8_argv(&argv, argc, cmdline_argv, pool));
 
 #if defined(WIN32) || defined(__CYGWIN__)
   /* Set the working copy administrative directory name. */
@@ -2295,8 +2295,8 @@ sub_main(int *exit_code,
       const char *utf8_opt_arg;
 
       /* Parse the next option. */
-      apr_status_t apr_err = apr_getopt_long(os, svn_cl__options, &opt_id,
-                                             &opt_arg);
+      apr_status_t apr_err = apr_getopt_long(os, svn_cl__options,
+                                             &opt_id, &utf8_opt_arg);
       if (APR_STATUS_IS_EOF(apr_err))
         break;
       else if (apr_err)
@@ -2305,11 +2305,6 @@ sub_main(int *exit_code,
           *exit_code = EXIT_FAILURE;
           return SVN_NO_ERROR;
         }
-
-      if (opt_arg != NULL)
-        SVN_ERR(svn_utf_cstring_to_utf8(&utf8_opt_arg, opt_arg, pool));
-      else
-        utf8_opt_arg = NULL;
 
       /* Stash the option code in an array before parsing it. */
       APR_ARRAY_PUSH(received_opts, int) = opt_id;
@@ -2526,15 +2521,18 @@ sub_main(int *exit_code,
         opt_state.extensions = apr_pstrdup(pool, utf8_opt_arg);
         break;
       case opt_diff_cmd:
+        SVN_ERR(svn_utf_cstring_from_utf8(&opt_arg, utf8_opt_arg, pool));
         opt_state.diff.diff_cmd = apr_pstrdup(pool, opt_arg);
         break;
       case opt_merge_cmd:
+        SVN_ERR(svn_utf_cstring_from_utf8(&opt_arg, utf8_opt_arg, pool));
         opt_state.merge_cmd = apr_pstrdup(pool, opt_arg);
         break;
       case opt_record_only:
         opt_state.record_only = TRUE;
         break;
       case opt_editor_cmd:
+        SVN_ERR(svn_utf_cstring_from_utf8(&opt_arg, utf8_opt_arg, pool));
         opt_state.editor_cmd = apr_pstrdup(pool, opt_arg);
         break;
       case opt_old_cmd:
@@ -2823,8 +2821,7 @@ sub_main(int *exit_code,
         {
           const char *first_arg;
 
-          SVN_ERR(svn_utf_cstring_to_utf8(&first_arg, os->argv[os->ind++],
-                                          pool));
+          first_arg = os->argv[os->ind++];
           subcommand = svn_opt_get_canonical_subcommand3(svn_cl__cmd_table,
                                                          first_arg);
           if (subcommand == NULL)
