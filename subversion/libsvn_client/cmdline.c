@@ -112,7 +112,9 @@ check_root_url_of_target(const char **root_url,
 
 /* Internal helper for public interfaces svn_client_args_to_target_array2
  * and svn_client_args_to_target_array_utf8.
- */
+ *
+ * Note: This is substantially copied from svn_opt__args_to_target_array() in
+ * order to move to libsvn_client while maintaining backward compatibility. */
 static svn_error_t *
 args_to_target_array(apr_array_header_t **targets_p,
                      apr_array_header_t *utf8_targets,
@@ -366,9 +368,6 @@ args_to_target_array(apr_array_header_t **targets_p,
 
   return SVN_NO_ERROR;
 }
-
-/* Note: This is substantially copied from svn_opt__args_to_target_array() in
- * order to move to libsvn_client while maintaining backward compatibility. */
 svn_error_t *
 svn_client_args_to_target_array2(apr_array_header_t **targets_p,
                                  apr_getopt_t *os,
