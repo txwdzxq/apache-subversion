@@ -2640,6 +2640,8 @@ def xml_unsafe_author(sbox):
                                      wc_dir)
 
 @Issue(4415)
+@Issue(4919)
+@XFail(svntest.main.unless_ra_type_dav)
 def xml_unsafe_author2(sbox):
   "svn:author with XML unsafe chars 2"
 
@@ -2694,8 +2696,8 @@ def xml_unsafe_author2(sbox):
     '</lists>\n'
     ]
 
-  svntest.actions.run_and_verify_svn(expected_output, [],
-                                     'ls', '--xml', repo_url)
+  svntest.actions.run_and_verify_svn_xml(expected_output, [],
+                                         'list', '--xml', repo_url)
 
   expected_info = [{
       'Repository Root' : sbox.repo_url,

@@ -1614,6 +1614,9 @@ def tests_verify_dump_load_cross_check():
 def is_ra_type_dav():
   return options.test_area_url.startswith('http')
 
+def unless_ra_type_dav():
+  return not is_ra_type_dav()
+
 def is_ra_type_dav_neon():
   """Return True iff running tests over RA-Neon.
      CAUTION: Result is only valid if svn was built to support both."""
