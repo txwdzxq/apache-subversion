@@ -1138,9 +1138,9 @@ svn_client_create_context(svn_client_ctx_t **ctx,
  */
 
 /**
- * Pull remaining target arguments from @a os into @a *targets_p,
- * converting them to UTF-8, followed by targets from @a known_targets
- * (which might come from, for example, the "--targets" command line option).
+ * Pull remaining target arguments from @a os into @a *targets_p, followed by
+ * targets from @a known_targets (which might come from, for example, the
+ * "--targets" command line option).
  *
  * Process each target in one of the following ways.  For a repository-
  * relative URL: resolve to a full URL, contacting the repository if
@@ -1170,8 +1170,25 @@ svn_client_create_context(svn_client_ctx_t **ctx,
  * literal path "@abc" with no peg revision, or the form ".@abc" to refer to
  * the empty path with peg revision "abc".
  *
- * @since New in 1.7
+ * @since New in 1.15
  */
+svn_error_t *
+svn_client_args_to_target_array3(apr_array_header_t **targets_p,
+                                 apr_getopt_t *os,
+                                 const apr_array_header_t *known_targets,
+                                 svn_client_ctx_t *ctx,
+                                 svn_boolean_t keep_last_origpath_on_truepath_collision,
+                                 apr_pool_t *pool);
+
+/**
+ * Similar to svn_client_args_to_target_array3() but also converts the
+ * targets to UTF-8.
+ *
+ * @since New in 1.7
+ *
+ * @deprecated Provided for backward compatibility with the 1.14 API.
+ */
+SVN_DEPRECATED
 svn_error_t *
 svn_client_args_to_target_array2(apr_array_header_t **targets_p,
                                  apr_getopt_t *os,
@@ -1196,20 +1213,6 @@ svn_client_args_to_target_array(apr_array_header_t **targets_p,
                                 const apr_array_header_t *known_targets,
                                 svn_client_ctx_t *ctx,
                                 apr_pool_t *pool);
-
-/**
- * Similar to svn_client_args_to_target_array2() but assuming that the targets
- * in @a os are already UTF-8 encoded.
- *
- * @since New in 1.15.0
- */
-svn_error_t *
-svn_client_args_to_target_array_utf8(apr_array_header_t **targets_p,
-                                     apr_getopt_t *os,
-                                     const apr_array_header_t *known_targets,
-                                     svn_client_ctx_t *ctx,
-                                     svn_boolean_t keep_last_origpath_on_truepath_collision,
-                                     apr_pool_t *pool);
 
 /** @} group end: Client command-line processing */
 
