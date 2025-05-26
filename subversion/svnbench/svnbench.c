@@ -555,11 +555,7 @@ sub_main(int *exit_code,
         descend = FALSE;
         break;
       case opt_depth:
-        err = svn_utf_cstring_to_utf8(&utf8_opt_arg, opt_arg, pool);
-        if (err)
-          return svn_error_createf(SVN_ERR_CL_ARG_PARSING_ERROR, err,
-                                   _("Error converting depth "
-                                     "from locale to UTF-8"));
+        SVN_ERR(svn_utf_cstring_to_utf8(&utf8_opt_arg, opt_arg, pool));
         opt_state.depth = svn_depth_from_word(utf8_opt_arg);
         if (opt_state.depth == svn_depth_unknown
             || opt_state.depth == svn_depth_exclude)
