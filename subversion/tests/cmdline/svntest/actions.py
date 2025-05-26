@@ -325,16 +325,6 @@ def run_and_verify_svnversion2(wc_dir, trail_url,
   verify.verify_exit_code("Unexpected return code", exit_code, expected_exit)
   return exit_code, out, err
 
-def run_and_verify_svn_xml(expected_stdout, expected_stderr,
-                            command, *varargs):
-  """Like run_and_verify_svn but expects the output to be XML
-  and validates it against the schema for the given command"""
-  exit_code, out, err = run_and_verify_svn(expected_stdout, expected_stderr,
-                                           command, *varargs)
-  if exit_code == 0:
-    verify.validate_xml_schema(command, out)
-  return exit_code, out, err
-
 def run_and_verify_svn(expected_stdout, expected_stderr, *varargs):
   """like run_and_verify_svn2, but the expected exit code is assumed to
   be 0 if no output is expected on stderr, and 1 otherwise."""
@@ -348,16 +338,6 @@ def run_and_verify_svn(expected_stdout, expected_stderr, *varargs):
       expected_exit = 1
   return run_and_verify_svn2(expected_stdout, expected_stderr,
                              expected_exit, *varargs)
-
-def run_and_verify_svn_xml2(expected_stdout, expected_stderr,
-                            expected_exit, command, *varargs):
-  """Like run_and_verify_svn2 but expects the output to be XML
-  and validates it against the schema for the given command"""
-  exit_code, out, err = run_and_verify_svn2(expected_stdout, expected_stderr,
-                                            expected_exit, command, *varargs)
-  if exit_code == 0:
-    verify.validate_xml_schema(command, out)
-  return exit_code, out, err
 
 def run_and_verify_svn2(expected_stdout, expected_stderr,
                         expected_exit, *varargs):
