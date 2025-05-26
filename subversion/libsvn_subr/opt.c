@@ -1068,20 +1068,9 @@ svn_opt__args_to_target_array(apr_array_header_t **targets_p,
 }
 
 svn_error_t *
-svn_opt_parse_revprop(apr_hash_t **revprop_table_p, const char *revprop_spec,
-                      apr_pool_t *pool)
-{
-  const char *revprop_spec_utf8;
-
-  SVN_ERR(svn_utf_cstring_to_utf8(&revprop_spec_utf8, revprop_spec, pool));
-
-  return svn_error_trace(svn_opt_parse_revprop_utf8(revprop_table_p,
-                                                    revprop_spec_utf8, pool));
-}
-
-svn_error_t *
-svn_opt_parse_revprop_utf8(apr_hash_t **revprop_table_p,
-                           const char *revprop_spec_utf8, apr_pool_t *pool)
+svn_opt_parse_revprop2(apr_hash_t **revprop_table_p,
+                       const char *revprop_spec_utf8,
+                       apr_pool_t *pool)
 {
   const char *sep, *propname;
   svn_string_t *propval;

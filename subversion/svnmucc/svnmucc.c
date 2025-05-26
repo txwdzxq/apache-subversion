@@ -611,7 +611,7 @@ sub_main(int *exit_code,
           break;
         case with_revprop_opt:
           SVN_ERR(svn_utf_cstring_to_utf8(&opt_arg, arg, pool));
-          SVN_ERR(svn_opt_parse_revprop_utf8(&revprops, opt_arg, pool));
+          SVN_ERR(svn_opt_parse_revprop2(&revprops, opt_arg, pool));
           break;
         case 'X':
           SVN_ERR(svn_utf_cstring_to_utf8(&extra_args_file, arg, pool));

@@ -273,17 +273,17 @@ test_svn_opt_parse_revprop(apr_pool_t *pool)
   svn_string_t *val;
 
   apr_hash_clear(hash);
-  SVN_ERR(svn_opt_parse_revprop(&hash, "name=val", pool));
+  SVN_ERR(svn_opt_parse_revprop2(&hash, "name=val", pool));
   val = apr_hash_get(hash, "name", APR_HASH_KEY_STRING);
   SVN_TEST_STRING_ASSERT(val->data, "val");
 
   apr_hash_clear(hash);
-  SVN_ERR(svn_opt_parse_revprop_utf8(&hash, "name=val", pool));
+  SVN_ERR(svn_opt_parse_revprop2(&hash, "name=val", pool));
   val = apr_hash_get(hash, "name", APR_HASH_KEY_STRING);
   SVN_TEST_STRING_ASSERT(val->data, "val");
 
   apr_hash_clear(hash);
-  SVN_ERR(svn_opt_parse_revprop_utf8(&hash, "name=" UNICODE_TEST_STRING, pool));
+  SVN_ERR(svn_opt_parse_revprop2(&hash, "name=" UNICODE_TEST_STRING, pool));
   val = apr_hash_get(hash, "name", APR_HASH_KEY_STRING);
   SVN_TEST_STRING_ASSERT(val->data, UNICODE_TEST_STRING);
 

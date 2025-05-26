@@ -674,19 +674,22 @@ svn_opt_args_to_target_array(apr_array_header_t **targets_p,
  * @since New in 1.6.
  */
 svn_error_t *
-svn_opt_parse_revprop(apr_hash_t **revprops, const char *revprop_spec,
-                      apr_pool_t *pool);
+svn_opt_parse_revprop2(apr_hash_t **revprops,
+                       const char *revprop_spec_utf8,
+                       apr_pool_t *pool);
 
 /**
- * Similar to svn_opt_parse_revprop() but assumes that revprop_spec_utf8 is
- * already utf8 encoded.
+ * Similar to svn_opt_parse_revprop2() but also converts @a revprop_spec
+ * to UTF-8 before parsing it.
  *
- * @since New in 1.15.
+ * @since New in 1.6.
+ * @deprecated Provided for backward compatibility with the 1.14 API.
  */
+SVN_DEPRECATED
 svn_error_t *
-svn_opt_parse_revprop_utf8(apr_hash_t **revprop_table_p,
-                           const char *revprop_spec_utf8,
-                           apr_pool_t *pool);
+svn_opt_parse_revprop(apr_hash_t **revprop_table_p,
+                      const char *revprop_spec,
+                      apr_pool_t *pool);
 
 /**
  * If no targets exist in @a *targets, add `.' as the lone target.
