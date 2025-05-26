@@ -1937,6 +1937,11 @@ svn_cmdline__win32_get_cstring_argv(const char **cstring_argv_p[],
 
       APR_ARRAY_PUSH(cstring_argv, const char *) = cstring_arg;
     }
+
+  APR_ARRAY_PUSH(cstring_argv, const char *) = NULL;
+
+  *cstring_argv_p = (const char **)cstring_argv->elts;
+  return SVN_NO_ERROR;
 }
 
 svn_error_t *
