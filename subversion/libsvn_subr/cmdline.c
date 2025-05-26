@@ -1,4 +1,3 @@
-#include "svn_cmdline_private.h"
 /*
  * cmdline.c :  Helpers for command-line programs.
  *
