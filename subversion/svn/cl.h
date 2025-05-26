@@ -173,7 +173,7 @@ typedef struct svn_cl__opt_state_t
   /* Was --no-unlock specified? */
   svn_boolean_t no_unlock;
 
-  const char *message;           /* log message (not converted to UTF-8) */
+  const char *message;           /* log message */
   svn_boolean_t force;           /* be more forceful, as in "svn rm -f ..." */
   svn_boolean_t force_log;       /* force validity of a suspect log msg file */
   svn_boolean_t incremental;     /* yield output suitable for concatenation */

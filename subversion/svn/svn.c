@@ -2331,9 +2331,7 @@ sub_main(int *exit_code,
         }
         break;
       case 'm':
-        /* We store the raw message here.  We will convert it to UTF-8
-         * later, according to the value of the '--encoding' option. */
-        opt_state.message = apr_pstrdup(pool, opt_arg);
+        opt_state.message = apr_pstrdup(pool, utf8_opt_arg);
         break;
       case 'c':
         {
@@ -3167,8 +3165,10 @@ sub_main(int *exit_code,
       if (opt_state.message)
         {
           apr_finfo_t finfo;
-          if (apr_stat(&finfo, opt_state.message /* not converted to UTF-8 */,
-                       APR_FINFO_MIN, pool) == APR_SUCCESS)
+
+          err = svn_io_stat(&finfo, opt_state.message, APR_FINFO_MIN, pool);
+
+          if (!err)
             {
               if (subcommand->cmd_func != svn_cl__lock)
                 {
@@ -3185,6 +3185,7 @@ sub_main(int *exit_code,
                        "(was -F intended?); use '--force-log' to override"));
                 }
             }
+          svn_error_clear(err);
         }
     }
 

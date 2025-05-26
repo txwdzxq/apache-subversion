@@ -220,28 +220,29 @@ svn_cl__make_log_msg_baton(void **baton,
                                   _("Log message contains a zero byte"));
         }
       lmb->message = opt_state->filedata->data;
+
+      if (opt_state->encoding)
+        {
+          lmb->message_encoding = opt_state->encoding;
+        }
+      else if (config)
+        {
+          svn_config_t *cfg =
+              svn_hash_gets(config, SVN_CONFIG_CATEGORY_CONFIG);
+          svn_config_get(cfg, &(lmb->message_encoding),
+                         SVN_CONFIG_SECTION_MISCELLANY,
+                         SVN_CONFIG_OPTION_LOG_ENCODING, NULL);
+        }
+      else
+        lmb->message_encoding = NULL;
     }
   else
     {
       lmb->message = opt_state->message;
+      lmb->message_encoding = "UTF-8";
     }
 
   lmb->editor_cmd = opt_state->editor_cmd;
-  if (opt_state->encoding)
-    {
-      lmb->message_encoding = opt_state->encoding;
-    }
-  else if (config)
-    {
-      svn_config_t *cfg = svn_hash_gets(config, SVN_CONFIG_CATEGORY_CONFIG);
-      svn_config_get(cfg, &(lmb->message_encoding),
-                     SVN_CONFIG_SECTION_MISCELLANY,
-                     SVN_CONFIG_OPTION_LOG_ENCODING,
-                     NULL);
-    }
-  else
-    lmb->message_encoding = NULL;
-
   lmb->base_dir = base_dir;
   lmb->tmpfile_left = NULL;
   lmb->config = config;
