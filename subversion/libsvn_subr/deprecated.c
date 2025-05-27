@@ -809,6 +809,24 @@ svn_opt_subcommand_help(const char *subcommand,
 }
 
 svn_error_t *
+svn_opt_args_to_target_array4(apr_array_header_t **targets_p,
+                              apr_getopt_t *os,
+                              const apr_array_header_t *known_targets,
+                              apr_pool_t *pool)
+{
+  apr_array_header_t *utf8_input_targets =
+      apr_array_make(pool, os->argc - os->ind, sizeof(const char *));
+
+  for (; os->ind < os->argc; os->ind++)
+    {
+      APR_ARRAY_PUSH(utf8_input_targets, const char *) = os->argv[os->ind];
+    }
+
+  return svn_error_trace(svn_opt__process_target_array(targets_p, os,
+                                                       known_targets, pool));
+}
+
+svn_error_t *
 svn_opt_args_to_target_array3(apr_array_header_t **targets_p,
                               apr_getopt_t *os,
                               const apr_array_header_t *known_targets,

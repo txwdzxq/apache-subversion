@@ -594,9 +594,8 @@ svn_opt_resolve_revisions(svn_opt_revision_t *peg_rev,
 
 /**
  * Pull remaining target arguments from @a os into @a *targets_p,
- * converting them to UTF-8, followed by targets from @a known_targets
- * (which might come from, for example, the "--targets" command line
- * option), which are already in UTF-8.
+ * followed by targets from @a known_targets (which might come from,
+ * for example, the "--targets" command line option).
  *
  * On each URL target, do some IRI-to-URI encoding and some
  * auto-escaping.  On each local path, canonicalize case and path
@@ -612,8 +611,21 @@ svn_opt_resolve_revisions(svn_opt_revision_t *peg_rev,
  * error, and if this is the only type of error encountered, complete
  * the operation before returning the error(s).
  *
- * @deprecated Provided for backward compatibility with the 1.5 API.
+ * @since New in 1.15.
  * @see svn_client_args_to_target_array()
+ */
+svn_error_t *
+svn_opt_args_to_target_array4(apr_array_header_t **targets_p,
+                              apr_getopt_t *os,
+                              const apr_array_header_t *known_targets,
+                              apr_pool_t *pool);
+
+/**
+ * Similar to svn_opt_args_to_target_array4() except that it also performs
+ * conversion of the targets to UTF-8.
+ *
+ * @since New in 1.5.
+ * @deprecated Provided for backward compatibility with the 1.5 API.
  */
 SVN_DEPRECATED
 svn_error_t *
