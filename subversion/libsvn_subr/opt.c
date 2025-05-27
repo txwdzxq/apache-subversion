@@ -954,34 +954,46 @@ svn_opt_parse_path(svn_opt_revision_t *rev,
   return SVN_NO_ERROR;
 }
 
-
-/* Note: This is substantially copied into svn_client_args_to_target_array() in
- * order to move to libsvn_client while maintaining backward compatibility. */
 svn_error_t *
 svn_opt__args_to_target_array(apr_array_header_t **targets_p,
                               apr_getopt_t *os,
                               const apr_array_header_t *known_targets,
                               apr_pool_t *pool)
 {
-  int i;
-  svn_error_t *err = SVN_NO_ERROR;
-  apr_array_header_t *input_targets =
-    apr_array_make(pool, DEFAULT_ARRAY_SIZE, sizeof(const char *));
-  apr_array_header_t *output_targets =
-    apr_array_make(pool, DEFAULT_ARRAY_SIZE, sizeof(const char *));
-
-  /* Step 1:  create a master array of targets that are in UTF-8
-     encoding, and come from concatenating the targets left by apr_getopt,
-     plus any extra targets (e.g., from the --targets switch.) */
+  apr_array_header_t *utf8_input_targets =
+      apr_array_make(pool, os->argc - os->ind, sizeof(const char *));
 
   for (; os->ind < os->argc; os->ind++)
     {
       /* The apr_getopt targets are still in native encoding. */
       const char *raw_target = os->argv[os->ind];
-      SVN_ERR(svn_utf_cstring_to_utf8
-              ((const char **) apr_array_push(input_targets),
-               raw_target, pool));
+      const char *utf8_target;
+
+      SVN_ERR(svn_utf_cstring_to_utf8(&utf8_target, raw_target, pool));
+
+      APR_ARRAY_PUSH(utf8_input_targets, const char *) = utf8_target;
     }
+
+  return svn_error_trace(svn_opt__process_target_array(
+      targets_p, utf8_input_targets, known_targets, pool));
+}
+
+/* Note: This is substantially copied into svn_client_args_to_target_array() in
+ * order to move to libsvn_client while maintaining backward compatibility. */
+svn_error_t *
+svn_opt__process_target_array(apr_array_header_t **targets_p,
+                              apr_array_header_t *input_targets,
+                              const apr_array_header_t *known_targets,
+                              apr_pool_t *pool)
+{
+  int i;
+  svn_error_t *err = SVN_NO_ERROR;
+  apr_array_header_t *output_targets =
+    apr_array_make(pool, DEFAULT_ARRAY_SIZE, sizeof(const char *));
+
+  /* Step 1:  create a master array of targets, and come from concatenating
+     the targets left by apr_getopt, plus any extra targets (e.g., from the
+     --targets switch.) */
 
   if (known_targets)
     {
