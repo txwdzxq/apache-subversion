@@ -2529,15 +2529,7 @@ sub_main(int *exit_code,
       switch (opt_id)
         {
         case 'r':
-          {
-            char *digits_end = NULL;
-            opt_state.rev = strtol(opt_arg, &digits_end, 10);
-            if ((! SVN_IS_VALID_REVNUM(opt_state.rev))
-                || (! digits_end)
-                || *digits_end)
-              return svn_error_create(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
-                                      _("Invalid revision number supplied"));
-          }
+          SVN_ERR(svn_revnum_parse(&opt_state.rev, opt_arg, NULL));
           break;
 
         case 't':
