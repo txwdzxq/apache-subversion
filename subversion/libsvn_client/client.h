@@ -1280,8 +1280,6 @@ svn_client__textbase_sync(svn_ra_session_t **ra_session_p,
 const svn_version_t *
 svn_client__compatible_wc_version_optional_pristine(apr_pool_t *result_pool);
 
-#define SVN_CLIENT__CMDLINE_DEFAULT_ARRAY_SIZE 5
-
 /* Helper for svn_client_args_to_target_array2 and
  * svn_client_args_to_target_array3.
  */

@@ -451,7 +451,7 @@ svn_client_args_to_target_array2(apr_array_header_t **targets_p,
                                  apr_pool_t *pool)
 {
   apr_array_header_t *utf8_input_targets = apr_array_make(
-      pool, SVN_CLIENT__CMDLINE_DEFAULT_ARRAY_SIZE, sizeof(const char *));
+    pool, os->argc - os->ind, sizeof(const char *));
 
   for (; os->ind < os->argc; os->ind++)
     {
