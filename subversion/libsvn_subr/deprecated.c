@@ -822,8 +822,8 @@ svn_opt_args_to_target_array4(apr_array_header_t **targets_p,
       APR_ARRAY_PUSH(utf8_input_targets, const char *) = os->argv[os->ind];
     }
 
-  return svn_error_trace(svn_opt__process_target_array(targets_p, os,
-                                                       known_targets, pool));
+  return svn_error_trace(svn_opt__process_target_array(
+      targets_p, utf8_input_targets, known_targets, pool));
 }
 
 svn_error_t *
@@ -846,8 +846,8 @@ svn_opt_args_to_target_array3(apr_array_header_t **targets_p,
       APR_ARRAY_PUSH(utf8_input_targets, const char *) = utf8_target;
     }
 
-  return svn_error_trace(svn_opt__process_target_array(targets_p, os,
-                                                       known_targets, pool));
+  return svn_error_trace(svn_opt__process_target_array(
+      targets_p, utf8_input_targets, known_targets, pool));
 }
 
 svn_error_t *
