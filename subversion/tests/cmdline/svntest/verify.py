@@ -24,11 +24,13 @@
 #    under the License.
 ######################################################################
 
-import re, sys
+import os, re
 from difflib import unified_diff, ndiff
 import pprint
 import logging
 import itertools
+from io import BytesIO
+from typing import Iterable
 
 import svntest
 
@@ -77,6 +79,9 @@ class SVNDumpParseError(svntest.Failure):
   """Exception raised if parsing a dump file fails"""
   pass
 
+class SVNXMLSchemaValidationError(SVNUnexpectedOutput):
+  """Exception raised if XML output failed validation against its schema"""
+  pass
 
 ######################################################################
 # Comparison of expected vs. actual output
@@ -1039,3 +1044,26 @@ def make_diff_prop_modified(pname, pval1, pval2):
     "## -1 +1 ##\n",
   ] + make_diff_prop_val("-", pval1) + make_diff_prop_val("+", pval2)
 
+
+__schema_dir = os.path.join(
+  os.path.dirname(
+    os.path.dirname(
+      os.path.dirname(
+        os.path.dirname(
+          os.path.abspath(__file__))))),
+  "svn", "schema")
+def validate_xml_schema(name: str, lines: Iterable[str]) -> None:
+  schema_name = name + ".rnc"
+  try:
+    # Imported in this scope because sys.path may not have been updated yet.
+    from lxml import etree #type:ignore
+    schema_file = os.path.join(__schema_dir, schema_name)
+    schema = etree.RelaxNG(file=schema_file)
+    source = ''.join(lines)
+    document = etree.parse(BytesIO(source.encode("utf-8")))
+    if not schema.validate(document):
+      raise SVNXMLSchemaValidationError("schema %s" % schema_name)
+  except Exception:
+    print("ERROR: XML output does not conform to schema", schema_name)
+    print(source)
+    raise
