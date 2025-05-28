@@ -821,9 +821,7 @@ sub_main(int *exit_code,
       if (action->action == ACTION_CP)
         {
           const char *rev_str = APR_ARRAY_IDX(action_args, i, const char *);
-          if (strcmp(rev_str, "head") == 0)
-            action->rev = SVN_INVALID_REVNUM;
-          else if (strcmp(rev_str, "HEAD") == 0)
+          if (svn_cstring_casecmp(rev_str, "head") == 0)
             action->rev = SVN_INVALID_REVNUM;
           else
             {
