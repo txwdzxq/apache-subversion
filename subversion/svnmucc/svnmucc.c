@@ -824,18 +824,8 @@ sub_main(int *exit_code,
           if (svn_cstring_casecmp(rev_str, "head") == 0)
             action->rev = SVN_INVALID_REVNUM;
           else
-            {
-              char *end;
+            SVN_ERR(svn_opt_parse_revnum(&action->rev, rev_str));
 
-              while (*rev_str == 'r')
-                ++rev_str;
-
-              action->rev = strtol(rev_str, &end, 0);
-              if (*end)
-                return svn_error_createf(SVN_ERR_INCORRECT_PARAMS, NULL,
-                                         "'%s' is not a revision\n",
-                                         rev_str);
-            }
           if (++i == action_args->nelts)
             return insufficient();
         }
