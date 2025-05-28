@@ -2640,6 +2640,9 @@ def xml_unsafe_author(sbox):
                                      wc_dir)
 
 @Issue(4415)
+@Issue(4919)
+@XFail(lambda: (svntest.main.is_bad_xml_fatal()
+                and not svntest.main.is_ra_type_dav()))
 def xml_unsafe_author2(sbox):
   "svn:author with XML unsafe chars 2"
 
@@ -2666,6 +2669,13 @@ def xml_unsafe_author2(sbox):
     expected_author = 'foo\bbar'
 
   # Use svn ls in --xml mode to test locale independent output.
+  # FIXME: Theat literal \b in the author field is invalid XML.
+  #        Should be encoded as a character entity and enclosed
+  #        in a CDATA section, like this:
+  #
+  #            <[CDATA[foo@#08;bar]]>
+  #        or
+  #            foo<[CDATA[@#08;]]>bar
   expected_output = [
     '<?xml version="1.0" encoding="UTF-8"?>\n',
     '<lists>\n',
@@ -2694,8 +2704,8 @@ def xml_unsafe_author2(sbox):
     '</lists>\n'
     ]
 
-  svntest.actions.run_and_verify_svn(expected_output, [],
-                                     'ls', '--xml', repo_url)
+  svntest.actions.run_and_verify_svn_xml(expected_output, [],
+                                         'list', '--xml', repo_url)
 
   expected_info = [{
       'Repository Root' : sbox.repo_url,

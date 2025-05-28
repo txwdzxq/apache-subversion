@@ -710,6 +710,16 @@ int svn_opt_parse_change_to_range(apr_array_header_t *opt_ranges,
 }
 
 svn_error_t *
+svn_opt_parse_revnum(svn_revnum_t *rev, const char *str)
+{
+  /* Allow any number of 'r's to prefix a revision number. */
+  while (*str == 'r')
+    str++;
+
+  return svn_error_trace(svn_revnum_parse(rev, str, NULL));
+}
+
+svn_error_t *
 svn_opt_resolve_revisions(svn_opt_revision_t *peg_rev,
                           svn_opt_revision_t *op_rev,
                           svn_boolean_t is_url,

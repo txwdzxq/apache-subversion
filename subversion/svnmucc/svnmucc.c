@@ -429,7 +429,7 @@ log_message_func(const char **log_msg,
       svn_string_t *message = svn_string_create(lmb->log_message, pool);
 
       SVN_ERR_W(svn_subst_translate_string2(&message, NULL, NULL,
-                                            message, NULL, FALSE,
+                                            message, "UTF-8", FALSE,
                                             pool, pool),
                 _("Error normalizing log message to internal format"));
 
@@ -576,6 +576,7 @@ sub_main(int *exit_code,
             const char *filename;
             SVN_ERR(svn_utf_cstring_to_utf8(&filename, arg, pool));
             SVN_ERR(svn_stringbuf_from_file2(&filedata, filename, pool));
+            SVN_ERR(svn_utf_stringbuf_to_utf8(&filedata, filedata, pool));
           }
           break;
         case 'u':
@@ -595,19 +596,7 @@ sub_main(int *exit_code,
           root_url = sanitize_url(root_url, pool);
           break;
         case 'r':
-          {
-            const char *saved_arg = arg;
-            char *digits_end = NULL;
-            while (*arg == 'r')
-              arg++;
-            base_revision = strtol(arg, &digits_end, 10);
-            if ((! SVN_IS_VALID_REVNUM(base_revision))
-                || (! digits_end)
-                || *digits_end)
-              return svn_error_createf(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
-                                       _("Invalid revision number '%s'"),
-                                       saved_arg);
-          }
+          SVN_ERR(svn_opt_parse_revnum(&base_revision, arg));
           break;
         case with_revprop_opt:
           SVN_ERR(svn_utf_cstring_to_utf8(&opt_arg, arg, pool));
@@ -774,7 +763,7 @@ sub_main(int *exit_code,
 
   lmb.non_interactive = non_interactive;
   lmb.ctx = ctx;
-    /* Make sure we have a log message to use. */
+  /* Make sure we have a log message to use. */
   SVN_ERR(sanitize_log_sources(&lmb.log_message, message, revprops, filedata,
                                pool, pool));
 
@@ -822,23 +811,11 @@ sub_main(int *exit_code,
       if (action->action == ACTION_CP)
         {
           const char *rev_str = APR_ARRAY_IDX(action_args, i, const char *);
-          if (strcmp(rev_str, "head") == 0)
-            action->rev = SVN_INVALID_REVNUM;
-          else if (strcmp(rev_str, "HEAD") == 0)
+          if (svn_cstring_casecmp(rev_str, "head") == 0)
             action->rev = SVN_INVALID_REVNUM;
           else
-            {
-              char *end;
+            SVN_ERR(svn_opt_parse_revnum(&action->rev, rev_str));
 
-              while (*rev_str == 'r')
-                ++rev_str;
-
-              action->rev = strtol(rev_str, &end, 0);
-              if (*end)
-                return svn_error_createf(SVN_ERR_INCORRECT_PARAMS, NULL,
-                                         "'%s' is not a revision\n",
-                                         rev_str);
-            }
           if (++i == action_args->nelts)
             return insufficient();
         }

@@ -797,11 +797,11 @@ def run_and_verify_log_xml(expected_log_attrs=None,
   # We'll parse the output unless the caller specifies expected_stderr or
   # expected_stdout for run_and_verify_svn.
   parse = True
-  if expected_stderr == None:
+  if expected_stderr is None:
     expected_stderr = []
   else:
     parse = False
-  if expected_stdout != None:
+  if expected_stdout is not None:
     parse = False
 
   log_args = list(args)
@@ -813,6 +813,7 @@ def run_and_verify_log_xml(expected_log_attrs=None,
     'log', '--xml', *log_args)
   if not parse:
     return
+  verify.validate_xml_schema('log', stdout)
 
   entries = LogParser().parse(stdout)
   for index in range(len(entries)):
@@ -1647,9 +1648,9 @@ def run_and_verify_status_xml(expected_entries = [],
 
   exit_code, output, errput = run_and_verify_svn(None, [],
                                                  'status', '--xml', *args)
-
   if len(errput) > 0:
     raise Failure
+  verify.validate_xml_schema('status', output)
 
   doc = parseString(''.join(output))
   entries = doc.getElementsByTagName('entry')
@@ -1726,6 +1727,7 @@ def run_and_verify_inherited_prop_xml(path_or_url,
 
   if len(errput) > 0:
     raise Failure
+  ## FIXME: Need XML schema: verify.validate_xml_schema('props', output)
 
   # Props inherited from within the WC are keyed on absolute paths.
   expected_iprops = {}
@@ -1798,10 +1800,10 @@ def run_and_verify_diff_summarize_xml(error_re_string = [],
                                                  'diff', '--summarize',
                                                  '--xml', *args)
 
-
   # Return if errors are present since they were expected
   if len(errput) > 0:
     return
+  verify.validate_xml_schema('diff', output)
 
   doc = parseString(''.join(output))
   paths = doc.getElementsByTagName("path")

@@ -1062,8 +1062,14 @@ def validate_xml_schema(name: str, lines: Iterable[str]) -> None:
     source = ''.join(lines)
     document = etree.parse(BytesIO(source.encode("utf-8")))
     if not schema.validate(document):
-      raise SVNXMLSchemaValidationError("schema %s" % schema_name)
-  except Exception:
-    print("ERROR: XML output does not conform to schema", schema_name)
-    print(source)
-    raise
+      raise SVNXMLSchemaValidationError(schema.error_log)
+  except ImportError:
+    logger.error("XML: Module lxml.etree not found")
+    return
+  except Exception as ex:
+    logger.error("XML: " + str(ex))
+    logger.warning("XML:\n" + "\n".join(repr(line) for line in lines))
+    if svntest.main.is_bad_xml_fatal():
+      raise
+    else:
+      logger.warning("XML:", exc_info=True)

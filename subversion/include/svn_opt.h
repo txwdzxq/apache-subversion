@@ -482,6 +482,24 @@ typedef struct svn_opt_revision_range_t
   svn_opt_revision_t end;
 } svn_opt_revision_range_t;
 
+
+/**
+ * Parse NULL-terminated C string @a str as a revision number and
+ * store its value in @a rev.
+ *
+ * If @a str is not a valid revision number, then the error
+ * #SVN_ERR_REVNUM_PARSE_FAILURE error is returned.  Negative numbers
+ * parsed from @a str are considered invalid, and result in the same error.
+ *
+ * Unlike svn_revnum_parse(), this function support our cmdline revision
+ * number format, whereas the revnum may be prefixed with an 'r' symbol.
+ *
+ * @since New in 1.15
+ * @see svn_revnum_parse()
+ */
+svn_error_t *
+svn_opt_parse_revnum(svn_revnum_t *rev, const char *str);
+
 /**
  * Set @a *start_revision and/or @a *end_revision according to @a arg,
  * where @a arg is "N" or "N:M", like so:
@@ -553,9 +571,10 @@ svn_opt_parse_revision_to_range(apr_array_header_t *opt_ranges,
  *
  * @since New in 1.15.
  */
-int svn_opt_parse_change_to_range(apr_array_header_t *opt_ranges,
-                                  const char *arg,
-                                  apr_pool_t *result_pool);
+int
+svn_opt_parse_change_to_range(apr_array_header_t *opt_ranges,
+                              const char *arg,
+                              apr_pool_t *result_pool);
 
 /**
  * Resolve peg revisions and operational revisions in the following way:

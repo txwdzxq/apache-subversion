@@ -2528,7 +2528,7 @@ sub_main(int *exit_code,
       switch (opt_id)
         {
         case 'r':
-          SVN_ERR(svn_revnum_parse(&opt_state.rev, utf8_opt_arg, NULL));
+          SVN_ERR(svn_opt_parse_revnum(&opt_state.rev, utf8_opt_arg));
           break;
 
         case 't':
