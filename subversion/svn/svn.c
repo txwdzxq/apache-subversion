@@ -2521,19 +2521,19 @@ sub_main(int *exit_code,
         opt_state.extensions = apr_pstrdup(pool, utf8_opt_arg);
         break;
       case opt_diff_cmd:
-        SVN_ERR(svn_utf_cstring_from_utf8(&opt_arg, utf8_opt_arg, pool));
-        opt_state.diff.diff_cmd = apr_pstrdup(pool, opt_arg);
+        SVN_ERR(svn_utf_cstring_from_utf8(&opt_state.diff.diff_cmd,
+                                          utf8_opt_arg, pool));
         break;
       case opt_merge_cmd:
-        SVN_ERR(svn_utf_cstring_from_utf8(&opt_arg, utf8_opt_arg, pool));
-        opt_state.merge_cmd = apr_pstrdup(pool, opt_arg);
+        SVN_ERR(svn_utf_cstring_from_utf8(&opt_state.merge_cmd,
+                                          utf8_opt_arg, pool));
         break;
       case opt_record_only:
         opt_state.record_only = TRUE;
         break;
       case opt_editor_cmd:
-        SVN_ERR(svn_utf_cstring_from_utf8(&opt_arg, utf8_opt_arg, pool));
-        opt_state.editor_cmd = apr_pstrdup(pool, opt_arg);
+        SVN_ERR(svn_utf_cstring_from_utf8(&opt_state.editor_cmd,
+                                          utf8_opt_arg, pool));
         break;
       case opt_old_cmd:
         if (opt_state.used_change_arg)
