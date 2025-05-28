@@ -553,9 +553,10 @@ svn_opt_parse_revision_to_range(apr_array_header_t *opt_ranges,
  *
  * @since New in 1.15.
  */
-int svn_opt_parse_change_to_range(apr_array_header_t *opt_ranges,
-                                  const char *arg,
-                                  apr_pool_t *result_pool);
+int
+svn_opt_parse_change_to_range(apr_array_header_t *opt_ranges,
+                              const char *arg,
+                              apr_pool_t *result_pool);
 
 /**
  * Resolve peg revisions and operational revisions in the following way:
