@@ -761,7 +761,7 @@ sub_main(int *exit_code,
 
   lmb.non_interactive = non_interactive;
   lmb.ctx = ctx;
-    /* Make sure we have a log message to use. */
+  /* Make sure we have a log message to use. */
   SVN_ERR(sanitize_log_sources(&lmb.log_message, message, revprops, filedata,
                                pool, pool));
 
