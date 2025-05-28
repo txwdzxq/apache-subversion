@@ -36,6 +36,7 @@ import xml
 import urllib
 import logging
 import hashlib
+import importlib
 import zipfile
 import codecs
 import queue
@@ -222,11 +223,13 @@ work_dir = "svn-test-work"
 
 # Directory for the Python virtual environment where we install
 # external dependencies of the test environment
-venv_dir = os.path.join(work_dir, "__venv__")
+venv_base = work_dir
+venv_path = lambda: os.path.join(venv_base, "__venv__")
+venv_create = True
 
 # List of dependencies
+found_dependencies = set()
 SVN_TESTS_REQUIRE = ["lxml", "rnc2rng"]
-dependencies_ensured = False
 
 # Constant for the merge info property.
 SVN_PROP_MERGEINFO = "svn:mergeinfo"
@@ -1614,9 +1617,6 @@ def tests_verify_dump_load_cross_check():
 def is_ra_type_dav():
   return options.test_area_url.startswith('http')
 
-def unless_ra_type_dav():
-  return not is_ra_type_dav()
-
 def is_ra_type_dav_neon():
   """Return True iff running tests over RA-Neon.
      CAUTION: Result is only valid if svn was built to support both."""
@@ -1756,6 +1756,13 @@ def is_httpd_authz_provider_enabled():
 def is_remote_http_connection_allowed():
   return options.allow_remote_http_connection
 
+# XML schema validation
+def is_bad_xml_fatal():
+  """Are we treating invalid XML output as a fatal error?"""
+  # Only if we have all the necessary dependencies.
+  return {'lxml', 'rnc2rnd'} & found_dependencies
+
+
 def wc_format(ver=None):
   """Return the WC format number used by Subversion version VER.
 
@@ -1859,6 +1866,8 @@ class TestSpawningThread(threading.Thread):
       args.append('--allow-remote-http-connection')
     if options.svn_bin:
       args.append('--bin=' + options.svn_bin)
+    if options.venv_base:
+      args.append('--python-venv=' + options.venv_base)
     if options.store_pristine:
       args.append('--store-pristine=' + options.store_pristine)
     if options.valgrind:
@@ -2233,6 +2242,9 @@ def _create_parser(usage=None):
                     help='Whether to clean up')
   parser.add_option('--enable-sasl', action='store_true',
                     help='Whether to enable SASL authentication')
+  parser.add_option('--python-venv', action='store', dest='venv_base',
+                    help=('Use the virtual environment inside this path to'
+                          ' find the dependencies used by the test suite.'))
   parser.add_option('--bin', action='store', dest='svn_bin',
                     help='Use the svn binaries installed in this path')
   parser.add_option('--use-jsvn', action='store_true',
@@ -2339,6 +2351,8 @@ def parse_options(arglist=sys.argv[1:], usage=None):
   """Parse the arguments in arg_list, and set the global options object with
      the results"""
 
+  global venv_base
+  global venv_create
   global options
 
   parser = _create_parser(usage)
@@ -2388,7 +2402,9 @@ def parse_options(arglist=sys.argv[1:], usage=None):
                     svn_wc__max_supported_format_version(),
                     options.wc_format_version))
 
-  pass
+  if options.venv_base:
+    venv_base = options.venv_base
+    venv_create = False
 
   return (parser, args)
 
@@ -2420,7 +2436,6 @@ def run_tests(test_list, serial_only = False):
         appropriate exit code.
   """
 
-  ensure_dependencies()
   sys.exit(execute_tests(test_list, serial_only))
 
 def ensure_dependencies():
@@ -2431,18 +2446,42 @@ def ensure_dependencies():
         upgrade the venv in that case. In practice, we won't.
   """
 
-  global dependencies_ensured
-  if dependencies_ensured:
-    return
-
+  venv_dir = os.path.abspath(venv_path())
   package_path = os.path.join(venv_dir, "lib",
                               "python%d.%d" % sys.version_info[:2],
                               "site-packages")
-  package_path = os.path.abspath(package_path)
-  if package_path in sys.path:
-    dependencies_ensured = True
-    return
 
+  # Check if all our dependencies are installed. It doesn't matter if
+  # they're installed in our venv, as long as they're available.
+  found_dependencies.clear()
+  saved_sys_path = sys.path[:]
+  try:
+    sys.path.insert(0, package_path)
+    for package in SVN_TESTS_REQUIRE:
+      importlib.import_module(package)
+      found_dependencies.add(package)
+    have_required = True
+  except ImportError:
+    have_required = False
+  finally:
+    sys.path[:] = saved_sys_path
+
+  if have_required:
+    if package_path not in sys.path:
+      sys.path.append(package_path)
+    return package_path
+
+  if venv_create:
+    python_prog, python_path = create_python_venv(venv_dir)
+    if python_prog is not None:
+      assert python_path == package_path
+      if package_path not in sys.path:
+        sys.path.append(package_path)
+      found_dependencies.update(set(SVN_TESTS_REQUIRE))
+      return package_path
+  return None
+
+def create_python_venv(venv_dir, quiet=False):
   try:
     # Create the virtual environment
     if not os.path.isdir(venv_dir):
@@ -2450,19 +2489,22 @@ def ensure_dependencies():
         safe_rmtree(venv_dir)
       venv.create(venv_dir, with_pip=True)
 
-    # Install any (new) dependencies
-    pip = os.path.join(venv_dir, venv_bin, "pip"+_exe)
+    # Install the dependencies
+    pip = os.path.join(venv_dir, venv_bin, "pip" + _exe)
     pip_options = ("--disable-pip-version-check", "--require-virtualenv")
     subprocess.run([pip, *pip_options, "install", *SVN_TESTS_REQUIRE],
-                   check=True)
+                   check=True, stdout=subprocess.PIPE if quiet else None)
+    importlib.invalidate_caches()
 
-    sys.path.append(package_path)
-    dependencies_ensured = True
-    return package_path
-  except Exception as ex:
-    print("WARNING: Could not install test dependencies,"
-          " some tests will be skipped", file=sys.stderr)
-    print(ex, file=sys.stderr)
+    python_prog = os.path.join(venv_dir, venv_bin, "python" + _exe)
+    python_path = os.path.join(venv_dir, "lib",
+                               "python%d.%d" % sys.version_info[:2],
+                               "site-packages")
+    return python_prog, python_path
+  except Exception:
+    if logger:
+      logger.warning('Could not install test dependencies', exc_info=True)
+    return None, None
 
 def get_issue_details(issue_numbers):
   """For each issue number in ISSUE_NUMBERS query the issue
@@ -2661,6 +2703,10 @@ def execute_tests(test_list, serial_only = False, test_name = None,
                                          'wc-lock-tester' + _exe)
     wc_incomplete_tester_binary = os.path.join(options.tools_bin,
                                                'wc-incomplete-tester' + _exe)
+
+  assert options.venv_base is None or venv_base == options.venv_base, \
+    'venv_base=%s options.venv_base=%s' % (venv_base, options.venv_base)
+  ensure_dependencies()
 
   ######################################################################
 

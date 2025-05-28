@@ -1062,12 +1062,14 @@ def validate_xml_schema(name: str, lines: Iterable[str]) -> None:
     source = ''.join(lines)
     document = etree.parse(BytesIO(source.encode("utf-8")))
     if not schema.validate(document):
-      print(schema.error_log)
-      raise SVNXMLSchemaValidationError("Schema: %s" % schema_name)
+      raise SVNXMLSchemaValidationError(schema.error_log)
   except ImportError:
-    print("ERROR: Pyhton module lxml.etree is required for XML validation")
-    raise svntest.Failure()
-  except Exception:
-    print("ERROR: invalid XML")
-    print("\n".join(repr(line) for line in lines))
-    raise
+    logger.error("XML: Module lxml.etree not found")
+    return
+  except Exception as ex:
+    logger.error("XML: " + str(ex))
+    logger.warning("XML:\n" + "\n".join(repr(line) for line in lines))
+    if svntest.main.is_bad_xml_fatal():
+      raise
+    else:
+      logger.warning("XML:", exc_info=True)
