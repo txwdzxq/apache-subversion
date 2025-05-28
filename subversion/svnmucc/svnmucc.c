@@ -429,7 +429,7 @@ log_message_func(const char **log_msg,
       svn_string_t *message = svn_string_create(lmb->log_message, pool);
 
       SVN_ERR_W(svn_subst_translate_string2(&message, NULL, NULL,
-                                            message, NULL, FALSE,
+                                            message, "UTF-8", FALSE,
                                             pool, pool),
                 _("Error normalizing log message to internal format"));
 
@@ -576,6 +576,7 @@ sub_main(int *exit_code,
             const char *filename;
             SVN_ERR(svn_utf_cstring_to_utf8(&filename, arg, pool));
             SVN_ERR(svn_stringbuf_from_file2(&filedata, filename, pool));
+            SVN_ERR(svn_utf_stringbuf_to_utf8(&filedata, filedata, pool));
           }
           break;
         case 'u':
