@@ -595,19 +595,7 @@ sub_main(int *exit_code,
           root_url = sanitize_url(root_url, pool);
           break;
         case 'r':
-          {
-            const char *saved_arg = arg;
-            char *digits_end = NULL;
-            while (*arg == 'r')
-              arg++;
-            base_revision = strtol(arg, &digits_end, 10);
-            if ((! SVN_IS_VALID_REVNUM(base_revision))
-                || (! digits_end)
-                || *digits_end)
-              return svn_error_createf(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
-                                       _("Invalid revision number '%s'"),
-                                       saved_arg);
-          }
+          SVN_ERR(svn_opt_parse_revnum(&base_revision, arg));
           break;
         case with_revprop_opt:
           SVN_ERR(svn_opt_parse_revprop(&revprops, arg, pool));
