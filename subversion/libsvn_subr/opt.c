@@ -309,17 +309,8 @@ svn_opt__process_target_array(apr_array_header_t **targets_p,
      the targets left by apr_getopt, plus any extra targets (e.g., from the
      --targets switch.) */
 
-  if (known_targets)
-    {
-      for (i = 0; i < known_targets->nelts; i++)
-        {
-          /* The --targets array have already been converted to UTF-8,
-             because we needed to split up the list with svn_cstring_split. */
-          const char *utf8_target = APR_ARRAY_IDX(known_targets,
-                                                  i, const char *);
-          APR_ARRAY_PUSH(input_targets, const char *) = utf8_target;
-        }
-    }
+  SVN_ERR(svn_opt__collect_targets(&input_targets, NULL, input_targets,
+                                   known_targets, pool));
 
   /* Step 2:  process each target.  */
 
