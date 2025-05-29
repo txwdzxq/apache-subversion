@@ -1112,8 +1112,7 @@ sub_main(int *exit_code,
       SVN_ERR(svn_cmdline__stdin_readline(&password, pool, pool));
     }
 
-  non_interactive = !svn_cmdline__be_interactive(non_interactive,
-                                                 force_interactive);
+  SVN_ERR(svn_cmdline__be_interactive(&non_interactive, force_interactive));
 
   SVN_ERR(init_client_context(&(opt_baton->ctx),
                               non_interactive,

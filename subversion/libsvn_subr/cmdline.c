@@ -1222,21 +1222,29 @@ svn_cmdline__stderr_is_a_terminal(void)
 #endif
 }
 
-svn_boolean_t
-svn_cmdline__be_interactive(svn_boolean_t non_interactive,
+svn_error_t *
+svn_cmdline__be_interactive(svn_boolean_t *non_interactive,
                             svn_boolean_t force_interactive)
 {
+  /* The --non-interactive and --force-interactive options are mutually
+   * exclusive. */
+  if (*non_interactive && force_interactive)
+    {
+      return svn_error_create(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
+                              _("--non-interactive and --force-interactive "
+                                "are mutually exclusive"));
+    }
+
   /* If neither --non-interactive nor --force-interactive was passed,
    * be interactive if stdin is a terminal.
    * If --force-interactive was passed, always be interactive. */
-  if (!force_interactive && !non_interactive)
-    {
-      return svn_cmdline__stdin_is_a_terminal();
-    }
-  else if (force_interactive)
-    return TRUE;
+  if (!force_interactive && !*non_interactive)
+    *non_interactive = svn_cmdline__stdin_is_a_terminal();
 
-  return !non_interactive;
+  if (force_interactive)
+    *non_interactive = FALSE;
+
+  return SVN_NO_ERROR;
 }
 
 

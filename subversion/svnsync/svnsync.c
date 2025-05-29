@@ -2202,18 +2202,8 @@ sub_main(int *exit_code,
   if (opt_baton.help)
     subcommand = svn_opt_get_canonical_subcommand3(svnsync_cmd_table, "help");
 
-  /* The --non-interactive and --force-interactive options are mutually
-   * exclusive. */
-  if (opt_baton.non_interactive && force_interactive)
-    {
-      return svn_error_create(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
-                              _("--non-interactive and --force-interactive "
-                                "are mutually exclusive"));
-    }
-  else
-    opt_baton.non_interactive = !svn_cmdline__be_interactive(
-                                  opt_baton.non_interactive,
-                                  force_interactive);
+  SVN_ERR(svn_cmdline__be_interactive(&opt_baton.non_interactive,
+                                      force_interactive));
 
   /* Disallow the mixing --username/password with their --source- and
      --sync- variants.  Treat "--username FOO" as "--source-username

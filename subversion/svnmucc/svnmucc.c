@@ -657,15 +657,7 @@ sub_main(int *exit_code,
       return SVN_NO_ERROR;
     }
 
-  if (non_interactive && force_interactive)
-    {
-      return svn_error_create(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
-                              _("--non-interactive and --force-interactive "
-                                "are mutually exclusive"));
-    }
-  else
-    non_interactive = !svn_cmdline__be_interactive(non_interactive,
-                                                   force_interactive);
+  SVN_ERR(svn_cmdline__be_interactive(&non_interactive, force_interactive));
 
   if (!non_interactive)
     {
