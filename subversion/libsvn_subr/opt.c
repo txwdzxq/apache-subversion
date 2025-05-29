@@ -287,6 +287,7 @@ svn_opt__collect_targets(apr_array_header_t **targets_p,
     }
 
   *targets_p = input_targets;
+  return SVN_NO_ERROR;
 }
 
 /* Note: This is substantially copied into svn_client_args_to_target_array() in
