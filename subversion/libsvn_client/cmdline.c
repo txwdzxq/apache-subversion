@@ -372,13 +372,9 @@ svn_client_args_to_target_array3(apr_array_header_t **targets_p,
                                  svn_boolean_t keep_last_origpath_on_truepath_collision,
                                  apr_pool_t *pool)
 {
-  apr_array_header_t *utf8_input_targets = apr_array_make(
-    pool, os->argc - os->ind, sizeof(const char *));
+  apr_array_header_t *utf8_input_targets;
 
-  for (; os->ind < os->argc; os->ind++)
-    {
-      APR_ARRAY_PUSH(utf8_input_targets, const char *) = os->argv[os->ind];
-    }
+  SVN_ERR(svn_opt_parse_all_args(&utf8_input_targets, os, pool));
 
   return svn_error_trace(svn_client__process_target_array(
       targets_p, utf8_input_targets, known_targets, ctx,

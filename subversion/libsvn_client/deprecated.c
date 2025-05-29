@@ -450,17 +450,21 @@ svn_client_args_to_target_array2(apr_array_header_t **targets_p,
                                  svn_boolean_t keep_last_origpath_on_truepath_collision,
                                  apr_pool_t *pool)
 {
-  apr_array_header_t *utf8_input_targets = apr_array_make(
-    pool, os->argc - os->ind, sizeof(const char *));
+  apr_array_header_t *input_targets;
+  apr_array_header_t *utf8_input_targets;
+  int i;
 
-  for (; os->ind < os->argc; os->ind++)
+  SVN_ERR(svn_opt_parse_all_args(&input_targets, os, pool));
+
+  utf8_input_targets = apr_array_make(pool, input_targets->nelts,
+                                      sizeof(const char *));
+
+  for (i = 0; i < input_targets->nelts; i++)
     {
-      /* The apr_getopt targets are still in native encoding. */
-      const char *raw_target = os->argv[os->ind];
+      const char *raw_target = APR_ARRAY_IDX(input_targets, i, const char *);
       const char *utf8_target;
 
-      SVN_ERR(svn_utf_cstring_to_utf8(&utf8_target,
-                                      raw_target, pool));
+      SVN_ERR(svn_utf_cstring_to_utf8(&utf8_target, raw_target, pool));
 
       APR_ARRAY_PUSH(utf8_input_targets, const char *) = utf8_target;
     }
