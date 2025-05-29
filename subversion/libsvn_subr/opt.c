@@ -255,8 +255,10 @@ svn_opt__collect_targets(apr_array_header_t **targets_p,
                          apr_pool_t *pool)
 {
   int i;
-  apr_array_header_t *input_targets = apr_array_make(
-      pool, utf8_targets->nelts + known_targets->nelts, sizeof(const char *));
+  int target_count = utf8_targets->nelts + (known_targets
+                                            ? known_targets->nelts : 0);
+  apr_array_header_t *input_targets = apr_array_make(pool, target_count,
+                                                     sizeof(const char *));
 
   for (i = 0; i < utf8_targets->nelts; i++)
     {
