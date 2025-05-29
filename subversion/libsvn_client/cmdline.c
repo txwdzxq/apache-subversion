@@ -108,37 +108,31 @@ check_root_url_of_target(const char **root_url,
    return SVN_NO_ERROR;
 }
 
-/* Note: This is substantially copied from svn_opt__args_to_target_array() in
- * order to move to libsvn_client while maintaining backward compatibility. */
-svn_error_t *
-svn_client__process_target_array(apr_array_header_t **targets_p,
-                                 apr_array_header_t *utf8_targets,
-                                 const apr_array_header_t *known_targets,
-                                 svn_client_ctx_t *ctx,
-                                 svn_boolean_t keep_last_origpath_on_truepath_collision,
-                                 apr_pool_t *pool)
+/**
+ * Collects targets from @a utf8_targets (unamed arguments from apr_getopt)
+ * and @a known_targets (--targets).
+ *
+ * If a relative URL was found, sets @a rel_url_found_p to @c TRUE, if
+ * it is not @c NULL.
+ */
+static svn_error_t *
+collect_targets(apr_array_header_t **targets_p,
+                svn_boolean_t *rel_url_found_p,
+                const apr_array_header_t *utf8_targets,
+                const apr_array_header_t *known_targets,
+                apr_pool_t *pool)
 {
   int i;
-  svn_boolean_t rel_url_found = FALSE;
-  const char *root_url = NULL;
   apr_array_header_t *input_targets = apr_array_make(
-    pool, utf8_targets->nelts, sizeof(const char *));
-  apr_array_header_t *output_targets = apr_array_make(
-    pool, utf8_targets->nelts, sizeof(const char *));
-  apr_array_header_t *reserved_names = NULL;
-
-  /* Step 1:  create a master array of targets that are in UTF-8
-     encoding, and come from concatenating the targets left by apr_getopt,
-     plus any extra targets (e.g., from the --targets switch.)
-     If any of the targets are relative urls, then set the rel_url_found
-     flag.*/
+      pool, utf8_targets->nelts + known_targets->nelts, sizeof(const char *));
 
   for (i = 0; i < utf8_targets->nelts; i++)
     {
       const char *utf8_target = APR_ARRAY_IDX(utf8_targets, i, const char *);
 
-      if (svn_path_is_repos_relative_url(utf8_target))
-        rel_url_found = TRUE;
+      if (rel_url_found_p != NULL &&
+          svn_path_is_repos_relative_url(utf8_target))
+        *rel_url_found_p = TRUE;
 
       APR_ARRAY_PUSH(input_targets, const char *) = utf8_target;
     }
@@ -152,14 +146,47 @@ svn_client__process_target_array(apr_array_header_t **targets_p,
           const char *utf8_target = APR_ARRAY_IDX(known_targets,
                                                   i, const char *);
 
-          if (svn_path_is_repos_relative_url(utf8_target))
-            rel_url_found = TRUE;
+          if (rel_url_found_p != NULL &&
+              svn_path_is_repos_relative_url(utf8_target))
+            *rel_url_found_p = TRUE;
 
           APR_ARRAY_PUSH(input_targets, const char *) = utf8_target;
         }
     }
 
+  *targets_p = input_targets;
+}
+
+/* Note: This is substantially copied from svn_opt__args_to_target_array() in
+ * order to move to libsvn_client while maintaining backward compatibility. */
+svn_error_t *
+svn_client__process_target_array(apr_array_header_t **targets_p,
+                                 apr_array_header_t *utf8_targets,
+                                 const apr_array_header_t *known_targets,
+                                 svn_client_ctx_t *ctx,
+                                 svn_boolean_t keep_last_origpath_on_truepath_collision,
+                                 apr_pool_t *pool)
+{
+  int i;
+  svn_boolean_t rel_url_found = FALSE;
+  const char *root_url = NULL;
+  apr_array_header_t *input_targets;
+  apr_array_header_t *output_targets;
+  apr_array_header_t *reserved_names = NULL;
+
+  /* Step 1:  create a master array of targets that are in UTF-8
+     encoding, and come from concatenating the targets left by apr_getopt,
+     plus any extra targets (e.g., from the --targets switch.)
+     If any of the targets are relative urls, then set the rel_url_found
+     flag.*/
+
+  SVN_ERR(collect_targets(&input_targets, &rel_url_found,
+                          utf8_targets, known_targets, pool));
+
   /* Step 2:  process each target.  */
+
+  output_targets = apr_array_make(pool, input_targets->nelts,
+                                  sizeof(const char *));
 
   for (i = 0; i < input_targets->nelts; i++)
     {
