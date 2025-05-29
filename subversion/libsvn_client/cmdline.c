@@ -108,6 +108,33 @@ check_root_url_of_target(const char **root_url,
    return SVN_NO_ERROR;
 }
 
+static svn_error_t *
+find_root_url(const char **root_url_p,
+              svn_client_ctx_t *ctx,
+              apr_pool_t *pool)
+{
+  /*
+   * Use the current directory's root url if one wasn't found using the
+   * arguments.
+   */
+  if (*root_url_p == NULL)
+    {
+      const char *current_abspath;
+      svn_error_t *err;
+
+      SVN_ERR(svn_dirent_get_absolute(&current_abspath, "", pool));
+      err = svn_client_get_repos_root(root_url_p, NULL /* uuid */,
+                                      current_abspath, ctx, pool, pool);
+      if (err || *root_url_p == NULL)
+        return svn_error_create(SVN_ERR_WC_NOT_WORKING_COPY, err,
+                                _("Resolving '^/': no repository root "
+                                  "found in the target arguments or "
+                                  "in the current directory"));
+    }
+
+  return SVN_NO_ERROR;
+}
+
 
 /* Note: This is substantially copied from svn_opt__args_to_target_array() in
  * order to move to libsvn_client while maintaining backward compatibility. */
@@ -276,24 +303,7 @@ svn_client__process_target_array(apr_array_header_t **targets_p,
   /* Only resolve relative urls if there were some actually found earlier. */
   if (rel_url_found)
     {
-      /*
-       * Use the current directory's root url if one wasn't found using the
-       * arguments.
-       */
-      if (root_url == NULL)
-        {
-          const char *current_abspath;
-          svn_error_t *err;
-
-          SVN_ERR(svn_dirent_get_absolute(&current_abspath, "", pool));
-          err = svn_client_get_repos_root(&root_url, NULL /* uuid */,
-                                          current_abspath, ctx, pool, pool);
-          if (err || root_url == NULL)
-            return svn_error_create(SVN_ERR_WC_NOT_WORKING_COPY, err,
-                                    _("Resolving '^/': no repository root "
-                                      "found in the target arguments or "
-                                      "in the current directory"));
-        }
+      SVN_ERR(find_root_url(&root_url, ctx, pool));
 
       *targets_p = apr_array_make(pool, output_targets->nelts,
                                   sizeof(const char *));
