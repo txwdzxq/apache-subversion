@@ -247,6 +247,48 @@ svn_opt__args_to_target_array(apr_array_header_t **targets_p,
       targets_p, utf8_input_targets, known_targets, pool));
 }
 
+svn_error_t *
+svn_opt__collect_targets(apr_array_header_t **targets_p,
+                         svn_boolean_t *rel_url_found_p,
+                         const apr_array_header_t *utf8_targets,
+                         const apr_array_header_t *known_targets,
+                         apr_pool_t *pool)
+{
+  int i;
+  apr_array_header_t *input_targets = apr_array_make(
+      pool, utf8_targets->nelts + known_targets->nelts, sizeof(const char *));
+
+  for (i = 0; i < utf8_targets->nelts; i++)
+    {
+      const char *utf8_target = APR_ARRAY_IDX(utf8_targets, i, const char *);
+
+      if (rel_url_found_p != NULL &&
+          svn_path_is_repos_relative_url(utf8_target))
+        *rel_url_found_p = TRUE;
+
+      APR_ARRAY_PUSH(input_targets, const char *) = utf8_target;
+    }
+
+  if (known_targets)
+    {
+      for (i = 0; i < known_targets->nelts; i++)
+        {
+          /* The --targets array have already been converted to UTF-8,
+             because we needed to split up the list with svn_cstring_split. */
+          const char *utf8_target = APR_ARRAY_IDX(known_targets,
+                                                  i, const char *);
+
+          if (rel_url_found_p != NULL &&
+              svn_path_is_repos_relative_url(utf8_target))
+            *rel_url_found_p = TRUE;
+
+          APR_ARRAY_PUSH(input_targets, const char *) = utf8_target;
+        }
+    }
+
+  *targets_p = input_targets;
+}
+
 /* Note: This is substantially copied into svn_client_args_to_target_array() in
  * order to move to libsvn_client while maintaining backward compatibility. */
 svn_error_t *

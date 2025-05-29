@@ -122,6 +122,20 @@ svn_opt__process_target_array(apr_array_header_t **targets_p,
                               apr_pool_t *pool);
 
 /**
+ * Collects targets from @a utf8_targets (unamed arguments from apr_getopt)
+ * and @a known_targets (--targets).
+ *
+ * If a relative URL was found, sets @a rel_url_found_p to @c TRUE, if
+ * it is not @c NULL.
+ */
+svn_error_t *
+svn_opt__collect_targets(apr_array_header_t **targets_p,
+                         svn_boolean_t *rel_url_found_p,
+                         const apr_array_header_t *utf8_targets,
+                         const apr_array_header_t *known_targets,
+                         apr_pool_t *pool);
+
+/**
  * Return a human-readable description of @a revision.  The result
  * will be allocated statically or from @a result_pool.
  *
