@@ -2167,19 +2167,24 @@ sub_main(int *exit_code,
             break;
 
           case 'M':
-            if (!config_options)
-              config_options =
-                    apr_array_make(pool, 1,
-                                   sizeof(svn_cmdline__config_argument_t*));
+            {
+              svn_cmdline__config_argument_t *new_option =
+                  apr_pcalloc(pool, sizeof(*new_option));
 
-            SVN_ERR(svn_utf_cstring_to_utf8(&opt_arg, opt_arg, pool));
-            SVN_ERR(svn_cmdline__parse_config_option(
-                      config_options,
-                      apr_psprintf(pool,
-                                   "config:miscellany:memory-cache-size=%s",
-                                   opt_arg),
-                      NULL /* won't be used */,
-                      pool));
+              if (!config_options)
+                config_options =
+                      apr_array_make(pool, 1,
+                                     sizeof(svn_cmdline__config_argument_t*));
+
+              new_option->file = SVN_CONFIG_CATEGORY_CONFIG;
+              new_option->section = SVN_CONFIG_SECTION_MISCELLANY;
+              new_option->option = SVN_CONFIG_OPTION_MEMORY_CACHE_SIZE;
+              SVN_ERR(svn_utf_cstring_to_utf8(&new_option->value,
+                                              opt_arg, pool));
+
+              APR_ARRAY_PUSH(config_options,
+                             svn_cmdline__config_argument_t *) = new_option;
+            }
             break;
 
           case '?':
