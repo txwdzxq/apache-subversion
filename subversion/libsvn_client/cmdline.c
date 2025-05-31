@@ -309,6 +309,9 @@ svn_client__process_target_array(apr_array_header_t **targets_p,
         }
     }
 
+  *targets_p = apr_array_make(pool, parsed_targets->nelts,
+                              sizeof(const char *));
+
   SVN_ERR(svn_opt__target_array_to_string(targets_p, parsed_targets, pool));
 
   if (reserved_names)
