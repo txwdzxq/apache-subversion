@@ -110,9 +110,21 @@ check_root_url_of_target(const char **root_url,
 
 static svn_error_t *
 find_root_url(const char **root_url_p,
+              const apr_array_header_t *raw_targets,
               svn_client_ctx_t *ctx,
               apr_pool_t *pool)
 {
+  int i;
+
+  for (i = 0; i < raw_targets->nelts; i++)
+    {
+      const char *target = APR_ARRAY_IDX(raw_targets, i, const char *);
+
+      /* Later targets have priority over earlier target, I
+         don't know why, see basic_relative_url_multi_repo. */
+      SVN_ERR(check_root_url_of_target(root_url_p, target, ctx, pool));
+    }
+
   /*
    * Use the current directory's root url if one wasn't found using the
    * arguments.
@@ -150,7 +162,7 @@ svn_client__process_target_array(apr_array_header_t **targets_p,
   svn_boolean_t rel_url_found = FALSE;
   const char *root_url = NULL;
   apr_array_header_t *input_targets;
-  apr_array_header_t *output_targets;
+  apr_array_header_t *parsed_targets;
   apr_array_header_t *reserved_names = NULL;
 
   /* Step 1:  create a master array of targets that are in UTF-8
@@ -162,28 +174,31 @@ svn_client__process_target_array(apr_array_header_t **targets_p,
   SVN_ERR(svn_opt__collect_targets(&input_targets, &rel_url_found,
                                    utf8_targets, known_targets, pool));
 
+  SVN_ERR(svn_opt__target_array_parse(&parsed_targets, &rel_url_found,
+                                      input_targets, pool));
+
   /* Step 2:  process each target.  */
 
-  output_targets = apr_array_make(pool, input_targets->nelts,
-                                  sizeof(const char *));
-
-  for (i = 0; i < input_targets->nelts; i++)
+  for (i = 0; i < parsed_targets->nelts; i++)
     {
-      const char *utf8_target = APR_ARRAY_IDX(input_targets, i, const char *);
+      svn_opt__target_t *target = APR_ARRAY_IDX(parsed_targets, i,
+                                                svn_opt__target_t *);
+      const char *raw_target = APR_ARRAY_IDX(input_targets, i, const char *);
+
+      /* Reject the form "@abc", a peg specifier with no path. */
+      if (target->true_target[0] == '\0' && target->peg_revision[0] != '\0')
+        {
+          return svn_error_createf(SVN_ERR_BAD_FILENAME, NULL,
+                                    _("'%s' is just a peg revision. "
+                                      "Maybe try '%s@' instead?"),
+                                    raw_target, raw_target);
+        }
 
       /* Relative urls will be canonicalized when they are resolved later in
        * the function
        */
-      if (svn_path_is_repos_relative_url(utf8_target))
+      if (target->type == svn_opt__target_type_absolute_url)
         {
-          APR_ARRAY_PUSH(output_targets, const char *) = utf8_target;
-        }
-      else
-        {
-          const char *true_target;
-          const char *peg_rev;
-          const char *target;
-
           /*
            * This is needed so that the target can be properly canonicalized,
            * otherwise the canonicalization does not treat a ".@BASE" as a "."
@@ -196,32 +211,14 @@ svn_client__process_target_array(apr_array_header_t **targets_p,
            * a string would not necessarily preserve the exact bytes of the
            * input date, so its easier just to keep it in string form.
            */
-          SVN_ERR(svn_opt__split_arg_at_peg_revision(&true_target, &peg_rev,
-                                                     utf8_target, pool));
 
-          /* Reject the form "@abc", a peg specifier with no path. */
-          if (true_target[0] == '\0' && peg_rev[0] != '\0')
-            {
-              return svn_error_createf(SVN_ERR_BAD_FILENAME, NULL,
-                                       _("'%s' is just a peg revision. "
-                                         "Maybe try '%s@' instead?"),
-                                       utf8_target, utf8_target);
-            }
-
-          /* URLs and wc-paths get treated differently. */
-          if (svn_path_is_url(true_target))
-            {
-              SVN_ERR(svn_opt__arg_canonicalize_url(&true_target,
-                                                    true_target, pool));
-            }
-          else  /* not a url, so treat as a path */
+          if (target->type == svn_opt__target_type_local_abspath)
             {
               const char *base_name;
               const char *original_target;
 
-              original_target = svn_dirent_internal_style(true_target, pool);
-              SVN_ERR(svn_opt__arg_canonicalize_path(&true_target,
-                                                     true_target, pool));
+              original_target = svn_dirent_internal_style(target->true_target,
+                                                          pool);
 
               /* There are two situations in which a 'truepath-conversion'
                  (case-canonicalization to on-disk path on case-insensitive
@@ -232,19 +229,19 @@ svn_client__process_target_array(apr_array_header_t **targets_p,
                     both targets have the same truepath. */
               if (keep_last_origpath_on_truepath_collision
                   && input_targets->nelts == 2 && i == 1
-                  && strcmp(original_target, true_target) != 0)
+                  && strcmp(original_target, target->true_target) != 0)
                 {
-                  const char *src_truepath = APR_ARRAY_IDX(output_targets,
+                  const char *src_truepath = APR_ARRAY_IDX(input_targets,
                                                            0,
                                                            const char *);
-                  if (strcmp(src_truepath, true_target) == 0)
-                    true_target = original_target;
+                  if (strcmp(src_truepath, target->true_target) == 0)
+                    target->true_target = original_target;
                 }
 
               /* 2. If there is an exact match in the wc-db without a
                     corresponding on-disk path (e.g. a scheduled-for-delete
                     file only differing in case from an on-disk file). */
-              if (strcmp(original_target, true_target) != 0)
+              if (strcmp(original_target, target->true_target) != 0)
                 {
                   const char *target_abspath;
                   svn_node_kind_t kind;
@@ -266,13 +263,13 @@ svn_client__process_target_array(apr_array_header_t **targets_p,
                       /* We successfully did a lookup in the wc-db. Now see
                          if it's something interesting. */
                       if (kind == svn_node_file || kind == svn_node_dir)
-                        true_target = original_target;
+                        target->true_target = original_target;
                     }
                 }
 
               /* If the target has the same name as a Subversion
                  working copy administrative dir, skip it. */
-              base_name = svn_dirent_basename(true_target, pool);
+              base_name = svn_dirent_basename(target->true_target, pool);
 
               if (svn_wc_is_adm_dir(base_name, pool))
                 {
@@ -280,63 +277,39 @@ svn_client__process_target_array(apr_array_header_t **targets_p,
                     reserved_names = apr_array_make(pool, 1,
                                                     sizeof(const char *));
 
-                  APR_ARRAY_PUSH(reserved_names, const char *) = utf8_target;
+                  APR_ARRAY_PUSH(reserved_names, const char *) = raw_target;
 
                   continue;
                 }
             }
 
-          target = apr_pstrcat(pool, true_target, peg_rev, SVN_VA_NULL);
-
-          if (rel_url_found)
+          if (rel_url_found
+              && target->type != svn_opt__target_type_relative_url)
             {
               /* Later targets have priority over earlier target, I
                  don't know why, see basic_relative_url_multi_repo. */
-              SVN_ERR(check_root_url_of_target(&root_url, target,
+              SVN_ERR(check_root_url_of_target(&root_url, target->true_target,
                                                ctx, pool));
             }
-
-          APR_ARRAY_PUSH(output_targets, const char *) = target;
         }
     }
 
   /* Only resolve relative urls if there were some actually found earlier. */
   if (rel_url_found)
     {
-      SVN_ERR(find_root_url(&root_url, ctx, pool));
+      SVN_ERR(find_root_url(&root_url, input_targets, ctx, pool));
 
-      *targets_p = apr_array_make(pool, output_targets->nelts,
-                                  sizeof(const char *));
-
-      for (i = 0; i < output_targets->nelts; i++)
+      for (i = 0; i < parsed_targets->nelts; i++)
         {
-          const char *target = APR_ARRAY_IDX(output_targets, i,
-                                             const char *);
+          svn_opt__target_t *target = APR_ARRAY_IDX(parsed_targets, i,
+                                                    svn_opt__target_t *);
 
-          if (svn_path_is_repos_relative_url(target))
-            {
-              const char *abs_target;
-              const char *true_target;
-              const char *peg_rev;
-
-              SVN_ERR(svn_opt__split_arg_at_peg_revision(&true_target, &peg_rev,
-                                                         target, pool));
-
-              SVN_ERR(svn_path_resolve_repos_relative_url(&abs_target,
-                                                          true_target,
-                                                          root_url, pool));
-
-              SVN_ERR(svn_opt__arg_canonicalize_url(&true_target, abs_target,
-                                                    pool));
-
-              target = apr_pstrcat(pool, true_target, peg_rev, SVN_VA_NULL);
-            }
-
-          APR_ARRAY_PUSH(*targets_p, const char *) = target;
+          if (target->type == svn_opt__target_type_relative_url)
+            SVN_ERR(svn_opt__target_resolve(target, root_url, pool));
         }
     }
-  else
-    *targets_p = output_targets;
+
+  SVN_ERR(svn_opt__target_array_to_string(targets_p, parsed_targets, pool));
 
   if (reserved_names)
     {
