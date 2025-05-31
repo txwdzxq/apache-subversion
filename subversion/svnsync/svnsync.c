@@ -2164,7 +2164,7 @@ sub_main(int *exit_code,
               new_option->file = SVN_CONFIG_CATEGORY_CONFIG;
               new_option->section = SVN_CONFIG_SECTION_MISCELLANY;
               new_option->option = SVN_CONFIG_OPTION_MEMORY_CACHE_SIZE;
-              new_option->value = apr_pstrdup(pool, opt_arg));
+              new_option->value = apr_pstrdup(pool, opt_arg);
 
               APR_ARRAY_PUSH(config_options,
                              svn_cmdline__config_argument_t *) = new_option;
