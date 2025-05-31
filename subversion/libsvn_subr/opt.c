@@ -628,7 +628,7 @@ svn_opt__target_array_parse(apr_array_header_t **targets_p,
 {
   int i;
 
-  if (*targets_p != NULL)
+  if (*targets_p == NULL)
     *targets_p = apr_array_make(pool, DEFAULT_ARRAY_SIZE,
                                 sizeof(svn_opt__target_t *));
 
@@ -651,7 +651,7 @@ svn_opt__target_array_to_string(apr_array_header_t **paths_p,
 {
   int i;
 
-  if (*paths_p != NULL)
+  if (*paths_p == NULL)
     *paths_p = apr_array_make(pool, DEFAULT_ARRAY_SIZE, sizeof(const char *));
 
   for (i = 0; i < targets->nelts; i++)
