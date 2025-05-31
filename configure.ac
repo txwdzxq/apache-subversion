@@ -61,7 +61,8 @@ If:
   PathExclude: [subversion/bindings/javahl/native/.*]
 
 CompileFlags:
-  Add:'
+  Add:
+    - --language=c'
 
   svn_dot_clangdxx_contents='---
 # C++
@@ -69,7 +70,8 @@ If:
   PathMatch: [.*\.[ch]pp|.*/bindings/javahl/native/.*\.h]
 
 CompileFlags:
-  Add:'
+  Add:
+    - --language=c++'
 ],
 [])
 

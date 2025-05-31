@@ -2152,18 +2152,23 @@ sub_main(int *exit_code,
             break;
 
           case 'M':
-            if (!config_options)
-              config_options =
-                    apr_array_make(pool, 1,
-                                   sizeof(svn_cmdline__config_argument_t*));
+            {
+              svn_cmdline__config_argument_t *new_option =
+                  apr_pcalloc(pool, sizeof(*new_option));
 
-            SVN_ERR(svn_cmdline__parse_config_option(
-                      config_options,
-                      apr_psprintf(pool,
-                                   "config:miscellany:memory-cache-size=%s",
-                                   opt_arg),
-                      NULL /* won't be used */,
-                      pool));
+              if (!config_options)
+                config_options =
+                      apr_array_make(pool, 1,
+                                     sizeof(svn_cmdline__config_argument_t*));
+
+              new_option->file = SVN_CONFIG_CATEGORY_CONFIG;
+              new_option->section = SVN_CONFIG_SECTION_MISCELLANY;
+              new_option->option = SVN_CONFIG_OPTION_MEMORY_CACHE_SIZE;
+              new_option->value = apr_pstrdup(pool, opt_arg));
+
+              APR_ARRAY_PUSH(config_options,
+                             svn_cmdline__config_argument_t *) = new_option;
+            }
             break;
 
           case '?':
@@ -2186,18 +2191,8 @@ sub_main(int *exit_code,
   if (opt_baton.help)
     subcommand = svn_opt_get_canonical_subcommand3(svnsync_cmd_table, "help");
 
-  /* The --non-interactive and --force-interactive options are mutually
-   * exclusive. */
-  if (opt_baton.non_interactive && force_interactive)
-    {
-      return svn_error_create(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
-                              _("--non-interactive and --force-interactive "
-                                "are mutually exclusive"));
-    }
-  else
-    opt_baton.non_interactive = !svn_cmdline__be_interactive(
-                                  opt_baton.non_interactive,
-                                  force_interactive);
+  SVN_ERR(svn_cmdline__be_interactive(&opt_baton.non_interactive,
+                                      force_interactive));
 
   /* Disallow the mixing --username/password with their --source- and
      --sync- variants.  Treat "--username FOO" as "--source-username
