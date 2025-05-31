@@ -244,6 +244,8 @@ read_propvalue_file(const svn_string_t **value_p,
   apr_pool_t *scratch_pool = svn_pool_create(pool);
 
   SVN_ERR(svn_stringbuf_from_file2(&value, filename, scratch_pool));
+  SVN_ERR(svn_utf_stringbuf_to_utf8(&value, value, scratch_pool));
+
   *value_p = svn_string_create_from_buf(value, pool);
   svn_pool_destroy(scratch_pool);
   return SVN_NO_ERROR;
@@ -866,9 +868,9 @@ sub_main(int *exit_code,
               && svn_prop_needs_translation(action->prop_name))
             {
               svn_string_t *translated_value;
-              SVN_ERR_W(svn_subst_translate_string2(&translated_value, NULL,
-                                                    NULL, action->prop_value,
-                                                    NULL, FALSE, pool, pool),
+              SVN_ERR_W(svn_subst_translate_string2(
+                            &translated_value, NULL, NULL, action->prop_value,
+                            "UTF-8", FALSE, pool, pool),
                         "Error normalizing property value");
               action->prop_value = translated_value;
             }
