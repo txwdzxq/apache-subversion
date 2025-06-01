@@ -939,7 +939,7 @@ sub_main(int *exit_code,
   if (! actions->nelts)
     {
       *exit_code = EXIT_FAILURE;
-      help(stderr, pool);
+      usage(pool);
       return SVN_NO_ERROR;
     }
 
