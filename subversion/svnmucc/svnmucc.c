@@ -105,8 +105,40 @@ typedef enum action_code_t {
   ACTION_PROPSETF,
   ACTION_PROPDEL,
   ACTION_PUT,
-  ACTION_RM
+  ACTION_RM,
+  ACTION_HELP
 } action_code_t;
+
+/* Parses action_code_t from @a action_string into @a action. */
+static svn_error_t *
+action_code_from_word(action_code_t *action, const char *action_string,
+                      apr_pool_t *pool)
+{
+  if (!strcmp(action_string, "mv"))
+    *action = ACTION_MV;
+  else if (!strcmp(action_string, "cp"))
+    *action = ACTION_CP;
+  else if (!strcmp(action_string, "mkdir"))
+    *action = ACTION_MKDIR;
+  else if (!strcmp(action_string, "rm"))
+    *action = ACTION_RM;
+  else if (!strcmp(action_string, "put"))
+    *action = ACTION_PUT;
+  else if (!strcmp(action_string, "propset"))
+    *action = ACTION_PROPSET;
+  else if (!strcmp(action_string, "propsetf"))
+    *action = ACTION_PROPSETF;
+  else if (!strcmp(action_string, "propdel"))
+    *action = ACTION_PROPDEL;
+  else if (!strcmp(action_string, "?") || !strcmp(action_string, "h") ||
+           !strcmp(action_string, "help"))
+    *action = ACTION_HELP;
+  else
+    return svn_error_createf(SVN_ERR_INCORRECT_PARAMS, NULL,
+                             "'%s' is not an action\n", action_string);
+
+  return SVN_NO_ERROR;
+}
 
 /* Return the portion of URL that is relative to ANCHOR (URI-decoded). */
 static const char *
@@ -771,32 +803,14 @@ sub_main(int *exit_code,
       struct action *action = apr_pcalloc(pool, sizeof(*action));
 
       /* First, parse the action. */
-      if (! strcmp(action_string, "mv"))
-        action->action = ACTION_MV;
-      else if (! strcmp(action_string, "cp"))
-        action->action = ACTION_CP;
-      else if (! strcmp(action_string, "mkdir"))
-        action->action = ACTION_MKDIR;
-      else if (! strcmp(action_string, "rm"))
-        action->action = ACTION_RM;
-      else if (! strcmp(action_string, "put"))
-        action->action = ACTION_PUT;
-      else if (! strcmp(action_string, "propset"))
-        action->action = ACTION_PROPSET;
-      else if (! strcmp(action_string, "propsetf"))
-        action->action = ACTION_PROPSETF;
-      else if (! strcmp(action_string, "propdel"))
-        action->action = ACTION_PROPDEL;
-      else if (! strcmp(action_string, "?") || ! strcmp(action_string, "h")
-               || ! strcmp(action_string, "help"))
+      SVN_ERR(action_code_from_word(&action->action, action_string, pool));
+
+      if (action->action == ACTION_HELP)
         {
           help(stdout, pool);
           return SVN_NO_ERROR;
         }
-      else
-        return svn_error_createf(SVN_ERR_INCORRECT_PARAMS, NULL,
-                                 "'%s' is not an action\n",
-                                 action_string);
+
       if (++i == action_args->nelts)
         return insufficient();
 
