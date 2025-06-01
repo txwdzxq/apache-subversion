@@ -7,7 +7,7 @@ svnbench                     | UTF8-ized
 svndumpfilter                | UTF8-ized
 svnfsfs                      | UTF8-ized
 svnlook                      | UTF8-ized
-svnmucc                      | ASCII
+svnmucc                      | UTF8-ized
 svnrdump                     | ASCII
 svnserve                     | ASCII
 svnsync                      | UTF8-ized
