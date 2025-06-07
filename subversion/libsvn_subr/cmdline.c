@@ -1,3 +1,4 @@
+#include "svn_cmdline_private.h"
 /*
  * cmdline.c :  Helpers for command-line programs.
  *
@@ -1429,10 +1430,32 @@ svn_cmdline__win32_get_cstring_argv(const char **cstring_argv_p[],
 
       APR_ARRAY_PUSH(cstring_argv, const char *) = cstring_arg;
     }
+}
 
-  APR_ARRAY_PUSH(cstring_argv, const char *) = NULL;
+svn_error_t *
+svn_cmdline__win32_get_utf8_argv(const char **utf8_argv_p[],
+                                 int argc,
+                                 const wchar_t *argv[],
+                                 apr_pool_t *result_pool)
+{
+  apr_array_header_t *utf8_argv;
+  int i;
 
-  *cstring_argv_p = (const char **)cstring_argv->elts;
+  utf8_argv = apr_array_make(result_pool, argc + 1, sizeof(const char *));
+
+  for (i = 0; i < argc; i++)
+    {
+      const wchar_t *arg = argv[i];
+      char *utf8_arg;
+
+      SVN_ERR(svn_utf__win32_utf16_to_utf8(&utf8_arg, arg, NULL, result_pool));
+
+      APR_ARRAY_PUSH(utf8_argv, const char *) = utf8_arg;
+    }
+
+  APR_ARRAY_PUSH(utf8_argv, const char *) = NULL;
+
+  *utf8_argv_p = (const char **)utf8_argv->elts;
   return SVN_NO_ERROR;
 }
 
@@ -1445,5 +1468,32 @@ svn_cmdline__default_get_cstring_argv(const char **cstring_argv_p[],
                                       apr_pool_t *result_pool)
 {
   *cstring_argv_p = argv;
+  return SVN_NO_ERROR;
+}
+
+svn_error_t *
+svn_cmdline__default_get_utf8_argv(const char **utf8_argv_p[],
+                                   int argc,
+                                   const char *argv[],
+                                   apr_pool_t *result_pool)
+{
+  apr_array_header_t *utf8_argv;
+  int i;
+
+  utf8_argv = apr_array_make(result_pool, argc + 1, sizeof(const char *));
+
+  for (i = 0; i < argc; i++)
+    {
+      const char *arg = argv[i];
+      char *utf8_arg;
+
+      SVN_ERR(svn_utf_cstring_to_utf8(&utf8_arg, arg, result_pool));
+
+      APR_ARRAY_PUSH(utf8_argv, const char *) = utf8_arg;
+    }
+
+  APR_ARRAY_PUSH(utf8_argv, const char *) = NULL;
+
+  *utf8_argv_p = (const char **)utf8_argv->elts;
   return SVN_NO_ERROR;
 }
