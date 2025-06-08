@@ -391,6 +391,16 @@ const char *
 svn_version_ext_runtime_osname(const svn_version_extended_t *ext_info);
 
 /**
+ * Accessor for svn_version_extended_t.
+ *
+ * @return The name of the current locale character set.
+ *
+ * @since New in 1.15.
+ */
+const char *
+svn_version_ext_character_encoding(const svn_version_extended_t *ext_info);
+
+/**
  * Dependent library information.
  * Describes the name and versions of known dependencies
  * used by libsvn_subr.
