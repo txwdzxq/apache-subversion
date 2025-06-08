@@ -115,12 +115,6 @@ svn_opt__args_to_target_array(apr_array_header_t **targets_p,
                               const apr_array_header_t *known_targets,
                               apr_pool_t *pool);
 
-svn_error_t *
-svn_opt__process_target_array(apr_array_header_t **targets_p,
-                              apr_array_header_t *utf8_input_targets,
-                              const apr_array_header_t *known_targets,
-                              apr_pool_t *pool);
-
 /**
  * Return a human-readable description of @a revision.  The result
  * will be allocated statically or from @a result_pool.
