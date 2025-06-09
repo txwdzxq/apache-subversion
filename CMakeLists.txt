@@ -724,6 +724,13 @@ if(SVN_ENABLE_NLS)
     "ENABLE_NLS" "1"
   )
 
+  if (NOT WIN32)
+    add_private_config_definition(
+      "Defined to be the path to the installed locale dirs"
+      "SVN_LOCALE_DIR" "\"${CMAKE_INSTALL_PREFIX}/share/locale\""
+    )
+  endif()
+
   add_custom_target(locale ALL)
 
   file(GLOB SVN_PO_FILES "subversion/po/*.po")
