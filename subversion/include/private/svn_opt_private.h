@@ -90,7 +90,7 @@ svn_opt__arg_canonicalize_path(const char **path_out,
                                apr_pool_t *pool);
 
 /*
- * Processes arguments from from @a utf8_input_targets into @a targets_p.
+ * Processes arguments from @a utf8_input_targets into @a targets_p.
  *
  * On each URL target, do some IRI-to-URI encoding and some
  * auto-escaping.  On each local path, canonicalize case and path
