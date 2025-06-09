@@ -902,7 +902,7 @@ initialize_cmd(apr_getopt_t *os, void *b, apr_pool_t *pool)
   apr_array_header_t *targets;
   subcommand_baton_t *baton;
 
-  SVN_ERR(svn_opt__args_to_target_array(&targets, os,
+  SVN_ERR(svn_opt_args_to_target_array3(&targets, os,
                                         apr_array_make(pool, 0,
                                                        sizeof(const char *)),
                                         pool));
@@ -1580,7 +1580,7 @@ synchronize_cmd(apr_getopt_t *os, void *b, apr_pool_t *pool)
   subcommand_baton_t *baton;
   const char *to_url, *from_url;
 
-  SVN_ERR(svn_opt__args_to_target_array(&targets, os,
+  SVN_ERR(svn_opt_args_to_target_array3(&targets, os,
                                         apr_array_make(pool, 0,
                                                        sizeof(const char *)),
                                         pool));
@@ -1785,7 +1785,7 @@ copy_revprops_cmd(apr_getopt_t *os, void *b, apr_pool_t *pool)
           /* This is the old "... TO_URL REV[:REV2]" syntax.
              Revisions come only from this argument.  (We effectively
              pop that last argument from the end of the argument list
-             so svn_opt__args_to_target_array() can do its thang.) */
+             so svn_opt_args_to_target_array() can do its thang.) */
           os->argc--;
 
           if ((opt_baton->start_rev.kind != svn_opt_revision_unspecified)
@@ -1806,7 +1806,7 @@ copy_revprops_cmd(apr_getopt_t *os, void *b, apr_pool_t *pool)
           SVN_ERR(resolve_revnums(&start_rev, &end_rev,
                                   start_revision, end_revision));
 
-          SVN_ERR(svn_opt__args_to_target_array(
+          SVN_ERR(svn_opt_args_to_target_array3(
                       &targets, os,
                       apr_array_make(pool, 1, sizeof(const char *)), pool));
           if (targets->nelts != 1)
@@ -1823,7 +1823,7 @@ copy_revprops_cmd(apr_getopt_t *os, void *b, apr_pool_t *pool)
       SVN_ERR(resolve_revnums(&start_rev, &end_rev,
                               opt_baton->start_rev, opt_baton->end_rev));
 
-      SVN_ERR(svn_opt__args_to_target_array(
+      SVN_ERR(svn_opt_args_to_target_array3(
                   &targets, os,
                   apr_array_make(pool, 2, sizeof(const char *)), pool));
       if (targets->nelts < 1)
@@ -1873,7 +1873,7 @@ info_cmd(apr_getopt_t *os, void *b, apr_pool_t * pool)
   apr_hash_t *props;
   svn_string_t *from_url, *from_uuid, *last_merged_rev;
 
-  SVN_ERR(svn_opt__args_to_target_array(&targets, os,
+  SVN_ERR(svn_opt_args_to_target_array3(&targets, os,
                                         apr_array_make(pool, 0,
                                                        sizeof(const char *)),
                                         pool));
