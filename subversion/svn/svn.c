@@ -2130,7 +2130,7 @@ add_commands(const svn_opt_subcommand_desc3_t *cmds_add,
   svn_cl__cmd_table = cmds_new;
 }
 
-/* Parse UTF8_OPT_ARG as a version number, into OPT_STATE->compatible_version.
+/* Parse OPT_ARG as a version number, into OPT_STATE->compatible_version.
  *
  * Ensure it is between the oldest and newest supported WC formats.
  *
@@ -2140,7 +2140,7 @@ add_commands(const svn_opt_subcommand_desc3_t *cmds_add,
  */
 static svn_error_t *
 parse_compatible_version(svn_cl__opt_state_t* opt_state,
-                         const char *utf8_opt_arg,
+                         const char *opt_arg,
                          apr_pool_t *result_pool)
 {
   svn_version_t *target;
@@ -2155,7 +2155,7 @@ parse_compatible_version(svn_cl__opt_state_t* opt_state,
                                        oldest->major, oldest->minor, 0));
 
   /* Parse the requested version. */
-  SVN_ERR(svn_version__parse_version_string(&target, utf8_opt_arg,
+  SVN_ERR(svn_version__parse_version_string(&target, opt_arg,
                                             result_pool));
   /* Quietly ignore 'patch' and 'tag' fields. */
   target->patch = 0;
