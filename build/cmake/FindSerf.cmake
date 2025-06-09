@@ -19,16 +19,22 @@
 # FindSerf.cmake -- CMake module for Serf library
 #
 
+include(GNUInstallDirs)
+
 find_path(Serf_INCLUDE_DIR
   NAMES serf.h
   PATH_SUFFIXES
     include
+    "${CMAKE_INSTALL_INCLUDEDIR}"
+    include/serf-2
+    "${CMAKE_INSTALL_INCLUDEDIR}/serf-2"
     include/serf-1
+    "${CMAKE_INSTALL_INCLUDEDIR}/serf-1"
 )
 
 find_library(Serf_LIBRARY
-  NAMES serf-1
-  PATH_SUFFIXES lib
+  NAMES serf-2 serf-1
+  PATH_SUFFIXES lib "${CMAKE_INSTALL_LIBDIR}"
 )
 
 mark_as_advanced(

@@ -148,7 +148,7 @@ find_root_url(const char **root_url_p,
 }
 
 
-/* Note: This is substantially copied from svn_opt__args_to_target_array() in
+/* Note: This is substantially copied from svn_opt__process_target_array() in
  * order to move to libsvn_client while maintaining backward compatibility. */
 svn_error_t *
 svn_client__process_target_array(apr_array_header_t **targets_p,

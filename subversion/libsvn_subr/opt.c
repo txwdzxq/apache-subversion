@@ -218,6 +218,8 @@ svn_opt_parse_path(svn_opt_revision_t *rev,
   return SVN_NO_ERROR;
 }
 
+/* Note: This is substantially copied into svn_client_args_to_target_array() in
+ * order to move to libsvn_client while maintaining backward compatibility. */
 svn_error_t *
 svn_opt__args_to_target_array(apr_array_header_t **targets_p,
                               apr_getopt_t *os,
