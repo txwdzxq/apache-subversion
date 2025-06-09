@@ -2390,7 +2390,7 @@ sub_main(int *exit_code,
         SVN_ERR(svn_stringbuf_from_file2(&(opt_state.filedata),
                                          utf8_opt_arg, pool));
         reading_file_from_stdin = (strcmp(utf8_opt_arg, "-") == 0);
-        dash_F_arg = utf8_opt_arg;
+        dash_F_arg = apr_pstrdup(pool, utf8_opt_arg);
         break;
       case opt_targets:
         {
