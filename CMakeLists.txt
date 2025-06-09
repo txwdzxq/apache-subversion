@@ -516,52 +516,22 @@ function(target_exports target_name)
     )
 
     set(def_file_path ${CMAKE_BINARY_DIR}/${target_name}.def)
+    set(headers)
 
-    # see build/generator/extractor.py
-    set(func_regex "(^|\n)((([A-Za-z0-9_]+|[*]) )+[*]?)?((svn|apr)_[A-Za-z0-9_]+)[ \t\r\n]*\\(")
-
-    set(defs)
     foreach(file ${ARGN})
-      file(READ ${file} contents)
-      string(REGEX MATCHALL "${func_regex}" funcs ${contents})
-
-      foreach(func_string ${funcs})
-        string(REGEX MATCH "[A-Za-z0-9_]+[ \t\r\n]*\\($" func_name ${func_string})
-        string(REGEX REPLACE "[ \t\r\n]*\\($" "" func_name ${func_name})
-        list(APPEND defs "${func_name}")
-      endforeach()
-
-      get_filename_component(filename ${file} NAME)
-      if(${filename} STREQUAL "svn_ctype.h")
-        # See libsvn_subr/ctype.c for an explanation why we use CONSTANT and not
-        # DATA, even though it causes an LNK4087 warning!
-        list(APPEND defs "svn_ctype_table = svn_ctype_table_internal CONSTANT")
-      elseif(${filename} STREQUAL "svn_wc_private.h")
-        # svn_wc__internal_walk_children() is now internal to libsvn_wc
-        # but entries-dump.c still calls it
-        list(APPEND defs "svn_wc__internal_walk_children")
-      endif()
+      list(APPEND headers "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
     endforeach()
 
-    list(SORT defs)
-    list(REMOVE_DUPLICATES defs)
-
-    set(def_file_content "EXPORTS\n")
-    foreach(def ${defs})
-      list(FIND filter_names "${def}" skip)
-      if(skip LESS 0)
-        string(APPEND def_file_content "${def}\n")
-      endif()
-    endforeach()
-
-    if(EXISTS "${def_file_path}")
-      file(READ "${def_file_path}" old_file_content)
-    else()
-      set(old_file_content "NOT_EXISTS")
-    endif()
-    if(NOT ${old_file_content} STREQUAL ${def_file_content})
-      file(WRITE "${def_file_path}" ${def_file_content})
-    endif()
+    add_custom_command(
+      OUTPUT "${def_file_path}"
+      DEPENDS ${headers}
+      COMMAND ${CMAKE_COMMAND}
+              "-DEXPORT_HEADER_FILE_PATHS=${headers}"
+              "-DEXPORT_DEF_FILE_PATH=${def_file_path}"
+              "-DEXPORT_BLACKLIST=${filter_names}"
+              -P "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake/extractor.cmake"
+      WORKING_DIRECTORY "${SERF_SOURCE_DIR}"
+    )
 
     target_sources("${target_name}" PRIVATE "${def_file_path}")
   endif()
