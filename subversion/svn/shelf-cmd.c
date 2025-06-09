@@ -72,7 +72,7 @@ get_next_argument(const char **arg,
   apr_array_header_t *args;
 
   SVN_ERR(svn_opt_parse_num_args(&args, os, 1, scratch_pool));
-  *arg = APR_ARRAY_IDX(args, 0, const char *);
+  *arg = apr_pstrdup(result_pool, APR_ARRAY_IDX(args, 0, const char *));
 
   return SVN_NO_ERROR;
 }
