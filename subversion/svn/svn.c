@@ -2291,7 +2291,6 @@ sub_main(int *exit_code,
   os->interleave = 1;
   while (1)
     {
-      const char *opt_arg;
       const char *utf8_opt_arg;
 
       /* Parse the next option. */
