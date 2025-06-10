@@ -114,6 +114,10 @@ option(SVN_USE_DSO "Defined if svn should try to load DSOs" OFF)
 set(SVN_SOVERSION "0" CACHE STRING "Subversion library ABI version")
 mark_as_advanced(SVN_SOVERSION)
 
+# Check whether we have pkg-config executable or not; Silence any messages.
+find_package(PkgConfig QUIET)
+cmake_dependent_option(SVN_USE_PKG_CONFIG "Use pkg-config for the dependencies" ON "PKG_CONFIG_FOUND" OFF)
+
 # Dependecies
 option(SVN_USE_INTERNAL_LZ4 "Use internal version of lz4" ON)
 option(SVN_USE_INTERNAL_UTF8PROC "Use internal version of utf8proc" ON)
@@ -247,25 +251,54 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake")
 
+# Require pkg-config if we are going to use it, to show the `Found PkgConfig`
+# meassge and insure it has actually been found. (yea, this invokes the module
+# for second time, but we are guaranteed to from it to not perform actual look
+# for the path due to the cache. It's fine to include the same modules for
+# multiple times).
+if(SVN_USE_PKG_CONFIG)
+  find_package(PkgConfig REQUIRED)
+endif()
+
 ### APR
 
-find_package(APR REQUIRED)
-add_library(external-apr ALIAS apr::apr)
+if(SVN_USE_PKG_CONFIG)
+  pkg_check_modules(apr-1 REQUIRED IMPORTED_TARGET apr-1)
+  add_library(external-apr ALIAS PkgConfig::apr-1)
+else()
+  find_package(APR REQUIRED)
+  add_library(external-apr ALIAS apr::apr)
+endif()
 
 ### APR-Util
 
-find_package(APRUtil REQUIRED)
-add_library(external-aprutil ALIAS apr::aprutil)
+if(SVN_USE_PKG_CONFIG)
+  pkg_check_modules(aprutil-1 REQUIRED IMPORTED_TARGET apr-util-1)
+  add_library(external-aprutil ALIAS PkgConfig::aprutil-1)
+else()
+  find_package(APRUtil REQUIRED)
+  add_library(external-aprutil ALIAS apr::aprutil)
+endif()
 
 ### ZLIB
 
-find_package(ZLIB REQUIRED)
-add_library(external-zlib ALIAS ZLIB::ZLIB)
+if(SVN_USE_PKG_CONFIG)
+  pkg_check_modules(zlib REQUIRED IMPORTED_TARGET zlib)
+  add_library(external-zlib ALIAS PkgConfig::zlib)
+else()
+  find_package(ZLIB REQUIRED)
+  add_library(external-zlib ALIAS ZLIB::ZLIB)
+endif()
 
 ### EXPAT
 
-find_package(EXPAT REQUIRED)
-add_library(external-xml ALIAS EXPAT::EXPAT)
+if(SVN_USE_PKG_CONFIG)
+  pkg_check_modules(expat REQUIRED IMPORTED_TARGET expat)
+  add_library(external-xml ALIAS PkgConfig::expat)
+else()
+  find_package(EXPAT REQUIRED)
+  add_library(external-xml ALIAS EXPAT::EXPAT)
+endif()
 
 ### LZ4
 
@@ -277,6 +310,9 @@ if(SVN_USE_INTERNAL_LZ4)
     "subversion/libsvn_subr/lz4/lz4internal.h" lz4_VERSION
     LZ4_VERSION_MAJOR LZ4_VERSION_MINOR LZ4_VERSION_RELEASE
   )
+elseif(SVN_USE_PKG_CONFIG)
+  pkg_check_modules(lz4 REQUIRED IMPORTED_TARGET liblz4)
+  add_library(external-lz4 ALIAS PkgConfig::lz4)
 else()
   find_package(lz4 CONFIG REQUIRED)
   add_library(external-lz4 ALIAS lz4::lz4)
@@ -292,6 +328,9 @@ if(SVN_USE_INTERNAL_UTF8PROC)
     "subversion/libsvn_subr/utf8proc/utf8proc_internal.h" UTF8PROC_VERSION
     UTF8PROC_VERSION_MAJOR UTF8PROC_VERSION_MINOR UTF8PROC_VERSION_PATCH
   )
+elseif(SVN_USE_PKG_CONFIG)
+  pkg_check_modules(utf8proc REQUIRED IMPORTED_TARGET libutf8proc)
+  add_library(external-utf8proc ALIAS PkgConfig::utf8proc)
 else()
   find_package(UTF8PROC REQUIRED)
   add_library(external-utf8proc ALIAS UTF8PROC::UTF8PROC)
@@ -302,6 +341,9 @@ endif()
 if(SVN_SQLITE_USE_AMALGAMATION)
   find_package(SQLiteAmalgamation REQUIRED)
   add_library(external-sqlite ALIAS SQLite::SQLite3Amalgamation)
+elseif(SVN_USE_PKG_CONFIG)
+  pkg_check_modules(sqlite3 REQUIRED IMPORTED_TARGET sqlite3)
+  add_library(external-sqlite ALIAS PkgConfig::sqlite3)
 else()
   # It should be not required.
   find_package(SQLite3)
@@ -323,8 +365,14 @@ endif()
 
 ### Serf
 if (SVN_ENABLE_RA_SERF)
-  find_package(Serf REQUIRED)
-  add_library(external-serf ALIAS Serf::Serf)
+  # TODO: serf-2
+  if(SVN_USE_PKG_CONFIG)
+    pkg_check_modules(serf-1 REQUIRED IMPORTED_TARGET serf-1)
+    add_library(external-serf ALIAS PkgConfig::serf-1)
+  else()
+    find_package(Serf REQUIRED)
+    add_library(external-serf ALIAS Serf::Serf)
+  endif()
 endif()
 
 ### Python
@@ -373,9 +421,12 @@ endif()
 if(SVN_ENABLE_AUTH_GNOME_KEYRING)
   add_library(external-gnome-keyring INTERFACE)
 
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(libsecret-1 REQUIRED IMPORTED_TARGET libsecret-1)
-  target_link_libraries(external-gnome-keyring INTERFACE PkgConfig::libsecret-1)
+  if(SVN_USE_PKG_CONFIG OR PKG_CONFIG_FOUND)
+    pkg_check_modules(libsecret-1 REQUIRED IMPORTED_TARGET libsecret-1)
+    target_link_libraries(external-gnome-keyring INTERFACE PkgConfig::libsecret-1)
+  else()
+    message(ERROR "GNOME Keyring requires pkg-config")
+  endif()
 
   add_private_config_definition(
     "Is libsecret support enabled?"
@@ -892,6 +943,7 @@ message(STATUS "  Build type ...................... : ${CMAKE_BUILD_TYPE}")
 message(STATUS "    Build shared libraries ........ : ${BUILD_SHARED_LIBS}")
 message(STATUS "    Build shared FS Modues ........ : ${SVN_BUILD_SHARED_FS}")
 message(STATUS "    Build shared RA Modues ........ : ${SVN_BUILD_SHARED_RA}")
+message(STATUS "    Use pkg-config dependencies ... : ${SVN_USE_PKG_CONFIG}")
 message(STATUS "  FS modules:")
 message(STATUS "    Enable FSFS ................... : ${SVN_ENABLE_FS_FS}")
 message(STATUS "    Enable FSX .................... : ${SVN_ENABLE_FS_X}")
