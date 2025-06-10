@@ -260,24 +260,33 @@ if(SVN_USE_PKG_CONFIG)
   find_package(PkgConfig REQUIRED)
 endif()
 
-### APR
+### APR and APR-Util
 
 if(SVN_USE_PKG_CONFIG)
-  pkg_check_modules(apr-1 REQUIRED IMPORTED_TARGET apr-1)
-  add_library(external-apr ALIAS PkgConfig::apr-1)
+  pkg_check_modules(apr IMPORTED_TARGET apr-1)
+
+  if(apr_FOUND)
+    # apr-1
+    add_library(external-apr ALIAS PkgConfig::apr)
+
+    pkg_check_modules(aprutil-1 REQUIRED IMPORTED_TARGET apr-util-1)
+    add_library(external-aprutil ALIAS PkgConfig::aprutil-1)
+  else()
+    # apr-2
+    pkg_check_modules(apr REQUIRED IMPORTED_TARGET apr-2)
+    add_library(external-apr ALIAS PkgConfig::apr)
+    add_library(external-aprutil ALIAS PkgConfig::apr)
+  endif()
 else()
   find_package(APR REQUIRED)
   add_library(external-apr ALIAS apr::apr)
-endif()
 
-### APR-Util
-
-if(SVN_USE_PKG_CONFIG)
-  pkg_check_modules(aprutil-1 REQUIRED IMPORTED_TARGET apr-util-1)
-  add_library(external-aprutil ALIAS PkgConfig::aprutil-1)
-else()
-  find_package(APRUtil REQUIRED)
-  add_library(external-aprutil ALIAS apr::aprutil)
+  if(APR_MAJOR_VERSION EQUAL 2)
+    add_library(external-aprutil ALIAS apr::apr)
+  else()
+    find_package(APRUtil REQUIRED)
+    add_library(external-aprutil ALIAS apr::aprutil)
+  endif()
 endif()
 
 ### ZLIB
