@@ -1868,12 +1868,7 @@ AC_DEFINE_UNQUOTED([SVN_BUILD_TARGET], "${target}",
 AC_OUTPUT
 
 # ==== Generate the .clangd file =============================================
-if test "x$svn_dot_clangdcc_contents$svn_dot_clangdxx_contents" = "x" ; then
-   if test -f "$svn_dot_clangd_file"; then
-      AC_MSG_NOTICE([Removing $svn_dot_clangd_file])
-      rm -f "$svn_dot_clangd_file"
-   fi
-else
+if test "x$svn_dot_clangdcc_contents$svn_dot_clangdxx_contents" != "x" ; then
   AC_MSG_NOTICE([Writing $svn_dot_clangd_file])
   echo "$svn_dot_clangdcc_contents" > "$svn_dot_clangd_file"
   echo "$svn_dot_clangdxx_contents" >> "$svn_dot_clangd_file"
