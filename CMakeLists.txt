@@ -365,10 +365,15 @@ endif()
 
 ### Serf
 if (SVN_ENABLE_RA_SERF)
-  # TODO: serf-2
   if(SVN_USE_PKG_CONFIG)
-    pkg_check_modules(serf-1 REQUIRED IMPORTED_TARGET serf-1)
-    add_library(external-serf ALIAS PkgConfig::serf-1)
+    pkg_check_modules(serf IMPORTED_TARGET serf-1)
+
+    # Try serf-2 instead?
+    if(NOT serf_FOUND)
+      pkg_check_modules(serf REQUIRED IMPORTED_TARGET serf-2)
+    endif()
+
+    add_library(external-serf ALIAS PkgConfig::serf)
   else()
     find_package(Serf REQUIRED)
     add_library(external-serf ALIAS Serf::Serf)
