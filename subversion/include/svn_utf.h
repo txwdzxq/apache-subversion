@@ -33,6 +33,7 @@
 #define SVN_UTF_H
 
 #include <apr_pools.h>
+#include <apr_xlate.h>  /* backward compat */
 
 #include "svn_types.h"
 #include "svn_string.h"
