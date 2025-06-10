@@ -263,19 +263,19 @@ endif()
 ### APR and APR-Util
 
 if(SVN_USE_PKG_CONFIG)
-  pkg_check_modules(apr IMPORTED_TARGET apr-1)
+  pkg_check_modules(apr1 IMPORTED_TARGET apr-1)
 
-  if(apr_FOUND)
+  if(apr1_FOUND)
     # apr-1
-    add_library(external-apr ALIAS PkgConfig::apr)
+    add_library(external-apr ALIAS PkgConfig::apr1)
 
     pkg_check_modules(aprutil-1 REQUIRED IMPORTED_TARGET apr-util-1)
     add_library(external-aprutil ALIAS PkgConfig::aprutil-1)
   else()
     # apr-2
-    pkg_check_modules(apr REQUIRED IMPORTED_TARGET apr-2)
-    add_library(external-apr ALIAS PkgConfig::apr)
-    add_library(external-aprutil ALIAS PkgConfig::apr)
+    pkg_check_modules(apr2 REQUIRED IMPORTED_TARGET apr-2)
+    add_library(external-apr ALIAS PkgConfig::apr2)
+    add_library(external-aprutil ALIAS PkgConfig::apr2)
   endif()
 else()
   find_package(APR REQUIRED)
@@ -375,14 +375,16 @@ endif()
 ### Serf
 if (SVN_ENABLE_RA_SERF)
   if(SVN_USE_PKG_CONFIG)
-    pkg_check_modules(serf IMPORTED_TARGET serf-1)
+    pkg_check_modules(serf1 IMPORTED_TARGET serf-1)
 
-    # Try serf-2 instead?
-    if(NOT serf_FOUND)
-      pkg_check_modules(serf REQUIRED IMPORTED_TARGET serf-2)
+    if(serf1_FOUND)
+      # serf-1
+      add_library(external-serf ALIAS PkgConfig::serf1)
+    else()
+      # serf-2
+      pkg_check_modules(serf2 REQUIRED IMPORTED_TARGET serf-2)
+      add_library(external-serf ALIAS PkgConfig::serf2)
     endif()
-
-    add_library(external-serf ALIAS PkgConfig::serf)
   else()
     find_package(Serf REQUIRED)
     add_library(external-serf ALIAS Serf::Serf)
