@@ -85,7 +85,7 @@ target_link_libraries(Serf::Serf INTERFACE
   ZLIB::ZLIB
 )
 
-if(NOT APR_MAJOR_VERSION EQUAL 2)
+if(APR_VERSION VERSION_LESS 2.0.0)
   find_package(APRUtil REQUIRED)
   target_link_libraries(Serf::Serf INTERFACE apr::aprutil)
 endif()
