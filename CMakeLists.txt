@@ -289,6 +289,12 @@ else()
   endif()
 endif()
 
+# APR and APR-Util include directories must be available to all our souroces,
+# not just those that happen to link with one or the other of these libraries.
+get_target_property(_apr_include external-apr INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(_apu_include external-aprutil INTERFACE_INCLUDE_DIRECTORIES)
+include_directories(${_apr_include} ${_apu_include})
+
 ### ZLIB
 
 if(SVN_USE_PKG_CONFIG)

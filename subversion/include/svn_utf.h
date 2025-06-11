@@ -33,7 +33,7 @@
 #define SVN_UTF_H
 
 #include <apr_pools.h>
-#include <apr_xlate.h>  /* backward compat */
+#include <apr_xlate.h>  /* for APR_*_CHARSET */
 
 #include "svn_types.h"
 #include "svn_string.h"
@@ -47,12 +47,12 @@ extern "C" {
   * useful if there are literal strings in the source code which must
   * be translated according to the charset of the source code.
   */
-#define SVN_APR_DEFAULT_CHARSET (const char *)0
+#define SVN_APR_DEFAULT_CHARSET APR_DEFAULT_CHARSET
 
 /**
  * To indicate charset names of the current locale
  */
-#define SVN_APR_LOCALE_CHARSET (const char *)1
+#define SVN_APR_LOCALE_CHARSET APR_LOCALE_CHARSET
 
   /**
  * Initialize the UTF-8 encoding/decoding routines.
