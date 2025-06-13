@@ -53,6 +53,10 @@ def get_module_name(name):
 
   return name[7:].upper()
 
+# APR and APR-Util are part of our public interface and should be
+# declared PUBLIC in library target dependencies.
+PUBLIC_LIB_DEPENDS = frozenset(["external-apr", "external-aprutil"])
+
 def get_output_name(target):
   if target.name.startswith("lib"):
     return target.name[3:] + "-1"
@@ -146,7 +150,8 @@ class Generator(gen_base.GeneratorBase):
           msvc_export.append("subversion/include/" + export)
 
       sources = []
-      libs = []
+      private_libs = []
+      public_libs = []
 
       for dep in self.get_dependencies(target.name):
         enable_condition += get_target_conditions(dep)
@@ -157,9 +162,9 @@ class Generator(gen_base.GeneratorBase):
         elif isinstance(dep, gen_base.TargetLinked):
           if dep.external_lib:
             if dep.name == "ra-libs":
-              libs.append("ra-libs")
+              private_libs.append("ra-libs")
             elif dep.name == "fs-libs":
-              libs.append("fs-libs")
+              private_libs.append("fs-libs")
             elif dep.name in ["apriconv",
                               "apr_memcache",
                               "magic",
@@ -170,9 +175,14 @@ class Generator(gen_base.GeneratorBase):
               # TODO:
               pass
             else:
-              libs.append("external-" + dep.name)
+              dep_name = "external-" + dep.name
+              if (dep_name in PUBLIC_LIB_DEPENDS
+                  and not isinstance(target, gen_base.TargetExe)):
+                public_libs.append(dep_name)
+              else:
+                private_libs.append(dep_name)
           else:
-            libs.append(dep.name)
+            private_libs.append(dep.name)
         elif isinstance(dep, gen_base.ObjectFile):
           for source in self.graph.get_sources(gen_base.DT_OBJECT, dep,
                                                gen_base.SourceFile):
@@ -212,7 +222,9 @@ class Generator(gen_base.GeneratorBase):
           output_name = get_output_name(target),
           type = target_type,
           sources = sources,
-          libs = libs,
+          libs = public_libs + private_libs,
+          public_libs = public_libs,
+          private_libs = private_libs,
           msvc_libs = msvc_libs,
           msvc_objects = msvc_objects,
           msvc_export = msvc_export,
