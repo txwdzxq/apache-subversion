@@ -53,10 +53,6 @@ def get_module_name(name):
 
   return name[7:].upper()
 
-# APR and APR-Util are part of our public interface and should be
-# declared PUBLIC in library target dependencies.
-PUBLIC_LIB_DEPENDS = frozenset(["external-apr", "external-aprutil"])
-
 def get_output_name(target):
   if target.name.startswith("lib"):
     return target.name[3:] + "-1"
@@ -176,7 +172,10 @@ class Generator(gen_base.GeneratorBase):
               pass
             else:
               dep_name = "external-" + dep.name
-              if (dep_name in PUBLIC_LIB_DEPENDS
+
+              # APR and APR-Util are part of our public interface and should be
+              # declared PUBLIC in library target dependencies.
+              if (dep_name in ["external-apr", "external-aprutil"]
                   and not isinstance(target, gen_base.TargetExe)):
                 public_libs.append(dep_name)
               else:
