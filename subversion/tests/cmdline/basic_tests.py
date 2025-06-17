@@ -40,6 +40,7 @@ XFail = svntest.testcase.XFail_deco
 Issues = svntest.testcase.Issues_deco
 Issue = svntest.testcase.Issue_deco
 Wimp = svntest.testcase.Wimp_deco
+RequireUtf8 = svntest.testcase.RequireUtf8_deco
 Item = wc.StateItem
 
 # Generic UUID-matching regular expression
@@ -3346,6 +3347,7 @@ def argv_with_best_fit_chars(sbox):
   if count == 0:
     raise svntest.Skip('No best fit characters in code page %r' % codepage)
 
+@RequireUtf8
 def unicode_arguments_test(sbox: svntest.sandbox.Sandbox):
   """test unicode arguments"""
 
