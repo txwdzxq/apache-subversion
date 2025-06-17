@@ -21,9 +21,6 @@
  * ====================================================================
  */
 
-/* prevent "empty compilation unit" warning on e.g. UNIX */
-typedef int win32_crypto__dummy;
-
 /* ==================================================================== */
 
 #if defined(WIN32) && !defined(__MINGW32__)
