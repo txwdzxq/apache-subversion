@@ -1588,9 +1588,11 @@ subcommand_freeze(apr_getopt_t *os, void *baton, apr_pool_t *pool)
   else
     {
       svn_stringbuf_t *buf;
+      const char *utf8;
       /* Read repository paths from the -F file. */
       SVN_ERR(svn_stringbuf_from_file2(&buf, opt_state->file, pool));
-      paths = svn_cstring_split(buf->data, "\r\n", FALSE, pool);
+      SVN_ERR(svn_utf_cstring_to_utf8(&utf8, buf->data, pool));
+      paths = svn_cstring_split(utf8, "\r\n", FALSE, pool);
     }
 
   b.command = APR_ARRAY_IDX(args, 0, const char *);
