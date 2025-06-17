@@ -249,29 +249,22 @@ svn_opt__args_to_target_array(apr_array_header_t **targets_p,
       targets_p, utf8_input_targets, known_targets, pool));
 }
 
+/* Note: This is substantially copied into svn_client___target_array() in
+ * order to move to libsvn_client while maintaining backward compatibility. */
 svn_error_t *
-svn_opt__collect_targets(apr_array_header_t **targets_p,
-                         svn_boolean_t *rel_url_found_p,
-                         const apr_array_header_t *utf8_targets,
-                         const apr_array_header_t *known_targets,
-                         apr_pool_t *pool)
+svn_opt__process_target_array(apr_array_header_t **targets_p,
+                              apr_array_header_t *input_targets,
+                              const apr_array_header_t *known_targets,
+                              apr_pool_t *pool)
 {
   int i;
-  int target_count = utf8_targets->nelts + (known_targets
-                                            ? known_targets->nelts : 0);
-  apr_array_header_t *input_targets = apr_array_make(pool, target_count,
-                                                     sizeof(const char *));
+  svn_error_t *err = SVN_NO_ERROR;
+  apr_array_header_t *output_targets =
+    apr_array_make(pool, DEFAULT_ARRAY_SIZE, sizeof(const char *));
 
-  for (i = 0; i < utf8_targets->nelts; i++)
-    {
-      const char *utf8_target = APR_ARRAY_IDX(utf8_targets, i, const char *);
-
-      if (rel_url_found_p != NULL &&
-          svn_path_is_repos_relative_url(utf8_target))
-        *rel_url_found_p = TRUE;
-
-      APR_ARRAY_PUSH(input_targets, const char *) = utf8_target;
-    }
+  /* Step 1:  create a master array of targets, and come from concatenating
+     the targets left by apr_getopt, plus any extra targets (e.g., from the
+     --targets switch.) */
 
   if (known_targets)
     {
@@ -281,50 +274,18 @@ svn_opt__collect_targets(apr_array_header_t **targets_p,
              because we needed to split up the list with svn_cstring_split. */
           const char *utf8_target = APR_ARRAY_IDX(known_targets,
                                                   i, const char *);
-
-          if (rel_url_found_p != NULL &&
-              svn_path_is_repos_relative_url(utf8_target))
-            *rel_url_found_p = TRUE;
-
           APR_ARRAY_PUSH(input_targets, const char *) = utf8_target;
         }
     }
 
-  *targets_p = input_targets;
-  return SVN_NO_ERROR;
-}
-
-/* Note: This is substantially copied into svn_client_args_to_target_array() in
- * order to move to libsvn_client while maintaining backward compatibility. */
-svn_error_t *
-svn_opt__process_target_array(apr_array_header_t **targets_p,
-                              apr_array_header_t *utf8_targets,
-                              const apr_array_header_t *known_targets,
-                              apr_pool_t *pool)
-{
-  int i;
-  apr_array_header_t *input_targets;
-  apr_array_header_t *output_targets;
-  apr_array_header_t *reserved_names = NULL;
-
-  /* Step 1:  create a master array of targets, and come from concatenating
-     the targets left by apr_getopt, plus any extra targets (e.g., from the
-     --targets switch.) */
-
-  SVN_ERR(svn_opt__collect_targets(&input_targets, NULL,
-                                   utf8_targets, known_targets, pool));
-
   /* Step 2:  process each target.  */
-
-  output_targets = apr_array_make(pool, input_targets->nelts,
-                                  sizeof(const char *));
 
   for (i = 0; i < input_targets->nelts; i++)
     {
       const char *utf8_target = APR_ARRAY_IDX(input_targets, i, const char *);
       const char *true_target;
-      const char *peg_rev;
       const char *target;      /* after all processing is finished */
+      const char *peg_rev;
 
       /*
        * This is needed so that the target can be properly canonicalized,
@@ -344,15 +305,15 @@ svn_opt__process_target_array(apr_array_header_t **targets_p,
       /* URLs and wc-paths get treated differently. */
       if (svn_path_is_url(true_target))
         {
-          SVN_ERR(svn_opt__arg_canonicalize_url(&true_target,
-                                                true_target, pool));
+          SVN_ERR(svn_opt__arg_canonicalize_url(&true_target, true_target,
+                                                 pool));
         }
       else  /* not a url, so treat as a path */
         {
           const char *base_name;
 
-          SVN_ERR(svn_opt__arg_canonicalize_path(&true_target,
-                                                  true_target, pool));
+          SVN_ERR(svn_opt__arg_canonicalize_path(&true_target, true_target,
+                                                 pool));
 
           /* If the target has the same name as a Subversion
              working copy administrative dir, skip it. */
@@ -368,11 +329,9 @@ svn_opt__process_target_array(apr_array_header_t **targets_p,
           if (0 == strcmp(base_name, ".svn")
               || 0 == strcmp(base_name, "_svn"))
             {
-              if (!reserved_names)
-                reserved_names = apr_array_make(pool, 1,
-                                                sizeof(const char *));
-
-              APR_ARRAY_PUSH(reserved_names, const char *) = utf8_target;
+              err = svn_error_createf(SVN_ERR_RESERVED_FILENAME_SPECIFIED,
+                                      err, _("'%s' ends in a reserved name"),
+                                      utf8_target);
               continue;
             }
         }
@@ -388,19 +347,7 @@ svn_opt__process_target_array(apr_array_header_t **targets_p,
 
   *targets_p = output_targets;
 
-  if (reserved_names)
-    {
-      svn_error_t *err = SVN_NO_ERROR;
-
-      for (i = 0; i < reserved_names->nelts; ++i)
-        err = svn_error_createf(SVN_ERR_RESERVED_FILENAME_SPECIFIED, err,
-                                _("'%s' ends in a reserved name"),
-                                APR_ARRAY_IDX(reserved_names, i,
-                                              const char *));
-      return svn_error_trace(err);
-    }
-
-  return SVN_NO_ERROR;
+  return err;
 }
 
 svn_error_t *
@@ -548,123 +495,6 @@ svn_opt__arg_canonicalize_path(const char **path_out, const char *path_in,
   /* convert back to UTF-8. */
   SVN_ERR(svn_path_cstring_to_utf8(path_out, apr_target, pool));
   *path_out = svn_dirent_canonicalize(*path_out, pool);
-
-  return SVN_NO_ERROR;
-}
-
-svn_error_t *
-svn_opt__target_parse(svn_opt__target_t **target_p,
-                      svn_boolean_t *rel_url_found_p,
-                      const char *path,
-                      apr_pool_t *pool)
-{
-  svn_opt__target_t *new_target = apr_pcalloc(pool,
-                                              sizeof(*new_target));
-
-  SVN_ERR(svn_opt__split_arg_at_peg_revision(&new_target->true_target,
-                                             &new_target->peg_revision,
-                                             path, pool));
-
-  if (svn_path_is_repos_relative_url(path))
-    {
-      new_target->type = svn_opt__target_type_relative_url;
-
-      if (rel_url_found_p != NULL)
-        *rel_url_found_p = TRUE;
-    }
-  if (svn_path_is_url(path))
-    new_target->type = svn_opt__target_type_absolute_url;
-  else
-    new_target->type = svn_opt__target_type_local_abspath;
-
-  *target_p = new_target;
-  return SVN_NO_ERROR;
-}
-
-svn_error_t *
-svn_opt__target_to_string(const char **path_p,
-                          svn_opt__target_t *target,
-                          apr_pool_t *pool)
-{
-  const char *canonical_target;
-
-  if (target->type == svn_opt__target_type_absolute_url
-      || target->type == svn_opt__target_type_relative_url)
-    {
-      SVN_ERR(svn_opt__arg_canonicalize_url(&canonical_target,
-                                            target->true_target, pool));
-    }
-  else
-    {
-      canonical_target = target->true_target;
-    }
-
-  *path_p = apr_pstrcat(pool, canonical_target,
-                        target->peg_revision, SVN_VA_NULL);
-  return SVN_NO_ERROR;
-}
-
-svn_error_t *
-svn_opt__target_resolve(svn_opt__target_t *target,
-                        const char *root,
-                        apr_pool_t *pool)
-{
-  const char *abs_target;
-
-  assert(target->type == svn_opt__target_type_relative_url);
-
-  SVN_ERR(svn_path_resolve_repos_relative_url(&abs_target, target->true_target,
-                                              root, pool));
-
-  target->true_target = abs_target;
-  target->type = svn_opt__target_type_absolute_url;
-
-  return SVN_NO_ERROR;
-}
-
-svn_error_t *
-svn_opt__target_array_parse(apr_array_header_t **targets_p,
-                            svn_boolean_t *rel_url_found_p,
-                            apr_array_header_t *paths,
-                            apr_pool_t *pool)
-{
-  int i;
-
-  if (*targets_p == NULL)
-    *targets_p = apr_array_make(pool, DEFAULT_ARRAY_SIZE,
-                                sizeof(svn_opt__target_t *));
-
-  for (i = 0; i < paths->nelts; i++)
-    {
-      const char *path = APR_ARRAY_IDX(paths, i, const char *);
-      svn_opt__target_t *target;
-
-      SVN_ERR(svn_opt__target_parse(&target, rel_url_found_p, path, pool));
-      APR_ARRAY_PUSH(*targets_p, svn_opt__target_t *) = target;
-    }
-
-  return SVN_NO_ERROR;
-}
-
-svn_error_t *
-svn_opt__target_array_to_string(apr_array_header_t **paths_p,
-                                apr_array_header_t *targets,
-                                apr_pool_t *pool)
-{
-  int i;
-
-  if (*paths_p == NULL)
-    *paths_p = apr_array_make(pool, DEFAULT_ARRAY_SIZE, sizeof(const char *));
-
-  for (i = 0; i < targets->nelts; i++)
-    {
-      const char *path;
-      svn_opt__target_t *target = APR_ARRAY_IDX(targets, i,
-                                                svn_opt__target_t *);
-
-      SVN_ERR(svn_opt__target_to_string(&path, target, pool));
-      APR_ARRAY_PUSH(*paths_p, const char *) = path;
-    }
 
   return SVN_NO_ERROR;
 }
