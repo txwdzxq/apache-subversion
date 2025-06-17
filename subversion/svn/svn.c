@@ -2611,7 +2611,7 @@ sub_main(int *exit_code,
         break;
       case opt_with_revprop:
         SVN_ERR(svn_opt_parse_revprop2(&opt_state.revprop_table,
-                                           utf8_opt_arg, pool));
+                                       utf8_opt_arg, pool));
         break;
       case opt_parents:
         opt_state.parents = TRUE;
