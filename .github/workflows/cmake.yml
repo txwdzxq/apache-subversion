@@ -83,6 +83,11 @@ jobs:
               libdbus-1-dev
               qtbase5-dev
               libsecret-1-dev
+          - name: Mac OS
+            os: macos-latest
+            build_shared: ON
+            cmake_generator: Ninja
+            run_tests: true
 
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.name }}
@@ -105,6 +110,11 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           # nothing yet
+
+      - name: Prepare Environment (Mac OS)
+        if: runner.os == 'macOS'
+        run: |
+          "CMAKE_PREFIX_PATH=/opt/homebrew/opt/subversion/libexec/serf"  >> $env:GITHUB_ENV
 
       - name: Export GitHub Actions cache environment variables
         if: runner.os == 'Windows'
@@ -136,6 +146,13 @@ jobs:
           zlib1g-dev
           libsqlite3-dev
           ninja-build
+          ${{ matrix.extra_packages }}
+
+      - name: Install dependencies (Mac OS, homebrew)
+        if: runner.os == 'macOS'
+        # hack to get serf installed, since there is no separate package.
+        run: >
+          brew install subversion
           ${{ matrix.extra_packages }}
 
       - name: Use LF for Git checkout

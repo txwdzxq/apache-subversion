@@ -69,9 +69,12 @@ if ([targets.enable_condition])[is targets.type "swig"]
     WORKING_DIRECTORY $<TARGET_FILE_DIR:[targets.name]>
   )
   set_tests_properties([targets.namespace].[targets.name] PROPERTIES ENVIRONMENT LD_LIBRARY_PATH=$<TARGET_FILE_DIR:[targets.name]>)
-  [end]target_link_libraries([targets.name] PRIVATE[for targets.libs]
-    [targets.libs][end]
-  )[if-any targets.msvc_libs]
+  [end][if-any targets.public_libs]target_link_libraries([targets.name] PUBLIC[for targets.public_libs]
+    [targets.public_libs][end]
+  )
+  [end][if-any targets.private_libs]target_link_libraries([targets.name] PRIVATE[for targets.private_libs]
+    [targets.private_libs][end]
+  )[end][if-any targets.msvc_libs]
   if (WIN32)
     target_link_libraries([targets.name] PRIVATE[for targets.msvc_libs] [targets.msvc_libs][end])
   endif()[end][if-any targets.msvc_objects]

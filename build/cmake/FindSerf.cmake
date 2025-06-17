@@ -77,15 +77,18 @@ set_target_properties(Serf::Serf PROPERTIES
 
 find_package(OpenSSL REQUIRED)
 find_package(APR REQUIRED)
-find_package(APRUtil REQUIRED)
 find_package(ZLIB REQUIRED)
 
 target_link_libraries(Serf::Serf INTERFACE
   apr::apr
-  apr::aprutil
   OpenSSL::SSL
   ZLIB::ZLIB
 )
+
+if(APR_VERSION VERSION_LESS 2.0.0)
+  find_package(APRUtil REQUIRED)
+  target_link_libraries(Serf::Serf INTERFACE apr::aprutil)
+endif()
 
 if (WIN32)
   target_link_libraries(Serf::Serf INTERFACE
