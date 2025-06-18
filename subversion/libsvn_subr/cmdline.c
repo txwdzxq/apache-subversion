@@ -1239,7 +1239,7 @@ svn_cmdline__be_interactive(svn_boolean_t *non_interactive,
    * be interactive if stdin is a terminal.
    * If --force-interactive was passed, always be interactive. */
   if (!force_interactive && !*non_interactive)
-    *non_interactive = svn_cmdline__stdin_is_a_terminal();
+    *non_interactive = !svn_cmdline__stdin_is_a_terminal();
 
   if (force_interactive)
     *non_interactive = FALSE;

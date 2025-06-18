@@ -115,11 +115,10 @@ def basic_status(sbox):
 
 #----------------------------------------------------------------------
 
-def basic_commit(sbox):
-  "basic commit command"
-
+def _basic_commit_common(sbox, expected_error=[], *args):
   sbox.build()
   wc_dir = sbox.wc_dir
+  svntest.main.use_editor('prepend_foo')
 
   # Make a couple of local mods to files
   mu_path = sbox.ospath('A/mu')
@@ -128,20 +127,48 @@ def basic_commit(sbox):
   svntest.main.file_append(rho_path, 'new appended text for rho')
 
   # Created expected output tree for 'svn ci'
-  expected_output = wc.State(wc_dir, {
-    'A/mu' : Item(verb='Sending'),
-    'A/D/G/rho' : Item(verb='Sending'),
+  if expected_error:
+    expected_output = []
+  else:
+    expected_output = wc.State(wc_dir, {
+      'A/mu' : Item(verb='Sending'),
+      'A/D/G/rho' : Item(verb='Sending'),
     })
 
   # Create expected status tree; all local revisions should be at 1,
   # but mu and rho should be at revision 2.
   expected_status = svntest.actions.get_virginal_state(wc_dir, 1)
-  expected_status.tweak('A/mu', 'A/D/G/rho', wc_rev=2)
+  if expected_error:
+    expected_status.tweak('A/mu', 'A/D/G/rho', status='M ')
+  else:
+    expected_status.tweak('A/mu', 'A/D/G/rho', wc_rev=2)
 
-  svntest.actions.run_and_verify_commit(wc_dir,
-                                        expected_output,
-                                        expected_status)
+  prepend_wc_dir_name = len(args) > 0
+  append_log_message = not (len(args) or expected_error)
+  svntest.actions.run_and_verify_commit2(wc_dir,
+                                         expected_output,
+                                         expected_status,
+                                         prepend_wc_dir_name,
+                                         append_log_message,
+                                         expected_error,
+                                         *args)
 
+def basic_commit(sbox):
+  "basic commit command"
+
+  return _basic_commit_common(sbox)
+
+def basic_commit_use_editor(sbox):
+  "basic commit using editor"
+
+  # Note: svn's stdin is not a terminal, so it defaults to non-interactive.
+  return _basic_commit_common(sbox,
+                              "svn: E205001: .* editor .* non-interactive.*")
+
+def basic_commit_use_editor_force_interactive(sbox):
+  "basic commit using editor and force-interactive"
+
+  return _basic_commit_common(sbox, [], '--force-interactive')
 
 #----------------------------------------------------------------------
 
@@ -3355,6 +3382,8 @@ test_list = [ None,
               basic_checkout,
               basic_status,
               basic_commit,
+              basic_commit_use_editor,
+              basic_commit_use_editor_force_interactive,
               basic_update,
               basic_mkdir_url,
               basic_mkdir_url_with_parents,
