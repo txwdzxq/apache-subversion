@@ -47,6 +47,17 @@
 /*-----------------------------------------------------------------------*/
 
 /*
+ * NOTE: On language compatibility.
+ * This file uses some C99 extensions:
+ *   - variable length stack-based arrays in build_dict;
+ *   - aggregate initializers that are not compile-time constants
+ *     in the SecItem* keychain_password_set and keychain_password_get.
+ * This is fine; the first public release of macOS (or rather, Mac OS X
+ * 10.0 Cheetah) is two years younger than the C99 standard, and gcc has
+ * supported these features since long before 1999.
+ */
+
+/*
  * XXX (2005-12-07): If no GUI is available (e.g. over a SSH session),
  * you won't be prompted for credentials with which to unlock your
  * keychain.  Apple recognizes lack of TTY prompting as a known
@@ -561,9 +572,10 @@ keychain_password_get(svn_boolean_t *done,
   if (status == errSecSuccess)
     {
       const CFIndex length = CFDataGetLength(item);
-      char *pwd = calloc(1, length + 1);
+      char *const pwd = apr_palloc(pool, length + 1);
 
       memcpy(pwd, CFDataGetBytePtr(item), length);
+      pwd[length] = '\0';
       *password = pwd;
       *done = TRUE;
     }
