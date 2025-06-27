@@ -706,7 +706,7 @@ svn_opt_args_to_target_array(apr_array_header_t **targets_p,
  */
 svn_error_t *
 svn_opt_parse_revprop2(apr_hash_t **revprops,
-                       const char *revprop_spec_utf8,
+                       const char *revprop_spec,
                        apr_pool_t *pool);
 
 /**
