@@ -1105,7 +1105,7 @@ svn_opt_print_generic_help(const char *header,
 }
 
 svn_error_t *
-svn_opt_parse_revprop(apr_hash_t **revprop_table_p,
+svn_opt_parse_revprop(apr_hash_t **revprops,
                       const char *revprop_spec,
                       apr_pool_t *pool)
 {
@@ -1113,7 +1113,7 @@ svn_opt_parse_revprop(apr_hash_t **revprop_table_p,
 
   SVN_ERR(svn_utf_cstring_to_utf8(&revprop_spec_utf8, revprop_spec, pool));
 
-  return svn_error_trace(svn_opt_parse_revprop2(revprop_table_p,
+  return svn_error_trace(svn_opt_parse_revprop2(revprops,
                                                 revprop_spec_utf8, pool));
 }
 

@@ -718,7 +718,7 @@ svn_opt_parse_revprop2(apr_hash_t **revprops,
  */
 SVN_DEPRECATED
 svn_error_t *
-svn_opt_parse_revprop(apr_hash_t **revprop_table_p,
+svn_opt_parse_revprop(apr_hash_t **revprops,
                       const char *revprop_spec,
                       apr_pool_t *pool);
 
