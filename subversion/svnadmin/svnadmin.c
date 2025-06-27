@@ -3366,7 +3366,7 @@ sub_main(int *exit_code,
                                   _("Repository argument required"));
         }
 
-      repos_path = os->argv[os->ind++], pool;
+      repos_path = os->argv[os->ind++];
 
       if (svn_path_is_url(repos_path))
         {
