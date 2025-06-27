@@ -41,6 +41,8 @@
 
 /*** Code. ***/
 
+#define DEFAULT_ARRAY_SIZE 5
+
 
 /* Attempt to find the repository root url for TARGET, possibly using CTX for
  * authentication.  If one is found and *ROOT_URL is not NULL, then just check
@@ -122,9 +124,9 @@ svn_client__process_target_array(apr_array_header_t **targets_p,
   svn_boolean_t rel_url_found = FALSE;
   const char *root_url = NULL;
   apr_array_header_t *input_targets = apr_array_make(
-    pool, utf8_targets->nelts, sizeof(const char *));
+    pool, DEFAULT_ARRAY_SIZE, sizeof(const char *));
   apr_array_header_t *output_targets = apr_array_make(
-    pool, utf8_targets->nelts, sizeof(const char *));
+    pool, DEFAULT_ARRAY_SIZE, sizeof(const char *));
   apr_array_header_t *reserved_names = NULL;
 
   /* Step 1:  create a master array of targets that are in UTF-8
@@ -271,7 +273,7 @@ svn_client__process_target_array(apr_array_header_t **targets_p,
               if (svn_wc_is_adm_dir(base_name, pool))
                 {
                   if (!reserved_names)
-                    reserved_names = apr_array_make(pool, 1,
+                    reserved_names = apr_array_make(pool, DEFAULT_ARRAY_SIZE,
                                                     sizeof(const char *));
 
                   APR_ARRAY_PUSH(reserved_names, const char *) = utf8_target;
