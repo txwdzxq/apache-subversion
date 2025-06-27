@@ -1449,10 +1449,10 @@ svn_cmdline__win32_get_utf8_argv(const char **utf8_argv_p[],
 
   for (i = 0; i < argc; i++)
     {
-      const wchar_t *arg = argv[i];
       const char *utf8_arg;
 
-      SVN_ERR(svn_utf__win32_utf16_to_utf8(&utf8_arg, arg, NULL, result_pool));
+      SVN_ERR(svn_utf__win32_utf16_to_utf8(&utf8_arg, argv[i],
+                                           NULL, result_pool));
 
       APR_ARRAY_PUSH(utf8_argv, const char *) = utf8_arg;
     }
@@ -1488,10 +1488,9 @@ svn_cmdline__default_get_utf8_argv(const char **utf8_argv_p[],
 
   for (i = 0; i < argc; i++)
     {
-      const char *arg = argv[i];
       const char *utf8_arg;
 
-      SVN_ERR(svn_utf_cstring_to_utf8(&utf8_arg, arg, result_pool));
+      SVN_ERR(svn_utf_cstring_to_utf8(&utf8_arg, argv[i], result_pool));
 
       APR_ARRAY_PUSH(utf8_argv, const char *) = utf8_arg;
     }
