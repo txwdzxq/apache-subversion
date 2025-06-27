@@ -2626,7 +2626,8 @@ sub_main(int *exit_code,
           break;
 
         case svnlook__diff_cmd:
-          opt_state.diff_cmd = apr_pstrdup(pool, utf8_opt_arg);
+          SVN_ERR(svn_utf_cstring_from_utf8(opt_state.diff_cmd, utf8_opt_arg,
+                                            pool));
           break;
 
         case svnlook__show_inherited_props:
