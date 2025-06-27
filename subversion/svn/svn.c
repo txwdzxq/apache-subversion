@@ -2567,7 +2567,7 @@ sub_main(int *exit_code,
       case opt_native_eol:
         if ( !strcmp("LF", utf8_opt_arg) || !strcmp("CR", utf8_opt_arg) ||
              !strcmp("CRLF", utf8_opt_arg))
-          opt_state.native_eol = utf8_opt_arg;
+          opt_state.native_eol = apr_pstrdup(pool, utf8_opt_arg);
         else
           {
             return svn_error_createf(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
@@ -2593,7 +2593,7 @@ sub_main(int *exit_code,
             return svn_error_create(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
                                     _("Changelist names must not be empty"));
           }
-        svn_hash_sets(changelists, utf8_opt_arg, (void *)1);
+        svn_hash_sets(changelists, apr_pstrdup(pool, utf8_opt_arg), (void *)1);
         break;
       case opt_keep_changelists:
         opt_state.keep_changelists = TRUE;
