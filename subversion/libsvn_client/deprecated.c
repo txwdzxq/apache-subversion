@@ -461,10 +461,10 @@ svn_client_args_to_target_array2(apr_array_header_t **targets_p,
 
   for (i = 0; i < input_targets->nelts; i++)
     {
-      const char *raw_target = APR_ARRAY_IDX(input_targets, i, const char *);
+      const char *target = APR_ARRAY_IDX(input_targets, i, const char *);
       const char *utf8_target;
 
-      SVN_ERR(svn_utf_cstring_to_utf8(&utf8_target, raw_target, pool));
+      SVN_ERR(svn_utf_cstring_to_utf8(&utf8_target, target, pool));
 
       APR_ARRAY_PUSH(utf8_input_targets, const char *) = utf8_target;
     }
