@@ -803,7 +803,8 @@ parse_args(apr_array_header_t **args,
       if (num_args)
         while (os->ind < os->argc)
           {
-            APR_ARRAY_PUSH(*args, const char *) = os->argv[os->ind++];
+            APR_ARRAY_PUSH(*args, const char *) =
+                apr_pstrdup(pool, os->argv[os->ind++]);
           }
     }
 
