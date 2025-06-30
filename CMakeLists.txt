@@ -263,7 +263,7 @@ endif()
 ### APR and APR-Util
 
 if(SVN_USE_PKG_CONFIG)
-  pkg_search_module(apr REQUIRED IMPORTED_TARGET apr-1 apr-2)
+  pkg_search_module(apr REQUIRED IMPORTED_TARGET apr-2 apr-1)
   add_library(external-apr ALIAS PkgConfig::apr)
 
   if(APR_VERSION VERSION_LESS 2.0.0)
@@ -372,7 +372,7 @@ endif()
 ### Serf
 if (SVN_ENABLE_RA_SERF)
   if(SVN_USE_PKG_CONFIG)
-    pkg_search_module(serf IMPORTED_TARGET serf-1 serf-2)
+    pkg_search_module(serf IMPORTED_TARGET serf-2 serf-1)
 
     if(serf_FOUND)
       add_library(external-serf ALIAS PkgConfig::serf)
