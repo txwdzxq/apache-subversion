@@ -107,7 +107,7 @@ jobs:
           ls env: | foreach { "$($_.Name)=$($_.Value)" >> $env:GITHUB_ENV }
 
       - name: Prepare Environment (Linux)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Linux'
         run: |
           # nothing yet
 
