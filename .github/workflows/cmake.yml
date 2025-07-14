@@ -106,11 +106,6 @@ jobs:
 
           ls env: | foreach { "$($_.Name)=$($_.Value)" >> $env:GITHUB_ENV }
 
-      - name: Prepare Environment (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          # nothing yet
-
       - name: Export GitHub Actions cache environment variables
         if: runner.os == 'Windows'
         uses: actions/github-script@v7
