@@ -156,7 +156,8 @@ SHA256_${BDB_DIST} = f14fd96dd38915a1d63dcb94a63fbb8092334ceba6b5060760427096f63
 SHA256_${APR_ICONV_DIST} = 19381959d50c4a5f3b9c84d594a5f9ffb3809786919b3058281f4c87e1f4b245
 SHA256_${GNU_ICONV_DIST} = ccf536620a45458d26ba83887a983b96827001e92a13847b45e4925cc8913178
 SHA256_${PCRE_DIST} = 244838e1f1d14f7e2fa7681b857b3a8566b74215f28133f14a8f5e59241b682c
-SHA256_${HTTPD_DIST} = aa97a834a32d51974be8d8a013b561e28d327387cb1da2c3c2762acd0146aabd
+SHA256_httpd-2.4.37.tar.gz = aa97a834a32d51974be8d8a013b561e28d327387cb1da2c3c2762acd0146aabd
+SHA256_httpd-2.4.65.tar.gz = 4f92861a50325c6d1046ebad5d814bff0d4169ada8cc265655f32b7f1ba4be1b
 SHA256_${NEON_DIST} = 4872e12f802572dedd4b02f870065814b2d5141f7dbdaf708eedab826b51a58a
 SHA256_${CYRUS_SASL_DIST} = 7ccfc6abd01ed67c1a0924b353e526f1b766b21f42d4562ee635a8ebfc5bb38c
 SHA256_${SQLITE_DIST} = f31d445b48e67e284cf206717cc170ab63cbe4fd7f79a82793b772285e78fdbb
@@ -785,9 +786,13 @@ $(HTTPD_OBJDIR)/.retrieved: $(DISTDIR)/$(HTTPD_DIST) \
 	$(call do_check_sha256,$(HTTPD_DIST))
 	[ -d $(HTTPD_OBJDIR) ] || mkdir -p $(HTTPD_OBJDIR)
 	tar -C $(SRCDIR) -zxf $(DISTDIR)/$(HTTPD_DIST)
+ifeq ($(shell test $(HTTPD_VER) \< 2.4.42 && echo 1), 1)
 	(cd $(HTTPD_SRCDIR) && patch -p0 < $(HTTPD_OBJDIR)/ssl-init-proxy-certs.diff)
 	(cd $(HTTPD_SRCDIR) && patch -p0 < $(HTTPD_OBJDIR)/mod-proxy-no-threads-2.4.diff)
+endif
+ifeq ($(shell test $(HTTPD_VER) \< 2.4.49 && echo 1), 1)
 	(cd $(HTTPD_SRCDIR) && svn diff -cr1849590 https://svn.apache.org/repos/asf/httpd/httpd/trunk | patch -p0)
+endif
 	(cd $(HTTPD_SRCDIR) && svn diff -cr1663375 https://svn.apache.org/repos/asf/httpd/httpd/trunk | patch -p0)
 	touch $@
 
