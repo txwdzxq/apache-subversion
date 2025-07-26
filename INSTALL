@@ -1239,7 +1239,7 @@ II.   INSTALLATION
 
             $ git clone https://github.com/microsoft/vcpkg
             $ cd vcpkg && .\bootstrap-vcpkg.bat -disableMetrics
-            $ .\vcpkg install apr apr-util expat zlib sqlite3 [any other dependency]
+            $ .\vcpkg install apr apr-util expat zlib sqlite3 serf [any other dependency]
 
         After this is done, vcpkg can be integrated into CMake by passing
         the vcpkg toolchain to CMAKE_TOOLCHAIN_FILE option. In order to do
