@@ -1412,7 +1412,7 @@ class GenDependenciesBase(gen_base.GeneratorBase):
       if show_warnings:
         print('Found sasl %s, but >= %s is required. '
               'sals support will not be built.\n' %
-              (sasl_version, '.'.join(str(v) for v in minimal_serf_version)))
+              (sasl_version, '.'.join(str(v) for v in minimal_sasl_version)))
       return
 
     lib_dir = os.path.join(self.sasl_path, 'lib')
