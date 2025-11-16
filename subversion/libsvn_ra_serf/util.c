@@ -1139,7 +1139,7 @@ svn_ra_serf__expect_empty_body(serf_request_t *request,
 {
   svn_ra_serf__handler_t *handler = baton;
   serf_bucket_t *hdrs;
-  const char *val;
+  const char *val = 0;
 
   /* This function is just like handle_multistatus_only() except for the
      XML parsing callbacks. We want to look for the -readable element.  */
@@ -1151,7 +1151,9 @@ svn_ra_serf__expect_empty_body(serf_request_t *request,
   SVN_ERR_ASSERT(handler->server_error == NULL);
 
   hdrs = serf_bucket_response_get_headers(response);
-  val = serf_bucket_headers_get(hdrs, "Content-Type");
+  if (hdrs)
+    val = serf_bucket_headers_get(hdrs, "Content-Type");
+
   if (val
       && (handler->sline.code < 200 || handler->sline.code >= 300)
       && strncasecmp(val, "text/xml", sizeof("text/xml") - 1) == 0)
