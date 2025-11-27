@@ -1465,7 +1465,7 @@ $(DISTDIR)/$(PYTHON2_DIST):
 # https://bugs.python.org/issue12560
 $(DISTDIR)/python-issue12560.patch:
 	cd $(DISTDIR) && $(FETCH_CMD) -O "$@" \
-		https://hg.python.org/cpython/raw-rev/32cc37a89b58
+		https://bugs.python.org/file22654/python-2.7.2-configure.diff
 
 # retrieve python 2
 #
