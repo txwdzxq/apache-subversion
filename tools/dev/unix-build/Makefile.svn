@@ -107,6 +107,7 @@ BDB_VER		= $(BDB_MAJOR_VER).25
 APR_VER		= 1.7.5
 APR_ICONV_VER	= 1.2.1
 GNU_ICONV_VER	= 1.15
+OPENLDAP_VER	= 2.6.10
 APR_UTIL_VER	= 1.6.1
 PCRE_VER	= 8.41
 HTTPD_VER	= 2.4.37
@@ -134,6 +135,7 @@ endif
 include Makefile.local
 
 BDB_DIST	= db-$(BDB_VER).tar.gz
+OPENLDAP_DIST	= openldap-$(OPENLDAP_VER).tgz
 APR_ICONV_DIST	= apr-iconv-$(APR_ICONV_VER).tar.gz
 GNU_ICONV_DIST	= libiconv-$(GNU_ICONV_VER).tar.gz
 NEON_DIST	= neon-$(NEON_VER).tar.gz
@@ -155,6 +157,7 @@ SWIG_DIST	= swig-$(SWIG_VER).tar.gz
 SHA256_${BDB_DIST} = f14fd96dd38915a1d63dcb94a63fbb8092334ceba6b5060760427096f631263e
 SHA256_${APR_ICONV_DIST} = 19381959d50c4a5f3b9c84d594a5f9ffb3809786919b3058281f4c87e1f4b245
 SHA256_${GNU_ICONV_DIST} = ccf536620a45458d26ba83887a983b96827001e92a13847b45e4925cc8913178
+SHA256_${OPENLDAP_DIST} = c065f04aad42737aebd60b2fe4939704ac844266bc0aeaa1609f0cad987be516
 SHA256_${PCRE_DIST} = 244838e1f1d14f7e2fa7681b857b3a8566b74215f28133f14a8f5e59241b682c
 SHA256_httpd-2.4.37.tar.gz = aa97a834a32d51974be8d8a013b561e28d327387cb1da2c3c2762acd0146aabd
 SHA256_httpd-2.4.65.tar.gz = 4f92861a50325c6d1046ebad5d814bff0d4169ada8cc265655f32b7f1ba4be1b
@@ -201,6 +204,7 @@ endef
 DISTFILES	= $(DISTDIR)/$(NEON_DIST) \
 		$(DISTDIR)/$(SERF_DIST) \
 		$(DISTDIR)/$(SQLITE_DIST) \
+		$(DISTDIR)/$(OPENLDAP_DIST) \
 		$(DISTDIR)/$(PCRE_DIST) \
 		$(DISTDIR)/$(HTTPD_DIST) \
 		$(DISTDIR)/$(APR_ICONV_DIST) \
@@ -223,6 +227,7 @@ BDB_URL		= http://download.oracle.com/berkeley-db/$(BDB_DIST)
 APR_URL		= https://svn.apache.org/repos/asf/apr/apr
 APR_ICONV_URL	= https://archive.apache.org/dist/apr/$(APR_ICONV_DIST)
 GNU_ICONV_URL	= https://ftp.gnu.org/pub/gnu/libiconv/$(GNU_ICONV_DIST)
+OPENLDAP_URL	= https://openldap.org/software/download/OpenLDAP/openldap-release/${OPENLDAP_DIST}
 APR_UTIL_URL	= https://svn.apache.org/repos/asf/apr/apr-util
 PCRE_URL	= https://downloads.sourceforge.net/project/pcre/pcre/$(PCRE_VER)/$(PCRE_DIST)
 HTTPD_URL	= https://archive.apache.org/dist/httpd/$(HTTPD_DIST)
@@ -246,6 +251,7 @@ BDB_SRCDIR	= $(SRCDIR)/db-$(BDB_VER)
 APR_SRCDIR	= $(SRCDIR)/apr-$(APR_VER)
 APR_ICONV_SRCDIR	= $(SRCDIR)/apr-iconv-$(APR_ICONV_VER)
 GNU_ICONV_SRCDIR	= $(SRCDIR)/libiconv-$(GNU_ICONV_VER)
+OPENLDAP_SRCDIR	= ${SRCDIR}/openldap-$(OPENLDAP_VER)
 APR_UTIL_SRCDIR	= $(SRCDIR)/apr-util-$(APR_UTIL_VER)
 PCRE_SRCDIR	= $(SRCDIR)/pcre-$(PCRE_VER)
 HTTPD_SRCDIR	= $(SRCDIR)/httpd-$(HTTPD_VER)
@@ -268,6 +274,7 @@ BDB_OBJDIR	= $(OBJDIR)/db-$(BDB_VER)
 APR_OBJDIR	= $(OBJDIR)/apr-$(APR_VER)
 APR_ICONV_OBJDIR	= $(OBJDIR)/apr-iconv-$(APR_ICONV_VER)
 GNU_ICONV_OBJDIR	= $(OBJDIR)/libiconv-$(GNU_ICONV_VER)
+OPENLDAP_OBJDIR	= ${OBJDIR}/openldap-$(OPENLDAP_VER)
 APR_UTIL_OBJDIR	= $(OBJDIR)/apr-util-$(APR_UTIL_VER)
 PCRE_OBJDIR	= $(OBJDIR)/pcre-$(PCRE_VER)
 HTTPD_OBJDIR	= $(OBJDIR)/httpd-$(HTTPD_VER)
@@ -296,10 +303,10 @@ PROFILE_CFLAGS=-pg
 endif
 
 # We need this to make sure some targets below pick up the right libraries
-LD_LIBRARY_PATH=$(PREFIX)/apr/lib:$(PREFIX)/gettext/lib:$(PREFIX)/iconv/lib:$(PREFIX)/bdb/lib:$(PREFIX)/neon/lib:$(PREFIX)/serf/lib:$(PREFIX)/sqlite/lib:$(PREFIX)/cyrus-sasl/lib:$(PREFIX)/iconv/lib:$(PREFIX)/libmagic/lib:$(PREFIX)/ruby/lib:$(PREFIX)/svn-$(WC)/lib
+LD_LIBRARY_PATH=$(PREFIX)/openldap/lib:$(PREFIX)/apr/lib:$(PREFIX)/gettext/lib:$(PREFIX)/iconv/lib:$(PREFIX)/bdb/lib:$(PREFIX)/neon/lib:$(PREFIX)/serf/lib:$(PREFIX)/sqlite/lib:$(PREFIX)/cyrus-sasl/lib:$(PREFIX)/iconv/lib:$(PREFIX)/libmagic/lib:$(PREFIX)/ruby/lib$(PREFIX)/svn-$(WC)/lib
 
 # We need this to make sure some targets below pick up the right pkg-config files
-PKG_CONFIG_PATH=$(PREFIX)/apr/lib/pkgconfig:$(PREFIX)/neon/lib/pkgconfig:$(PREFIX)/serf/lib/pkgconfig:$(PREFIX)/sqlite/lib/pkgconfig:$(PREFIX)/ruby/lib/pkgconfig:$(PREFIX)/lz4/lib/pkgconfig
+PKG_CONFIG_PATH=$(PREFIX)/openldap/lib/pkgconfig:$(PREFIX)/apr/lib/pkgconfig:$(PREFIX)/neon/lib/pkgconfig:$(PREFIX)/serf/lib/pkgconfig:$(PREFIX)/sqlite/lib/pkgconfig:$(PREFIX)/ruby/lib/pkgconfig:$(PREFIX)/lz4/lib/pkgconfig
 
 
 #######################################################################
@@ -308,24 +315,24 @@ PKG_CONFIG_PATH=$(PREFIX)/apr/lib/pkgconfig:$(PREFIX)/neon/lib/pkgconfig:$(PREFI
 
 .PHONY: all reset clean nuke fetch
 
-all: dirs-create bdb-install apr-install iconv-install apr-util-install \
-	pcre-install httpd-install neon-install serf-install \
-	sqlite-install cyrus-sasl-install libmagic-install \
+all: dirs-create bdb-install sqlite-install cyrus-sasl-install \
+	openldap-install apr-install iconv-install apr-util-install \
+	pcre-install httpd-install neon-install serf-install libmagic-install \
 	ruby-install bz2-install python-install python2-install py3c-retrieve \
-	gettext-install lz4-install swig-install svn-install \
-	svn-bindings-install
+	gettext-install lz4-install swig-install svn-install svn-bindings-install
 
 # Use these to start a build from the beginning.
 reset: dirs-reset bdb-reset apr-reset iconv-reset apr-util-reset \
 	pcre-reset httpd-reset neon-reset serf-reset \
 	sqlite-reset cyrus-sasl-reset libmagic-reset ruby-reset python-reset \
-	python2-reset bz2-reset gettext-reset lz4-reset swig-reset svn-reset
+	python2-reset bz2-reset gettext-reset lz4-reset swig-reset \
+	openldap-reset svn-reset
 
 # Use to save disk space.
 clean: bdb-clean apr-clean iconv-clean apr-util-clean pcre-clean httpd-clean \
 	neon-clean serf-clean sqlite-clean cyrus-sasl-clean \
 	libmagic-clean ruby-clean bz2-clean python-clean python2-clean \
-	gettext-clean lz4-clean swig-clean svn-clean
+	gettext-clean lz4-clean swig-clean openldap-clean svn-clean
 
 # Nukes everything (including installed binaries!)
 # Use this to start ALL OVER AGAIN! Use with caution!
@@ -632,6 +639,65 @@ iconv-clean: gnu-iconv-clean
 endif
 
 #######################################################################
+# openldap
+#######################################################################
+
+openldap-retrieve:	$(OPENLDAP_OBJDIR)/.retrieved
+openldap-configure:	$(OPENLDAP_OBJDIR)/.configured
+openldap-compile:	$(OPENLDAP_OBJDIR)/.compiled
+openldap-install:	$(OPENLDAP_OBJDIR)/.installed
+openldap-reset:
+	$(foreach f, .retrieved .configured .compiled .installed, \
+		rm -f $(OPENLDAP_OBJDIR)/$(f);)
+
+openldap-clean:
+	-(cd $(OPENLDAP_OBJDIR) && env MAKEFLAGS= make clean)
+
+
+# fetch distfile for openldap
+$(DISTDIR)/$(OPENLDAP_DIST):
+	cd $(DISTDIR) && $(FETCH_CMD) $(OPENLDAP_URL)
+
+# retrieve pcre
+$(OPENLDAP_OBJDIR)/.retrieved: $(DISTDIR)/$(OPENLDAP_DIST)
+	$(call do_check_sha256,$(OPENLDAP_DIST))
+	[ -d $(OPENLDAP_OBJDIR) ] || mkdir -p $(OPENLDAP_OBJDIR)
+	tar -C $(SRCDIR) -zxf $(DISTDIR)/$(OPENLDAP_DIST)
+	touch $@
+
+# configure openldap
+$(OPENLDAP_OBJDIR)/.configured: $(OPENLDAP_OBJDIR)/.retrieved \
+	$(OPENLDAP_OBJDIR)/.installed $(CYRUS_SASL_OBJDIR)/.installed
+	cd $(OPENLDAP_OBJDIR) \
+		&& env PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) \
+			CFLAGS="-O0 -g $(PROFILE_CFLAGS)" \
+			CPPFLAGS="-I$(PREFIX)/cyrus-sasl/include" \
+			LDFLAGS="-L$(PREFIX)/cyrus-sasl/lib" \
+			CC=$(CC) CXX=$(CXX) \
+			GREP="`which grep`" \
+			ac_cv_lib_ssl_SSL_export_keying_material_early=yes \
+			$(OPENLDAP_SRCDIR)/configure \
+			--enable-dynamic \
+			--enable-local \
+			--enable-ipv6 \
+			--with-tls=openssl \
+			--disable-balancer \
+			--disable-slapd \
+			--with-cyrus-sasl=yes \
+		--prefix=$(PREFIX)/openldap
+	touch $@
+
+# compile openldap
+$(OPENLDAP_OBJDIR)/.compiled: $(OPENLDAP_OBJDIR)/.configured
+	(cd $(OPENLDAP_OBJDIR) && env MAKEFLAGS= make -j${MAKE_JOBS})
+	touch $@
+
+# install openldap
+$(OPENLDAP_OBJDIR)/.installed: $(OPENLDAP_OBJDIR)/.compiled
+	(cd $(OPENLDAP_OBJDIR) && env MAKEFLAGS= make install)
+	touch $@
+
+#######################################################################
 # apr-util
 #######################################################################
 
@@ -679,6 +745,9 @@ $(APR_UTIL_OBJDIR)/.configured: $(APR_UTIL_OBJDIR)/.retrieved \
 		--enable-maintainer-mode \
 		--with-apr=$(PREFIX)/apr \
 		--with-berkeley-db=$(PREFIX)/bdb \
+		--with-ldap-includes=$(PREFIX)/openldap/include/ \
+		--with-ldap-lib=$(PREFIX)/openldap/lib/ \
+		--with-ldap=yes \
 		$(ICONV_FLAG)
 	touch $@
 
@@ -2549,6 +2618,7 @@ else
 endif
 	@echo "apr:        $(APR_VER)"
 	@echo "apr-util:   $(APR_UTIL_VER)"
+	@echo "OpenLDAP:   $(OPENLDAP_VER)"
 	@echo "httpd:      $(HTTPD_VER)"
 	$(NEON_VER_LINE)
 	@echo "serf:       $(SERF_VER)"
