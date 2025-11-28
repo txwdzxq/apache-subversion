@@ -2516,6 +2516,8 @@ svn-check-javahl:
 				tee $(svn_builddir)/tests.log.bindings.javahl; \
 	fi
 
+.PHONY: svn-check-neon svn-check-serf svn-check-local svn-check-svn
+.PHONY: svn-check-prepare-ramdisk svn-check-bindings svn-check
 svn-check: svn-check-prepare-ramdisk svn-check-local svn-check-svn \
 	svn-check-neon svn-check-serf svn-check-bindings
 
