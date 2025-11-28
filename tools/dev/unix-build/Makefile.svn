@@ -2425,7 +2425,8 @@ define do_check
     echo "Begin test: $(subst svn-check-,,$@) x $$fs"; \
     test -d "$(RAMDISK)/tmp" && export TMPDIR="$(RAMDISK)/tmp"; \
     env LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) $(LIB_PTHREAD_HACK) \
-        env MAKEFLAGS= make check PARALLEL=$(PARALLEL) CLEANUP=$(CLEANUP) \
+	  PATH=$(PYTHON_BIN_PATH):$(PREFIX)/ruby/bin:$$PATH \
+	  MAKEFLAGS= make check PARALLEL=$(PARALLEL) CLEANUP=$(CLEANUP) \
 	  EXCLUSIVE_WC_LOCKS=$(EXCLUSIVE_WC_LOCKS) \
 	  THREADED=$(THREADED) \
 	  SVN_BIN_DIR=$(SVN_PREFIX)/bin \
