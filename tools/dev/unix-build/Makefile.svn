@@ -2452,13 +2452,13 @@ svn-check-neon:
 	@echo Neon is not supported by this build of Subversion, skipping tests
 	@true
 else
-svn-check-neon: $(HTTPD_CHECK_CONF) $(SVN_OBJDIR)/.compiled $(SVN_OBJDIR)/.bindings-compiled svn-check-prepare-ramdisk
+svn-check-neon: $(HTTPD_CHECK_CONF) svn-check-prepare-ramdisk
 	$(HTTPD_START_CMD)
 	$(call do_check,BASE_URL=http://localhost:$(HTTPD_CHECK_PORT) HTTP_LIBRARY=neon)
 	$(HTTPD_STOP_CMD)
 endif
 
-svn-check-serf: $(HTTPD_CHECK_CONF) $(SVN_OBJDIR)/.compiled $(SVN_OBJDIR)/.bindings-compiled svn-check-prepare-ramdisk
+svn-check-serf: $(HTTPD_CHECK_CONF) svn-check-prepare-ramdisk
 	$(HTTPD_START_CMD)
 	$(call do_check,BASE_URL=http://localhost:$(HTTPD_CHECK_PORT) HTTP_LIBRARY=serf)
 	$(HTTPD_STOP_CMD)
