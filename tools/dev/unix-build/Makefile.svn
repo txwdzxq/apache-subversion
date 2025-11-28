@@ -667,7 +667,7 @@ $(OPENLDAP_OBJDIR)/.retrieved: $(DISTDIR)/$(OPENLDAP_DIST)
 
 # configure openldap
 $(OPENLDAP_OBJDIR)/.configured: $(OPENLDAP_OBJDIR)/.retrieved \
-	$(OPENLDAP_OBJDIR)/.installed $(CYRUS_SASL_OBJDIR)/.installed
+	$(CYRUS_SASL_OBJDIR)/.installed
 	cd $(OPENLDAP_OBJDIR) \
 		&& env PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) \
 			CFLAGS="-O0 -g $(PROFILE_CFLAGS)" \
