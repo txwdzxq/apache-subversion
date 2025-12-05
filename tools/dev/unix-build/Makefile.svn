@@ -303,7 +303,7 @@ PROFILE_CFLAGS=-pg
 endif
 
 # We need this to make sure some targets below pick up the right libraries
-LD_LIBRARY_PATH=$(PREFIX)/lz4/lib:$(PREFIX)/openldap/lib:$(PREFIX)/apr/lib:$(PREFIX)/gettext/lib:$(PREFIX)/iconv/lib:$(PREFIX)/bdb/lib:$(PREFIX)/neon/lib:$(PREFIX)/serf/lib:$(PREFIX)/sqlite/lib:$(PREFIX)/cyrus-sasl/lib:$(PREFIX)/iconv/lib:$(PREFIX)/libmagic/lib:$(PREFIX)/ruby/lib$(PREFIX)/svn-$(WC)/lib
+LD_LIBRARY_PATH=$(PREFIX)/lz4/lib:$(PREFIX)/openldap/lib:$(PREFIX)/apr/lib:$(PREFIX)/gettext/lib:$(PREFIX)/iconv/lib:$(PREFIX)/bdb/lib:$(PREFIX)/neon/lib:$(PREFIX)/serf/lib:$(PREFIX)/sqlite/lib:$(PREFIX)/cyrus-sasl/lib:$(PREFIX)/iconv/lib:$(PREFIX)/libmagic/lib:$(PREFIX)/ruby/lib:$(PREFIX)/svn-$(WC)/lib
 
 # We need this to make sure some targets below pick up the right pkg-config files
 PKG_CONFIG_PATH=$(PREFIX)/openldap/lib/pkgconfig:$(PREFIX)/apr/lib/pkgconfig:$(PREFIX)/neon/lib/pkgconfig:$(PREFIX)/serf/lib/pkgconfig:$(PREFIX)/sqlite/lib/pkgconfig:$(PREFIX)/ruby/lib/pkgconfig:$(PREFIX)/lz4/lib/pkgconfig
