@@ -119,8 +119,8 @@ LIBMAGIC_VER	= 5.46
 RUBY_MAJOR_VER	= 3.4
 RUBY_VER	= $(RUBY_MAJOR_VER).7
 BZ2_VER	= 1.0.8
-PYTHON_VER	= 3.11.10
-PYTHON2_VER	= 2.7.13
+PYTHON_VER	= 3.13.9
+PYTHON2_VER	= 2.7.18
 PY3C_VER	= 1.1
 JUNIT_VER	= 4.10
 GETTEXT_VER	= 0.23.1
@@ -171,8 +171,8 @@ SHA256_ruby-3.0.7.tar.gz = 2a3411977f2850431136b0fab8ad53af09fb74df2ee2f4fb7f11b
 SHA256_ruby-3.1.6.tar.gz = 0d0dafb859e76763432571a3109d1537d976266be3083445651dc68deed25c22
 SHA256_ruby-${RUBY_VER}.tar.gz = 23815a6d095696f7919090fdc3e2f9459b2c83d57224b2e446ce1f5f7333ef36
 SHA256_${BZ2_DIST} = ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269
-SHA256_${PYTHON_DIST} = 92f2faf242681bfa406d53a51e17d42c5373affe23a130cd9697e132ef574706
-SHA256_${PYTHON2_DIST} = a4f05a0720ce0fd92626f0278b6b433eee9a6173ddf2bced7957dfb599a5ece1
+SHA256_${PYTHON_DIST} = c4c066af19c98fb7835d473bebd7e23be84f6e9874d47db9e39a68ee5d0ce35c
+SHA256_${PYTHON2_DIST} = da3080e3b488f648a3d7a4560ddee895284c3380b11d6de75edb986526b9a814
 SHA256_${PY3C_DIST} = c7ffc22bc92dded0ca859db53ef3a0b466f89a9f8aad29359c9fe4ff18ebdd20
 SHA256_${JUNIT_DIST} = 36a747ca1e0b86f6ea88055b8723bb87030d627766da6288bf077afdeeb0f75a
 SHA256_${GETTEXT_DIST} = 52a578960fe308742367d75cd1dff8552c5797bd0beba7639e12bdcda28c0e49
@@ -1462,15 +1462,17 @@ $(PYTHON_OBJDIR)/.retrieved: $(DISTDIR)/$(PYTHON_DIST) $(PYTHON_OBJDIR)/openbsd-
 	[ -d $(PYTHON_OBJDIR) ] || mkdir -p $(PYTHON_OBJDIR)
 	tar -C $(SRCDIR) -zxf $(DISTDIR)/$(PYTHON_DIST)
 	# Make setup.py use our own dependencies instead of system ones
+	if [ -f $(PYTHON_SRCDIR)/setup.py ]; then \
 	sed -e "s#sqlite_inc_paths = \[ '/usr/include',#sqlite_inc_paths = [ '$(PREFIX)/sqlite/include',#" \
 		-e "s#'/usr/include/db4'#'$(PREFIX)/bdb/include'#" \
 		-e "s|\(add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')\)|pass #\1|" \
 		-e "s|\(add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')\)|pass #\1|" \
 		-e "s#find_library_file(lib_dirs, 'bz2'#find_library_file(['$(PREFIX)/bz2/lib'] + lib_dirs, 'bz2'#" \
 		< $(PYTHON_SRCDIR)/setup.py \
-		> $(PYTHON_SRCDIR)/setup.py.patched
-	mv $(PYTHON_SRCDIR)/setup.py.patched $(PYTHON_SRCDIR)/setup.py
-	chmod +x $(PYTHON_SRCDIR)/setup.py
+		> $(PYTHON_SRCDIR)/setup.py.patched && \
+	mv $(PYTHON_SRCDIR)/setup.py.patched $(PYTHON_SRCDIR)/setup.py && \
+	chmod +x $(PYTHON_SRCDIR)/setup.py; \
+	fi
 	cd $(PYTHON_SRCDIR) && patch -p0 < $(PYTHON_OBJDIR)/openbsd-march.diff
 	cd $(PYTHON_SRCDIR) && patch -p0 < $(PYTHON_OBJDIR)/openbsd-make.diff
 	touch $@
@@ -1481,7 +1483,7 @@ PYTHON_PROFILING=--enable-profiling
 endif
 $(PYTHON_OBJDIR)/.configured: $(PYTHON_OBJDIR)/.retrieved \
 	$(BZ2_OBJDIR)/.installed
-	cd $(PYTHON_SRCDIR) && autoconf
+	if [ "`uname`" = "OpenBSD" ]; then cd $(PYTHON_SRCDIR) && autoconf; fi
 	cd $(PYTHON_OBJDIR) \
 		&& env CFLAGS="-g $(PROFILE_CFLAGS)" GREP="`which grep`" \
 		CC=$(CC) CXX=$(CXX) \
