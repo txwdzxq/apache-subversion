@@ -9,7 +9,7 @@ svnfsfs                      | UTF8-ized
 svnlook                      | UTF8-ized
 svnmucc                      | UTF8-ized
 svnrdump                     | UTF8-ized
-svnserve                     | ASCII
+svnserve                     | UTF8-ized
 svnsync                      | UTF8-ized
 svnversion                   | ASCII
 svn                          | UTF8-ized
