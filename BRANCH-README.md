@@ -17,4 +17,4 @@ svn-mergeinfo-normalizer     | ASCII
 svnconflict                  | ASCII
 svnraisetreeconflict         | ASCII
 svn-wc-db-tester             | ASCII
-svnauthz                     | ASCII
+svnauthz                     | UTF8-ized
