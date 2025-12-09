@@ -8,7 +8,7 @@ svndumpfilter                | UTF8-ized
 svnfsfs                      | UTF8-ized
 svnlook                      | UTF8-ized
 svnmucc                      | UTF8-ized
-svnrdump                     | ASCII
+svnrdump                     | UTF8-ized
 svnserve                     | ASCII
 svnsync                      | UTF8-ized
 svnversion                   | ASCII
