@@ -11,7 +11,7 @@ svnmucc                      | UTF8-ized
 svnrdump                     | UTF8-ized
 svnserve                     | UTF8-ized
 svnsync                      | UTF8-ized
-svnversion                   | ASCII
+svnversion                   | UTF8-ized
 svn                          | UTF8-ized
 svn-mergeinfo-normalizer     | ASCII
 svnconflict                  | ASCII
