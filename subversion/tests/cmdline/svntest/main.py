@@ -2438,6 +2438,13 @@ def run_tests(test_list, serial_only = False):
 
   sys.exit(execute_tests(test_list, serial_only))
 
+def _get_purelib_dir(venv_dir):
+  if sys.platform == 'win32':
+    return os.path.join(venv_dir, "Lib", "site-packages")
+  else:
+    return os.path.join(venv_dir, "lib", "python%d.%d" % sys.version_info[:2],
+                        "site-packages")
+
 def ensure_dependencies():
   """Install the dependencies we need for running the tests.
 
@@ -2447,9 +2454,7 @@ def ensure_dependencies():
   """
 
   venv_dir = os.path.abspath(venv_path())
-  package_path = os.path.join(venv_dir, "lib",
-                              "python%d.%d" % sys.version_info[:2],
-                              "site-packages")
+  package_path = _get_purelib_dir(venv_dir)
 
   # Check if all our dependencies are installed. It doesn't matter if
   # they're installed in our venv, as long as they're available.
@@ -2497,9 +2502,7 @@ def create_python_venv(venv_dir, quiet=False):
     importlib.invalidate_caches()
 
     python_prog = os.path.join(venv_dir, venv_bin, "python" + _exe)
-    python_path = os.path.join(venv_dir, "lib",
-                               "python%d.%d" % sys.version_info[:2],
-                               "site-packages")
+    python_path = _get_purelib_dir(venv_dir)
     return python_prog, python_path
   except Exception:
     if logger:

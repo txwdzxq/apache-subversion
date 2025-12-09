@@ -45,6 +45,13 @@ xml_stream_write(void *baton, const char *data, apr_size_t *len)
   xml_stream_baton_t *b = baton;
   svn_error_t *err;
 
+  /* 
+   * Check if the XML parser has already been freed.
+   * This can happen if an error occurs during XML parsing.
+   */
+  if (b->parser == NULL)
+    return NULL; 
+
   err = svn_xml_parse(b->parser, data, *len, FALSE);
 
   if (err)
@@ -61,15 +68,17 @@ xml_stream_write(void *baton, const char *data, apr_size_t *len)
 static svn_error_t *
 xml_stream_close(void *baton)
 {
+  svn_error_t *err;
   xml_stream_baton_t *b = baton;
 
   if (b->parser)
     {
       /* Dispose the parser with a final push because we are closing
          the stream. */
-      SVN_ERR(svn_xml_parse(b->parser, NULL, 0, TRUE));
+      err = svn_xml_parse(b->parser, NULL, 0, TRUE);
       svn_xml_free_parser(b->parser);
       b->parser = NULL;
+      return svn_error_trace(err);
     }
   else
     {
