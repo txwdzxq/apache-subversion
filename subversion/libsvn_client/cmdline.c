@@ -123,10 +123,10 @@ svn_client__process_target_array(apr_array_header_t **targets_p,
   int i;
   svn_boolean_t rel_url_found = FALSE;
   const char *root_url = NULL;
-  apr_array_header_t *input_targets = apr_array_make(
-    pool, DEFAULT_ARRAY_SIZE, sizeof(const char *));
-  apr_array_header_t *output_targets = apr_array_make(
-    pool, DEFAULT_ARRAY_SIZE, sizeof(const char *));
+  apr_array_header_t *input_targets =
+    apr_array_make(pool, DEFAULT_ARRAY_SIZE, sizeof(const char *));
+  apr_array_header_t *output_targets =
+    apr_array_make(pool, DEFAULT_ARRAY_SIZE, sizeof(const char *));
   apr_array_header_t *reserved_names = NULL;
 
   /* Step 1:  create a master array of targets that are in UTF-8

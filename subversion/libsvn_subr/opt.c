@@ -358,11 +358,11 @@ svn_opt_parse_revprop2(apr_hash_t **revprop_table_p,
   const char *sep, *propname;
   svn_string_t *propval;
 
-  if (!*revprop_spec)
+  if (! *revprop_spec)
     return svn_error_create(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
                             _("Revision property pair is empty"));
 
-  if (!*revprop_table_p)
+  if (! *revprop_table_p)
     *revprop_table_p = apr_hash_make(pool);
 
   sep = strchr(revprop_spec, '=');

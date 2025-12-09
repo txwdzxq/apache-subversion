@@ -455,8 +455,8 @@ sub_main(int *exit_code,
       const char *utf8_opt_arg;
 
       /* Parse the next option. */
-      apr_status_t apr_err = apr_getopt_long(os, svn_cl__options,
-                                             &opt_id, &utf8_opt_arg);
+      apr_status_t apr_err = apr_getopt_long(os, svn_cl__options, &opt_id,
+                                             &utf8_opt_arg);
       if (APR_STATUS_IS_EOF(apr_err))
         break;
       else if (apr_err)
