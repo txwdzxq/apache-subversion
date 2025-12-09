@@ -13,8 +13,8 @@ svnserve                     | UTF8-ized
 svnsync                      | UTF8-ized
 svnversion                   | UTF8-ized
 svn                          | UTF8-ized
-svn-mergeinfo-normalizer     | ASCII
-svnconflict                  | ASCII
-svnraisetreeconflict         | ASCII
-svn-wc-db-tester             | ASCII
+svn-mergeinfo-normalizer     | UTF8-ized
+svnconflict                  | UTF8-ized
+svnraisetreeconflict         | UTF8-ized
+svn-wc-db-tester             | UTF8-ized
 svnauthz                     | UTF8-ized
