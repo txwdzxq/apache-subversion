@@ -2626,7 +2626,7 @@ sub_main(int *exit_code,
           break;
 
         case svnlook__diff_cmd:
-          SVN_ERR(svn_utf_cstring_from_utf8(opt_state.diff_cmd, utf8_opt_arg,
+          SVN_ERR(svn_utf_cstring_from_utf8(&opt_state.diff_cmd, utf8_opt_arg,
                                             pool));
           break;
 
