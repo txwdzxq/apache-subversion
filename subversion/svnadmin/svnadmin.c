@@ -573,7 +573,7 @@ static const svn_opt_subcommand_desc3_t cmd_table[] =
     "overwrite the previous log message.\n"
    )},
    {'r', svnadmin__bypass_hooks},
-   { {'r', "specify revision number ARG"} }, }, 
+   { {'r', "specify revision number ARG"} }, },
 
   {"setrevprop", subcommand_setrevprop, {0}, {N_(
     "usage: 1. svnadmin setrevprop REPOS_PATH -r REVISION NAME FILE\n"
@@ -592,7 +592,7 @@ static const svn_opt_subcommand_desc3_t cmd_table[] =
    )},
    {'r', 't', svnadmin__use_pre_revprop_change_hook,
     svnadmin__use_post_revprop_change_hook},
-   { {'r', "specify revision number ARG"} }, }, 
+   { {'r', "specify revision number ARG"} }, },
 
   {"setuuid", subcommand_setuuid, {0}, {N_(
     "usage: svnadmin setuuid REPOS_PATH [NEW_UUID]\n"
