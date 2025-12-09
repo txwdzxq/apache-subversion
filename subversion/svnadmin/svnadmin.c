@@ -3133,7 +3133,7 @@ sub_main(int *exit_code,
         }
         break;
       case 't':
-        opt_state.txn_id = utf8_opt_arg;
+        opt_state.txn_id = apr_pstrdup(pool, utf8_opt_arg);
         break;
 
       case 'q':
@@ -3152,7 +3152,7 @@ sub_main(int *exit_code,
         }
         break;
       case 'F':
-        opt_state.file = utf8_opt_arg;
+        opt_state.file = apr_pstrdup(pool, utf8_opt_arg);
         dash_F_arg = TRUE;
         break;
       case svnadmin__version:
@@ -3231,7 +3231,7 @@ sub_main(int *exit_code,
         opt_state.metadata_only = TRUE;
         break;
       case svnadmin__fs_type:
-        opt_state.fs_type = utf8_opt_arg;
+        opt_state.fs_type = apr_pstrdup(pool, utf8_opt_arg);
         break;
       case svnadmin__parent_dir:
         opt_state.parent_dir = svn_dirent_internal_style(utf8_opt_arg, pool);
@@ -3282,12 +3282,14 @@ sub_main(int *exit_code,
       case svnadmin__exclude:
         if (! opt_state.exclude)
           opt_state.exclude = apr_array_make(pool, 1, sizeof(const char *));
-        APR_ARRAY_PUSH(opt_state.exclude, const char *) = utf8_opt_arg;
+        APR_ARRAY_PUSH(opt_state.exclude, const char *)
+          = apr_pstrdup(pool, utf8_opt_arg);
         break;
       case svnadmin__include:
         if (! opt_state.include)
           opt_state.include = apr_array_make(pool, 1, sizeof(const char *));
-        APR_ARRAY_PUSH(opt_state.include, const char *) = utf8_opt_arg;
+        APR_ARRAY_PUSH(opt_state.include, const char *)
+          = apr_pstrdup(pool, utf8_opt_arg);
         break;
       case svnadmin__glob:
         opt_state.glob = TRUE;
