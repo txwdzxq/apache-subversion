@@ -92,7 +92,7 @@ option(SVN_ENABLE_SWIG_RUBY "Enable Subversion SWIG bindings into Ruby" OFF)
 
 # Enable modules and features
 option(SVN_ENABLE_RA_LOCAL "Enable Subversion Local Repository Access Library" ON)
-option(SVN_ENABLE_RA_SERF "Enable Subversion HTTP/WebDAV Protocol Repository Access Library" OFF)
+option(SVN_ENABLE_RA_SERF "Enable Subversion HTTP/WebDAV Protocol Repository Access Library" ON)
 option(SVN_ENABLE_RA_SVN "Enable Subversion SVN Protocol Repository Access Library" ON)
 option(SVN_ENABLE_FS_FS "Enable Subversion FSFS Repository Filesystem Library" ON)
 option(SVN_ENABLE_FS_X "Enable Subversion FSX Repository Filesystem Library" ON)
