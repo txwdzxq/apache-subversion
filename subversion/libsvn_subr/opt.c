@@ -351,6 +351,20 @@ svn_opt__process_target_array(apr_array_header_t **targets_p,
 }
 
 svn_error_t *
+svn_opt_args_to_target_array4(apr_array_header_t **targets_p,
+                              apr_getopt_t *os,
+                              const apr_array_header_t *known_targets,
+                              apr_pool_t *pool)
+{
+  apr_array_header_t *utf8_input_targets;
+
+  SVN_ERR(svn_opt_parse_all_args(&utf8_input_targets, os, pool));
+
+  return svn_error_trace(svn_opt__process_target_array(
+      targets_p, utf8_input_targets, known_targets, pool));
+}
+
+svn_error_t *
 svn_opt_parse_revprop2(apr_hash_t **revprop_table_p,
                        const char *revprop_spec,
                        apr_pool_t *pool)
