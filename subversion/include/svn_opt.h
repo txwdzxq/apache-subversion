@@ -631,10 +631,9 @@ svn_opt_resolve_revisions(svn_opt_revision_t *peg_rev,
  * error, and if this is the only type of error encountered, complete
  * the operation before returning the error(s).
  *
- * @deprecated Provided for backward compatibility with the 1.5 API.
+ * @since New in 1.5.
  * @see svn_client_args_to_target_array()
  */
-SVN_DEPRECATED
 svn_error_t *
 svn_opt_args_to_target_array3(apr_array_header_t **targets_p,
                               apr_getopt_t *os,
