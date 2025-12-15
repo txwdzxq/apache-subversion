@@ -1374,7 +1374,7 @@ class GenDependenciesBase(gen_base.GeneratorBase):
       lib_name = 'serf-%d.lib' % (serf_ver_maj,)
     else:
       lib_name = 'serf.lib'
-    
+
     if self.shared_serf:
       lib_name = 'lib' + lib_name
 

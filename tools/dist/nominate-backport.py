@@ -53,18 +53,18 @@ def check_local_mods_to_STATUS():
       sys.exit(1)
     input("Press Enter to continue or Ctrl-C to abort...")
     return True
-  
+
   return False
 
 def get_availid():
   """Try to get the AVAILID of the current user"""
 
   SVN_A_O_REALM = '<https://svn.apache.org:443> ASF Committers'
-  
+
   try:
     # First try to get the ID from an environment variable
     return os.environ["AVAILID"]
-  
+
   except KeyError:
     try:
       # Failing, try executing svn auth
@@ -220,15 +220,15 @@ def main():
   answer = input("Commit this nomination [y/N]? ")
   if answer.lower() == "y":
     backport.merger.run_svn_quiet(['commit', STATUS, '-m',
-                       '* STATUS: Nominate r' + 
+                       '* STATUS: Nominate r' +
                        ', r'.join(map(str, revisions))])
   else:
     answer = input("Revert STATUS (destroying local mods) [y/N]? ")
     if answer.lower() == "y":
       backport.merger.run_svn_quiet(['revert', STATUS])
-  
+
   sys.exit(0)
-  
+
 AVAILID = get_availid()
 
 # Load the various knobs

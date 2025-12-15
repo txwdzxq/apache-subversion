@@ -2782,7 +2782,7 @@ def log_on_deleted_deep(sbox):
 @Issue(4711)
 def log_with_merge_history_and_search(sbox):
   "log --use-merge-history --search"
-  
+
   sbox.build()
 
   # r2: create branch
@@ -2808,7 +2808,7 @@ def log_with_merge_history_and_search(sbox):
 @Issue(4856)
 def log_xml_with_merge_history(sbox):
   "log --use-merge-history --xml"
-  
+
   sbox.build()
 
   # r2-r4: create branches

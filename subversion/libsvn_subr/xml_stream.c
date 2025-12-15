@@ -45,12 +45,12 @@ xml_stream_write(void *baton, const char *data, apr_size_t *len)
   xml_stream_baton_t *b = baton;
   svn_error_t *err;
 
-  /* 
+  /*
    * Check if the XML parser has already been freed.
    * This can happen if an error occurs during XML parsing.
    */
   if (b->parser == NULL)
-    return NULL; 
+    return NULL;
 
   err = svn_xml_parse(b->parser, data, *len, FALSE);
 

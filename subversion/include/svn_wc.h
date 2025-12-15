@@ -1328,7 +1328,7 @@ typedef enum svn_wc_notify_action_t
 
   /** A file is readonly for the user but isn't svn:needs-lock.
    * So we want to restore RW, but fail since the file has W bits,
-   * just not for the current user. 
+   * just not for the current user.
    * @since New in 1.15. */
   svn_wc_notify_revert_noaccess,
 

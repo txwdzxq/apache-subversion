@@ -141,7 +141,7 @@ class SubversionMergeinfoTestCase(unittest.TestCase):
         # ....and now 3 (incref during iteration of each range object)
 
         refcount = sys.getrefcount(r)
-        # ....and finally, 4 (getrefcount() also increfs, unless deferred 
+        # ....and finally, 4 (getrefcount() also increfs, unless deferred
         #                     reference counting)
         expected = 4
 
@@ -162,7 +162,7 @@ class SubversionMergeinfoTestCase(unittest.TestCase):
     mergeinfo = core.svn_mergeinfo_parse(self.TEXT_MERGEINFO1)
     merge_range_refdict = weakref.WeakValueDictionary()
     merge_range_indexes = []
-    n_merge_range = 0 
+    n_merge_range = 0
     for (path, rangelist) in core._as_list(mergeinfo.items()):
       # ....and now 2 (incref during iteration of rangelist)
 
@@ -171,7 +171,7 @@ class SubversionMergeinfoTestCase(unittest.TestCase):
 
         idx = (path, i)
         merge_range_refdict[idx] = r
-        merge_range_indexes.append(idx) 
+        merge_range_indexes.append(idx)
         n_merge_range += 1
 
         # Note: if path and index are not '/trunk' and 0 respectively, then
@@ -192,7 +192,7 @@ class SubversionMergeinfoTestCase(unittest.TestCase):
     gc.collect()
     if merge_range_refdict:
       # certainly memory leak, but we want to listing up leaked objects
-      # before raise an assertion error.  
+      # before raise an assertion error.
       self.assertFalse(merge_range_refdict,
          "Memory leak! All svn_merge_range_t object holded "
          "by mergeinfo object should be removed, but at least "

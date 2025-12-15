@@ -3324,7 +3324,7 @@ public class BasicTests extends SVNTests
 
     /**
      * Test getMessage in NativeException.
-     * @throws Throwable 
+     * @throws Throwable
      */
     public void testGetMessage() throws Throwable
     {

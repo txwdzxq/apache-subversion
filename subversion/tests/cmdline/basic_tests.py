@@ -3308,7 +3308,7 @@ def keep_local_reverted_properly(sbox):
   svntest.main.run_svn(None, 'revert', *targets)
 
   # Check that the modifications are absent
-  # 
+  #
   # alpha and beta are still scheduled for deletion because 'revert' doesn't
   # recurse by default.
   expected_disk = svntest.main.greek_state.copy()

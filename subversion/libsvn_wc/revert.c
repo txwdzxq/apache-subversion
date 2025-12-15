@@ -513,7 +513,7 @@ revert_wc_data(svn_boolean_t *run_wq,
 #endif
 
   *notify_noaccess = FALSE; /* notify_required is reset elsewhere */
-  
+
   /* Would be nice to use svn_io_dirent2_t here, but the performance
      improvement that provides doesn't work, because we need the read
      only and executable bits later on, in the most likely code path */
@@ -675,7 +675,7 @@ revert_wc_data(svn_boolean_t *run_wq,
                         {
                           /* If there is already W on the file, it is owned by
 			   * some other user. Then svn_io_set_file_read_write
-			   * will return without making any changes and the 
+			   * will return without making any changes and the
 			   * user will get a spurious "Reverted" message.
 			   * Only checking for user's W since that is the only
 			   * one set by svn_io_set_file_read_write()

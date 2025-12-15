@@ -74,18 +74,18 @@ def check_local_mods_to_STATUS():
       sys.exit(1)
     input("Press Enter to continue or Ctrl-C to abort...")
     return True
-  
+
   return False
 
 def get_availid():
   """Try to get the AVAILID of the current user"""
 
   SVN_A_O_REALM = '<https://svn.apache.org:443> ASF Committers'
-  
+
   try:
     # First try to get the ID from an environment variable
     return os.environ["AVAILID"]
-  
+
   except KeyError:
     try:
       # Failing, try executing svn auth
@@ -250,7 +250,7 @@ def main():
           else:
             print("Please use one of the options in brackets (N to continue with next item)!")
         backport.merger.run_svn_quiet(["revert", ".", "--depth=infinity"])
-      
+
       elif a == "l":
         # Show logs for entries being nominated
         if e._entry.branch != None:
@@ -266,15 +266,15 @@ def main():
       elif a == "q":
         # Quit the "for each entry" loop.
         break
-      
+
       elif len(a) == 2 and a[0] in "+-" and a[1] in "01":
         print("Voting " + a)
-        
+
       elif a == "a":
         # Approve the entry
         sf.remove(e._entry)
         sf.insert(e._entry, "Approved changes")
-          
+
       elif a == "e":
         # Edit the entry in EDITOR
         subprocess.run([EDITOR, STATUS])
@@ -282,26 +282,26 @@ def main():
       elif a == "N":
         # Move to next entry and don't prompt for this entry ever again
         break
-      
+
       elif a == "":
         # Move to next entry
         break
-      
+
       elif a == "?":
         # Print help
         print(BACKPORT_OPTIONS_HELP)
 
       else:
         print("Please use one of the options in brackets (q to quit)!")
-        
+
     if a == "q":
       # Quit the "for each entry" loop.
       break
-    
+
   with open(STATUS, mode='w', encoding='UTF-8') as f:
     sf.unparse(f)
   sys.exit(0)
-  
+
   revisions = [int(''.join(filter(str.isdigit, revision))) for revision in sys.argv[1].split()]
   justification = sys.argv[2]
 
@@ -324,15 +324,15 @@ def main():
   answer = input("Commit this nomination [y/N]? ")
   if answer.lower() == "y":
     subprocess_output(['svn', 'commit', STATUS, '-m',
-                       '* STATUS: Nominate r' + 
+                       '* STATUS: Nominate r' +
                        ', r'.join(map(str, revisions))])
   else:
     answer = input("Revert STATUS (destroying local mods) [y/N]? ")
     if answer.lower() == "y":
       subprocess_output(['svn', 'revert', STATUS])
-  
+
   sys.exit(0)
-  
+
 AVAILID = get_availid()
 
 # Load the various knobs
@@ -348,7 +348,7 @@ except:
 
 if __name__ == "__main__":
 #  print("Starting subshell!\n")
-  
+
   try:
     main()
   except KeyboardInterrupt:

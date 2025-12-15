@@ -2857,7 +2857,7 @@ def tmpfile_name_matches_prop_type(sbox):
   svntest.actions.run_and_verify_svn(
     None,
     '.*' + re.escape(non_editor) + r'.*svn-revprop-r1\.tmp.*',
-    'propedit', '--revprop', 
+    'propedit', '--revprop',
     '--editor-cmd', non_editor,
     '-r1', 'svn:log',
     sbox.repo_url)
@@ -2865,7 +2865,7 @@ def tmpfile_name_matches_prop_type(sbox):
   svntest.actions.run_and_verify_svn(
     None,
     '.*' + re.escape(non_editor) + r'.*svn-prop\.tmp.*',
-    'propedit', 
+    'propedit',
     '--editor-cmd', non_editor,
     'ignored-propname',
     sbox.ospath('A/mu'))

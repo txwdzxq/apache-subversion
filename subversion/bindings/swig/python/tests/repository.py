@@ -94,11 +94,11 @@ class BatonCollector(repos.ChangeCollector):
       """determine expected refcount of batons within a batoun_tuple,
          by using dumy object"""
       self.open_root(-1, None)
-      for baton_tuple in self.batons: 
+      for baton_tuple in self.batons:
         rc = sys.getrefcount(baton_tuple[2])
         break
       return rc
-    
+
     repos.ChangeCollector.__init__(self, fs_ptr, root, pool, notify_cb)
     self.close_called = False
     self.abort_called = False
