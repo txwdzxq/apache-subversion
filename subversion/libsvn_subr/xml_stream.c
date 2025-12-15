@@ -25,6 +25,7 @@
 
 /*** Includes. ***/
 
+#include "private/svn_xml_private.h"
 #include "svn_error.h"
 #include "svn_io.h"
 #include "svn_xml.h"
@@ -94,7 +95,7 @@ xml_stream_close(void *baton)
 /* Public Interface */
 
 svn_stream_t *
-svn_xml_make_parse_stream(svn_xml_parser_t *parser,
+svn_xml__make_parse_stream(svn_xml_parser_t *parser,
                           apr_pool_t *result_pool)
 {
   svn_stream_t *result;
