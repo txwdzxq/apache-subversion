@@ -1667,6 +1667,15 @@ svn_ra_serf__create_stream_bucket(svn_stream_t *stream,
                                   svn_ra_serf__stream_bucket_errfunc_t errfunc,
                                   void *errfunc_baton);
 
+/* Default implementation of the bucket readline function, see
+   serf_bucket_type_t.readline.  This function will use the bucket
+   read function, when possible optimized by the bucket peek function
+   to return the requested result. */
+apr_status_t
+svn_ra_serf__default_readline(serf_bucket_t *bucket, int acceptable,
+                              int *found,
+                              const char **data, apr_size_t *len);
+
 #if defined(SVN_DEBUG)
 /* Wrapper macros to collect file and line information */
 #define svn_ra_serf__wrap_err \
