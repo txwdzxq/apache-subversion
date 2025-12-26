@@ -96,8 +96,6 @@ dist_repos = os.getenv('SVN_RELEASE_DIST_REPOS',
 dist_dev_url = dist_repos + '/dev/subversion'
 dist_release_url = dist_repos + '/release/subversion'
 dist_archive_url = 'https://archive.apache.org/dist/subversion'
-buildbot_repos = os.getenv('SVN_RELEASE_BUILDBOT_REPOS',
-                           'https://svn.apache.org/repos/infra/infrastructure/buildbot2')
 extns = ['zip', 'tar.gz', 'tar.bz2']
 
 
@@ -512,11 +510,6 @@ def get_trunk_wc_path(base_dir, path=None):
     if path is None: return trunk_wc_path
     return os.path.join(trunk_wc_path, path)
 
-def get_buildbot_wc_path(base_dir, path=None):
-    buildbot_wc_path = os.path.join(get_tempdir(base_dir), 'svn-buildmaster')
-    if path is None: return buildbot_wc_path
-    return os.path.join(buildbot_wc_path, path)
-
 def get_trunk_url(revnum=None):
     return svn_repos + '/trunk' + '@' + (str(revnum) if revnum else '')
 
@@ -670,36 +663,11 @@ def update_backport_bot(args):
 """ % (ver.branch,))
 
 #----------------------------------------------------------------------
-def update_buildbot_config(args):
-    """Add the new branch to the list of branches monitored by the buildbot
-       master.
-    """
-    ver = args.version
-    buildbot_wc = get_buildbot_wc_path(args.base_dir)
-    run_svn(['checkout', buildbot_repos, buildbot_wc])
-
-    prev_ver = Version('1.%d.0' % (ver.minor - 1,))
-    next_ver = Version('1.%d.0' % (ver.minor + 1,))
-
-    relpath = 'projects/subversion.py'
-    edit_file(get_buildbot_wc_path(args.base_dir, relpath),
-              r'(MINOR_LINES = \[.*%s)(\])' % (prev_ver.minor,),
-              r'\1, %s\2' % (ver.minor,))
-
-    log_msg = '''\
-Subversion: start monitoring the %s branch.
-''' % (ver.branch)
-    commit_paths = [get_buildbot_wc_path(args.base_dir, relpath)]
-    run_svn(['commit'] + commit_paths + ['-m', log_msg],
-            dry_run=args.dry_run)
-
-#----------------------------------------------------------------------
 def create_release_branch(args):
     make_release_branch(args)
     update_minor_ver_in_trunk(args)
     create_status_file_on_branch(args)
     update_backport_bot(args)
-    update_buildbot_config(args)
 
 
 #----------------------------------------------------------------------
@@ -1752,8 +1720,7 @@ def main():
     subparser = subparsers.add_parser('create-release-branch',
                     help='''Create a minor release branch: branch from trunk,
                             update version numbers on trunk, create status
-                            file on branch, update backport bot,
-                            update buildbot config.''')
+                            file on branch, update backport bot.''')
     subparser.set_defaults(func=create_release_branch)
     subparser.add_argument('version', type=Version,
                     help='''A version number to indicate the branch, such as
