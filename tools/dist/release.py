@@ -1765,7 +1765,7 @@ def main():
     subparser.add_argument('--dry-run', action='store_true', default=False,
                    help='Avoid committing any changes to repositories.')
 
-    # Setup the parser for the create-release-branch subcommand
+    # Setup the parser for the write-release-notes subcommand
     subparser = subparsers.add_parser('write-release-notes',
                     help='''Write a template release-notes file.''')
     subparser.set_defaults(func=write_release_notes)
