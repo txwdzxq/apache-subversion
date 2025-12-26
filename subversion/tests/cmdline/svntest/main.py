@@ -51,7 +51,7 @@ from svntest import Failure
 from svntest import Skip
 from svntest.wc import StateItem as Item
 
-SVN_VER_MINOR = 15
+SVN_VER_MINOR = 16
 DEFAULT_COMPATIBLE_VERSION = "1.8"
 
 def svn_wc__min_supported_format_version():
