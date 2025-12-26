@@ -646,7 +646,7 @@ def create_status_file_on_branch(args):
       print('\nNew STATUS file:')
       print(template.generate(sys.stdout, data))
     else:
-      with open(status_local_path, 'wx') as g:
+      with open(status_local_path, 'x') as g:
         template.generate(g, data)
     run_svn(['add', status_local_path],
             dry_run=args.dry_run)
