@@ -69,6 +69,11 @@ svn__digests_match(const unsigned char d1[],
 
 
 /* MD5 checksum context */
+svn_error_t *
+svn_checksum__md5(unsigned char *digest,
+                  const void *data,
+                  apr_size_t len);
+
 typedef struct svn_checksum__md5_ctx_t svn_checksum__md5_ctx_t;
 
 svn_checksum__md5_ctx_t *
@@ -88,6 +93,11 @@ svn_checksum__md5_ctx_final(unsigned char *digest,
 
 
 /* SHA1 checksum context */
+svn_error_t *
+svn_checksum__sha1(unsigned char *digest,
+                   const void *data,
+                   apr_size_t len);
+
 typedef struct svn_checksum__sha1_ctx_t svn_checksum__sha1_ctx_t;
 
 svn_checksum__sha1_ctx_t *

@@ -483,13 +483,13 @@ svn_checksum(svn_checksum_t **checksum,
   switch (kind)
     {
       case svn_checksum_md5:
-        apr_md5((unsigned char *)(*checksum)->digest, data, len);
+        SVN_ERR(svn_checksum__md5((unsigned char *)(*checksum)->digest, data,
+                                  len));
         break;
 
       case svn_checksum_sha1:
-        apr_sha1_init(&sha1_ctx);
-        apr_sha1_update(&sha1_ctx, data, (unsigned int)len);
-        apr_sha1_final((unsigned char *)(*checksum)->digest, &sha1_ctx);
+        SVN_ERR(svn_checksum__sha1((unsigned char *)(*checksum)->digest, data,
+                                   len));
         break;
 
       case svn_checksum_fnv1a_32:
