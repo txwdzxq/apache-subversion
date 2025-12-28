@@ -52,13 +52,11 @@ svn_checksum_ctx_create(svn_checksum_kind_t kind,
   switch (kind)
     {
       case svn_checksum_md5:
-        ctx->apr_ctx = apr_palloc(pool, sizeof(apr_md5_ctx_t));
-        apr_md5_init(ctx->apr_ctx);
+        ctx->apr_ctx = svn_checksum__md5_ctx_create(pool);
         break;
 
       case svn_checksum_sha1:
-        ctx->apr_ctx = apr_palloc(pool, sizeof(apr_sha1_ctx_t));
-        apr_sha1_init(ctx->apr_ctx);
+        ctx->apr_ctx = svn_checksum__sha1_ctx_create(pool);
         break;
 
       case svn_checksum_fnv1a_32:
@@ -82,13 +80,11 @@ svn_checksum_ctx_reset(svn_checksum_ctx_t *ctx)
   switch (ctx->kind)
     {
       case svn_checksum_md5:
-        memset(ctx->apr_ctx, 0, sizeof(apr_md5_ctx_t));
-        apr_md5_init(ctx->apr_ctx);
+        svn_checksum__md5_ctx_reset(ctx->apr_ctx);
         break;
 
       case svn_checksum_sha1:
-        memset(ctx->apr_ctx, 0, sizeof(apr_sha1_ctx_t));
-        apr_sha1_init(ctx->apr_ctx);
+        svn_checksum__sha1_ctx_reset(ctx->apr_ctx);
         break;
 
       case svn_checksum_fnv1a_32:
@@ -114,11 +110,11 @@ svn_checksum_update(svn_checksum_ctx_t *ctx,
   switch (ctx->kind)
     {
       case svn_checksum_md5:
-        apr_md5_update(ctx->apr_ctx, data, len);
+        svn_checksum__md5_ctx_update(ctx->apr_ctx, data, len);
         break;
 
       case svn_checksum_sha1:
-        apr_sha1_update(ctx->apr_ctx, data, (unsigned int)len);
+        svn_checksum__sha1_ctx_update(ctx->apr_ctx, data, len);
         break;
 
       case svn_checksum_fnv1a_32:
@@ -147,11 +143,13 @@ svn_checksum_final(svn_checksum_t **checksum,
   switch (ctx->kind)
     {
       case svn_checksum_md5:
-        apr_md5_final((unsigned char *)(*checksum)->digest, ctx->apr_ctx);
+        SVN_ERR(svn_checksum__md5_ctx_final(
+            (unsigned char *)(*checksum)->digest, ctx->apr_ctx));
         break;
 
       case svn_checksum_sha1:
-        apr_sha1_final((unsigned char *)(*checksum)->digest, ctx->apr_ctx);
+        SVN_ERR(svn_checksum__sha1_ctx_final(
+            (unsigned char *)(*checksum)->digest, ctx->apr_ctx));
         break;
 
       case svn_checksum_fnv1a_32:

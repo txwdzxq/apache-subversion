@@ -67,6 +67,45 @@ svn__digests_match(const unsigned char d1[],
                    const unsigned char d2[],
                    apr_size_t digest_size);
 
+
+/* MD5 checksum context */
+typedef struct svn_checksum__md5_ctx_t svn_checksum__md5_ctx_t;
+
+svn_checksum__md5_ctx_t *
+svn_checksum__md5_ctx_create(apr_pool_t *result_pool);
+
+svn_error_t *
+svn_checksum__md5_ctx_reset(svn_checksum__md5_ctx_t *ctx);
+
+svn_error_t *
+svn_checksum__md5_ctx_update(svn_checksum__md5_ctx_t *ctx,
+                             const void *data,
+                             apr_size_t len);
+
+svn_error_t *
+svn_checksum__md5_ctx_final(unsigned char *digest,
+                            const svn_checksum__md5_ctx_t *ctx);
+
+
+/* SHA1 checksum context */
+typedef struct svn_checksum__sha1_ctx_t svn_checksum__sha1_ctx_t;
+
+svn_checksum__sha1_ctx_t *
+svn_checksum__sha1_ctx_create(apr_pool_t *result_pool);
+
+svn_error_t *
+svn_checksum__sha1_ctx_reset(svn_checksum__sha1_ctx_t *ctx);
+
+svn_error_t *
+svn_checksum__sha1_ctx_update(svn_checksum__sha1_ctx_t *ctx,
+                              const void *data,
+                              apr_size_t len);
+
+svn_error_t *
+svn_checksum__sha1_ctx_final(unsigned char *digest,
+                             const svn_checksum__sha1_ctx_t *ctx);
+
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
