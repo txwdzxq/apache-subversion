@@ -393,7 +393,7 @@ do_bench_test(apr_size_t blocksize, svn_checksum_kind_t kind, apr_pool_t *pool)
     apr_size_t bytes = count * blocksize;
 
     /* Calling svn_checksum_serialize() is the simplest way to stringify
-     * checksum kind yet, althrough it also includes extra information such as
+     * checksum kind yet, although it also includes extra information such as
      * the digest itself. */
     const char *checksum_str = svn_checksum_serialize(checksum, pool, pool);
 
