@@ -1,5 +1,5 @@
 /*
- * checksum_apr.c:   APR backed checksums
+ * checksum_openssl.c:   OpenSSL backed checksums
  *
  * ====================================================================
  *    Licensed to the Apache Software Foundation (ASF) under one
@@ -22,7 +22,7 @@
  */
 
 #include "svn_private_config.h"
-#ifndef SVN_CHECKSUM_USE_OPENSSL
+#ifdef SVN_CHECKSUM_USE_OPENSSL
 
 #define APR_WANT_BYTEFUNC
 
@@ -32,6 +32,24 @@
 #include "svn_error.h"
 #include "checksum.h"
 
+/* There is an alternative way to compute checksums in OpenSSL which is to use
+ * their EVP interface. Here are the arguments why we are sticking with this
+ * one even though it's deprecated in OpenSSL v3.0:
+ *
+ * - EVP provides much more complicated interface.
+ *
+ * - We don't need the most of the features it gives us.
+ *
+ * - It might affect performance because there are vtable calls involved.
+ *
+ * - The default implementation used in EVP actually relies the exact same set
+ *   of functions under the hood.
+ */
+
+#define OPENSSL_SUPPRESS_DEPRECATED
+#include <openssl/sha.h>
+#include <openssl/md5.h>
+
 
 /*** MD5 checksum ***/
 svn_error_t *
@@ -39,24 +57,29 @@ svn_checksum__md5(unsigned char *digest,
                   const void *data,
                   apr_size_t len)
 {
-  apr_md5(digest, data, len);
+  MD5_CTX ctx;
+
+  MD5_Init(&ctx);
+  MD5_Update(&ctx, data, len);
+  MD5_Final(digest, &ctx);
+
   return SVN_NO_ERROR;
 }
 
 svn_checksum__md5_ctx_t *
 svn_checksum__md5_ctx_create(apr_pool_t *pool)
 {
-  apr_md5_ctx_t *result = apr_palloc(pool, sizeof(*result));
-  apr_md5_init(result);
+  MD5_CTX *result = apr_palloc(pool, sizeof(*result));
+  MD5_Init(result);
   return (svn_checksum__md5_ctx_t *)result;
 }
 
 svn_error_t *
 svn_checksum__md5_ctx_reset(svn_checksum__md5_ctx_t *ctx)
 {
-  apr_md5_ctx_t *apr_ctx = (apr_md5_ctx_t *)ctx;
-  memset(apr_ctx, 0, sizeof(*apr_ctx));
-  apr_md5_init(apr_ctx);
+  MD5_CTX *md5_ctx = (MD5_CTX *)ctx;
+  memset(md5_ctx, 0, sizeof(*md5_ctx));
+  MD5_Init(md5_ctx);
   return SVN_NO_ERROR;
 }
 
@@ -65,8 +88,8 @@ svn_checksum__md5_ctx_update(svn_checksum__md5_ctx_t *ctx,
                              const void *data,
                              apr_size_t len)
 {
-  apr_md5_ctx_t *apr_ctx = (apr_md5_ctx_t *)ctx;
-  apr_md5_update(apr_ctx, data, len);
+  MD5_CTX *md5_ctx = (MD5_CTX *)ctx;
+  MD5_Update(md5_ctx, data, len);
   return SVN_NO_ERROR;
 }
 
@@ -74,9 +97,8 @@ svn_error_t *
 svn_checksum__md5_ctx_final(unsigned char *digest,
                             const svn_checksum__md5_ctx_t *ctx)
 {
-
-  apr_md5_ctx_t *apr_ctx = (apr_md5_ctx_t *)ctx;
-  apr_md5_final(digest, apr_ctx);
+  MD5_CTX *md5_ctx = (MD5_CTX *)ctx;
+  MD5_Final(digest, md5_ctx);
   return SVN_NO_ERROR;
 }
 
@@ -87,27 +109,29 @@ svn_checksum__sha1(unsigned char *digest,
                    const void *data,
                    apr_size_t len)
 {
-  apr_sha1_ctx_t sha1_ctx;
-  apr_sha1_init(&sha1_ctx);
-  apr_sha1_update(&sha1_ctx, data, (unsigned int)len);
-  apr_sha1_final(digest, &sha1_ctx);
+  SHA_CTX ctx;
+
+  SHA1_Init(&ctx);
+  SHA1_Update(&ctx, data, len);
+  SHA1_Final(digest, &ctx);
+
   return SVN_NO_ERROR;
 }
 
 svn_checksum__sha1_ctx_t *
 svn_checksum__sha1_ctx_create(apr_pool_t *pool)
 {
-  apr_sha1_ctx_t *result = apr_palloc(pool, sizeof(*result));
-  apr_sha1_init(result);
-  return (svn_checksum__sha1_ctx_t  *)result;
+  SHA_CTX *result = apr_palloc(pool, sizeof(*result));
+  SHA1_Init(result);
+  return (svn_checksum__sha1_ctx_t *)result;
 }
 
 svn_error_t *
 svn_checksum__sha1_ctx_reset(svn_checksum__sha1_ctx_t *ctx)
 {
-  apr_sha1_ctx_t *apr_ctx = (apr_sha1_ctx_t *)ctx;
-  memset(apr_ctx, 0, sizeof(*apr_ctx));
-  apr_sha1_init(apr_ctx);
+  SHA_CTX *sha_ctx = (SHA_CTX *)ctx;
+  memset(sha_ctx, 0, sizeof(*sha_ctx));
+  SHA1_Init(sha_ctx);
   return SVN_NO_ERROR;
 }
 
@@ -116,8 +140,8 @@ svn_checksum__sha1_ctx_update(svn_checksum__sha1_ctx_t *ctx,
                              const void *data,
                              apr_size_t len)
 {
-  apr_sha1_ctx_t *apr_ctx = (apr_sha1_ctx_t *)ctx;
-  apr_sha1_update(apr_ctx, data, len);
+  SHA_CTX *sha_ctx = (SHA_CTX *)ctx;
+  SHA1_Update(sha_ctx, data, len);
   return SVN_NO_ERROR;
 }
 
@@ -126,8 +150,8 @@ svn_checksum__sha1_ctx_final(unsigned char *digest,
                             const svn_checksum__sha1_ctx_t *ctx)
 {
 
-  apr_sha1_ctx_t *apr_ctx = (apr_sha1_ctx_t *)ctx;
-  apr_sha1_final(digest, apr_ctx);
+  SHA_CTX *sha_ctx = (SHA_CTX *)ctx;
+  SHA1_Final(digest, sha_ctx);
   return SVN_NO_ERROR;
 }
 

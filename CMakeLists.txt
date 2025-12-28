@@ -111,6 +111,7 @@ cmake_dependent_option(SVN_BUILD_SHARED_RA "Build shared RA modules" ON "BUILD_S
 option(SVN_DEBUG "Enables specific features for developer builds" OFF)
 cmake_dependent_option(SVN_USE_WIN32_CRASHHANDLER "Enables WIN32 crash handler." ON "WIN32" OFF)
 option(SVN_USE_DSO "Defined if svn should try to load DSOs" OFF)
+option(SVN_CHECKSUM_USE_OPENSSL "Defined if svn should use OpenSSL to compute checksums." OFF)
 set(SVN_SOVERSION "0" CACHE STRING "Subversion library ABI version")
 mark_as_advanced(SVN_SOVERSION)
 
@@ -381,6 +382,17 @@ if (SVN_ENABLE_RA_SERF)
     find_package(Serf REQUIRED)
     add_library(external-serf ALIAS Serf::Serf)
   endif()
+endif()
+
+if (SVN_CHECKSUM_USE_OPENSSL)
+  find_package(OpenSSL REQUIRED)
+  add_library(external-openssl ALIAS OpenSSL::Crypto)
+  add_private_config_definition(
+    "Defined if svn should use OpenSSL to compute checksums."
+    "SVN_CHECKSUM_USE_OPENSSL" "1"
+  )
+else()
+  add_library(external-openssl INTERFACE)
 endif()
 
 ### Python
@@ -952,6 +964,7 @@ message(STATUS "    Build shared libraries ........ : ${BUILD_SHARED_LIBS}")
 message(STATUS "    Build shared FS Modues ........ : ${SVN_BUILD_SHARED_FS}")
 message(STATUS "    Build shared RA Modues ........ : ${SVN_BUILD_SHARED_RA}")
 message(STATUS "    Use pkg-config dependencies ... : ${SVN_USE_PKG_CONFIG}")
+message(STATUS "    Use OpenSSL for checksum ...... : ${SVN_CHECKSUM_USE_OPENSSL}")
 message(STATUS "  FS modules:")
 message(STATUS "    Enable FSFS ................... : ${SVN_ENABLE_FS_FS}")
 message(STATUS "    Enable FSX .................... : ${SVN_ENABLE_FS_X}")
