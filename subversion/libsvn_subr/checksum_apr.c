@@ -72,7 +72,7 @@ svn_checksum__md5_ctx_update(svn_checksum__md5_ctx_t *ctx,
 
 svn_error_t *
 svn_checksum__md5_ctx_final(unsigned char *digest,
-                            const svn_checksum__md5_ctx_t *ctx)
+                            svn_checksum__md5_ctx_t *ctx)
 {
 
   apr_md5_ctx_t *apr_ctx = (apr_md5_ctx_t *)ctx;
@@ -123,7 +123,7 @@ svn_checksum__sha1_ctx_update(svn_checksum__sha1_ctx_t *ctx,
 
 svn_error_t *
 svn_checksum__sha1_ctx_final(unsigned char *digest,
-                             const svn_checksum__sha1_ctx_t *ctx)
+                             svn_checksum__sha1_ctx_t *ctx)
 {
 
   apr_sha1_ctx_t *apr_ctx = (apr_sha1_ctx_t *)ctx;

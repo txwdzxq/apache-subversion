@@ -89,7 +89,7 @@ svn_checksum__md5_ctx_update(svn_checksum__md5_ctx_t *ctx,
 
 svn_error_t *
 svn_checksum__md5_ctx_final(unsigned char *digest,
-                            const svn_checksum__md5_ctx_t *ctx);
+                            svn_checksum__md5_ctx_t *ctx);
 
 
 /* SHA1 checksum context */
@@ -113,7 +113,7 @@ svn_checksum__sha1_ctx_update(svn_checksum__sha1_ctx_t *ctx,
 
 svn_error_t *
 svn_checksum__sha1_ctx_final(unsigned char *digest,
-                             const svn_checksum__sha1_ctx_t *ctx);
+                             svn_checksum__sha1_ctx_t *ctx);
 
 
 #ifdef __cplusplus
