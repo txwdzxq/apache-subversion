@@ -137,8 +137,8 @@ svn_checksum__sha1_ctx_reset(svn_checksum__sha1_ctx_t *ctx)
 
 svn_error_t *
 svn_checksum__sha1_ctx_update(svn_checksum__sha1_ctx_t *ctx,
-                             const void *data,
-                             apr_size_t len)
+                              const void *data,
+                              apr_size_t len)
 {
   SHA_CTX *sha_ctx = (SHA_CTX *)ctx;
   SHA1_Update(sha_ctx, data, len);
@@ -147,7 +147,7 @@ svn_checksum__sha1_ctx_update(svn_checksum__sha1_ctx_t *ctx,
 
 svn_error_t *
 svn_checksum__sha1_ctx_final(unsigned char *digest,
-                            const svn_checksum__sha1_ctx_t *ctx)
+                             const svn_checksum__sha1_ctx_t *ctx)
 {
 
   SHA_CTX *sha_ctx = (SHA_CTX *)ctx;

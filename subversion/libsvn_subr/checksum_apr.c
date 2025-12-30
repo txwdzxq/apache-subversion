@@ -99,7 +99,7 @@ svn_checksum__sha1_ctx_create(apr_pool_t *pool)
 {
   apr_sha1_ctx_t *result = apr_palloc(pool, sizeof(*result));
   apr_sha1_init(result);
-  return (svn_checksum__sha1_ctx_t  *)result;
+  return (svn_checksum__sha1_ctx_t *)result;
 }
 
 svn_error_t *
@@ -113,8 +113,8 @@ svn_checksum__sha1_ctx_reset(svn_checksum__sha1_ctx_t *ctx)
 
 svn_error_t *
 svn_checksum__sha1_ctx_update(svn_checksum__sha1_ctx_t *ctx,
-                             const void *data,
-                             apr_size_t len)
+                              const void *data,
+                              apr_size_t len)
 {
   apr_sha1_ctx_t *apr_ctx = (apr_sha1_ctx_t *)ctx;
   apr_sha1_update(apr_ctx, data, len);
@@ -123,7 +123,7 @@ svn_checksum__sha1_ctx_update(svn_checksum__sha1_ctx_t *ctx,
 
 svn_error_t *
 svn_checksum__sha1_ctx_final(unsigned char *digest,
-                            const svn_checksum__sha1_ctx_t *ctx)
+                             const svn_checksum__sha1_ctx_t *ctx)
 {
 
   apr_sha1_ctx_t *apr_ctx = (apr_sha1_ctx_t *)ctx;
