@@ -111,7 +111,8 @@ cmake_dependent_option(SVN_BUILD_SHARED_RA "Build shared RA modules" ON "BUILD_S
 option(SVN_DEBUG "Enables specific features for developer builds" OFF)
 cmake_dependent_option(SVN_USE_WIN32_CRASHHANDLER "Enables WIN32 crash handler." ON "WIN32" OFF)
 option(SVN_USE_DSO "Defined if svn should try to load DSOs" OFF)
-option(SVN_CHECKSUM_USE_OPENSSL "Defined if svn should use OpenSSL to compute checksums." OFF)
+set(SVN_CHECKSUM_BACKEND "apr" CACHE STRING "Checksum backend to use (possible values are 'apr', 'openssl')" )
+set_property(CACHE SVN_CHECKSUM_BACKEND PROPERTY STRINGS "apr" "openssl")
 set(SVN_SOVERSION "0" CACHE STRING "Subversion library ABI version")
 mark_as_advanced(SVN_SOVERSION)
 
@@ -384,15 +385,24 @@ if (SVN_ENABLE_RA_SERF)
   endif()
 endif()
 
-if (SVN_CHECKSUM_USE_OPENSSL)
+if (SVN_CHECKSUM_BACKEND STREQUAL "apr")
+  add_library(external-openssl INTERFACE)
+  add_private_config_definition(
+    "Defined if svn should use APR to compute checksums."
+    "SVN_CHECKSUM_BACKEND_APR" "1"
+  )
+elseif (SVN_CHECKSUM_BACKEND STREQUAL "openssl")
   find_package(OpenSSL REQUIRED)
   add_library(external-openssl ALIAS OpenSSL::Crypto)
   add_private_config_definition(
     "Defined if svn should use OpenSSL to compute checksums."
-    "SVN_CHECKSUM_USE_OPENSSL" "1"
+    "SVN_CHECKSUM_BACKEND_OPENSSL" "1"
   )
 else()
-  add_library(external-openssl INTERFACE)
+  message(SEND_ERROR
+    "Invalid value of SVN_CHECKSUM_BACKEND: '${SVN_CHECKSUM_BACKEND}'. "
+    "Possible options are 'apr' or 'openssl'."
+  )
 endif()
 
 ### Python

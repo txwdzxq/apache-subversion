@@ -22,7 +22,7 @@
  */
 
 #include "svn_private_config.h"
-#ifndef SVN_CHECKSUM_USE_OPENSSL
+#ifdef SVN_CHECKSUM_BACKEND_APR
 
 #define APR_WANT_BYTEFUNC
 
@@ -134,5 +134,5 @@ svn_checksum__sha1_ctx_final(unsigned char *digest,
   return SVN_NO_ERROR;
 }
 
-#endif /* SVN_CHECKSUM_USE_OPENSSL */
+#endif /* SVN_CHECKSUM_BACKEND_APR */
 
