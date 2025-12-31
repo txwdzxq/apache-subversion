@@ -111,8 +111,8 @@ cmake_dependent_option(SVN_BUILD_SHARED_RA "Build shared RA modules" ON "BUILD_S
 option(SVN_DEBUG "Enables specific features for developer builds" OFF)
 cmake_dependent_option(SVN_USE_WIN32_CRASHHANDLER "Enables WIN32 crash handler." ON "WIN32" OFF)
 option(SVN_USE_DSO "Defined if svn should try to load DSOs" OFF)
-set(SVN_CHECKSUM_BACKEND "apr" CACHE STRING "Checksum backend to use (possible values are 'apr', 'openssl')" )
-set_property(CACHE SVN_CHECKSUM_BACKEND PROPERTY STRINGS "apr" "openssl")
+set(SVN_CHECKSUM_BACKEND "apr" CACHE STRING "Checksum backend to use (possible values are 'apr', 'openssl', or 'bcrypt')" )
+set_property(CACHE SVN_CHECKSUM_BACKEND PROPERTY STRINGS "apr" "openssl" "bcrypt")
 set(SVN_SOVERSION "0" CACHE STRING "Subversion library ABI version")
 mark_as_advanced(SVN_SOVERSION)
 
@@ -397,6 +397,18 @@ elseif (SVN_CHECKSUM_BACKEND STREQUAL "openssl")
   add_private_config_definition(
     "Defined if svn should use OpenSSL to compute checksums."
     "SVN_CHECKSUM_BACKEND_OPENSSL" "1"
+  )
+elseif (SVN_CHECKSUM_BACKEND STREQUAL "bcrypt")
+  if (NOT WIN32)
+    message(SEND_ERROR "BCrypt checksum backend is only available on Win32 platform.")
+  endif()
+
+  add_library(external-openssl INTERFACE)
+  target_link_libraries(external-openssl INTERFACE Bcrypt.lib)
+
+  add_private_config_definition(
+    "Defined if svn should use BCrypt to compute checksums."
+    "SVN_CHECKSUM_BACKEND_BCRYPT" "1"
   )
 else()
   message(SEND_ERROR
