@@ -152,6 +152,16 @@ bcrypt_ctx_final(algorithm_state_t *algorithm,
 }
 
 static svn_error_t *
+bcrypt_ctx_reset(algorithm_state_t *algorithm,
+                 bcrypt_ctx_t *ctx)
+{
+  bcrypt_ctx_cleanup(ctx);
+  SVN_ERR(bcrypt_ctx_init(ctx, algorithm));
+
+  return SVN_NO_ERROR;
+}
+
+static svn_error_t *
 bcrypt_checksum(algorithm_state_t *algorithm,
                 unsigned char *digest,
                 const void *data,
@@ -207,10 +217,7 @@ svn_checksum__md5_ctx_create(apr_pool_t *pool)
 svn_error_t *
 svn_checksum__md5_ctx_reset(svn_checksum__md5_ctx_t *ctx)
 {
-  bcrypt_ctx_cleanup(&ctx->bcrypt_ctx);
-  SVN_ERR(bcrypt_ctx_init(&ctx->bcrypt_ctx, &md5));
-
-  return SVN_NO_ERROR;
+  return svn_error_trace(bcrypt_ctx_reset(&md5, &ctx->bcrypt_ctx));
 }
 
 svn_error_t *
@@ -261,10 +268,7 @@ svn_checksum__sha1_ctx_create(apr_pool_t *pool)
 svn_error_t *
 svn_checksum__sha1_ctx_reset(svn_checksum__sha1_ctx_t *ctx)
 {
-  bcrypt_ctx_cleanup(&ctx->bcrypt_ctx);
-  SVN_ERR(bcrypt_ctx_init(&ctx->bcrypt_ctx, &sha1));
-
-  return SVN_NO_ERROR;
+  return svn_error_trace(bcrypt_ctx_reset(&sha1, &ctx->bcrypt_ctx));
 }
 
 svn_error_t *
