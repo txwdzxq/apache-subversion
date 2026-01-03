@@ -25,6 +25,7 @@
 
 #include <zlib.h>
 
+#include "svn_checksum.h"
 #include "svn_error.h"
 #include "svn_io.h"
 
@@ -406,6 +407,29 @@ do_bench_test(apr_size_t blocksize, svn_checksum_kind_t kind, apr_pool_t *pool)
 }
 
 static svn_error_t *
+test_checksum_ctx_no_updates(apr_pool_t *pool)
+{
+  svn_checksum_kind_t kind;
+
+  for (kind = svn_checksum_md5; kind <= svn_checksum_fnv1a_32x4; ++kind)
+    {
+      svn_checksum_ctx_t *ctx;
+      svn_checksum_t *checksum1, *checksum2;
+
+      ctx = svn_checksum_ctx_create(kind, pool);
+      SVN_ERR(svn_checksum_final(&checksum1, ctx, pool));
+
+      ctx = svn_checksum_ctx_create(kind, pool);
+      SVN_ERR(svn_checksum_update(ctx, "", 0));
+      SVN_ERR(svn_checksum_final(&checksum2, ctx, pool));
+
+      SVN_TEST_INT_ASSERT(svn_checksum_match(checksum1, checksum2), TRUE);
+    }
+
+  return SVN_NO_ERROR;
+}
+
+static svn_error_t *
 test_checksum_performance(apr_pool_t *pool)
 {
   SVN_ERR(do_bench_test(/* 16 KB */ 16 * (1 << 10),
@@ -456,6 +480,8 @@ static struct svn_test_descriptor_t test_funcs[] =
                    "reset checksummed stream"),
     SVN_TEST_PASS2(test_checksum_performance,
                    "test checksum performance"),
+    SVN_TEST_PASS2(test_checksum_ctx_no_updates,
+                   "test checksum context without updates"),
     SVN_TEST_NULL
   };
 
