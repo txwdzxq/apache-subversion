@@ -97,8 +97,13 @@ bcrypt_ctx_cleanup(void *data)
 {
   bcrypt_ctx_t *ctx = (bcrypt_ctx_t *)data;
 
-  if (! BCRYPT_SUCCESS(BCryptDestroyHash(ctx->handle)))
-    SVN_ERR_MALFUNCTION_NO_RETURN();
+  if (ctx->handle)
+    {
+      NTSTATUS status = BCryptDestroyHash(ctx->handle);
+
+      if (! BCRYPT_SUCCESS(status))
+        SVN_ERR_MALFUNCTION_NO_RETURN();
+    }
 
   return APR_SUCCESS;
 }
@@ -124,11 +129,15 @@ bcrypt_ctx_init(bcrypt_ctx_t *ctx,
 }
 
 static svn_error_t *
-bcrypt_ctx_update(bcrypt_ctx_t *ctx,
+bcrypt_ctx_update(algorithm_state_t *algorithm,
+                  bcrypt_ctx_t *ctx,
                   const void *data,
                   apr_size_t len)
 {
   SVN_ERR_ASSERT(len <= ULONG_MAX);
+
+  if (! ctx->handle)
+    SVN_ERR(bcrypt_ctx_init(ctx, algorithm));
 
   SVN_ERR(handle_error(BCryptHashData(ctx->handle,
                                       (PUCHAR) data,
@@ -143,6 +152,9 @@ bcrypt_ctx_final(algorithm_state_t *algorithm,
                  unsigned char *digest,
                  bcrypt_ctx_t *ctx)
 {
+  if (! ctx->handle)
+    SVN_ERR(bcrypt_ctx_init(ctx, algorithm));
+
   SVN_ERR(handle_error(BCryptFinishHash(ctx->handle,
                                         (PUCHAR) digest,
                                         algorithm->hash_length,
@@ -152,12 +164,9 @@ bcrypt_ctx_final(algorithm_state_t *algorithm,
 }
 
 static svn_error_t *
-bcrypt_ctx_reset(algorithm_state_t *algorithm,
-                 bcrypt_ctx_t *ctx)
+bcrypt_ctx_reset(algorithm_state_t *algorithm, bcrypt_ctx_t *ctx)
 {
-  bcrypt_ctx_cleanup(ctx);
-  SVN_ERR(bcrypt_ctx_init(ctx, algorithm));
-
+  ctx->handle = NULL;
   return SVN_NO_ERROR;
 }
 
@@ -172,7 +181,7 @@ bcrypt_checksum(algorithm_state_t *algorithm,
 
   SVN_ERR(bcrypt_ctx_init(&bcrypt_ctx, algorithm));
 
-  err = bcrypt_ctx_update(&bcrypt_ctx, data, len);
+  err = bcrypt_ctx_update(algorithm, &bcrypt_ctx, data, len);
   if (err)
     {
       bcrypt_ctx_cleanup(&bcrypt_ctx);
@@ -204,10 +213,6 @@ svn_checksum__md5_ctx_t *
 svn_checksum__md5_ctx_create(apr_pool_t *pool)
 {
   svn_checksum__md5_ctx_t *ctx = apr_pcalloc(pool, sizeof(*ctx));
-  svn_error_t *err;
-
-  err = bcrypt_ctx_init(&ctx->bcrypt_ctx, &md5);
-  SVN_ERR_ASSERT_NO_RETURN(err == SVN_NO_ERROR);
 
   apr_pool_cleanup_register(pool, &ctx->bcrypt_ctx, bcrypt_ctx_cleanup, NULL);
 
@@ -225,8 +230,8 @@ svn_checksum__md5_ctx_update(svn_checksum__md5_ctx_t *ctx,
                              const void *data,
                              apr_size_t len)
 {
-  return svn_error_trace(bcrypt_ctx_update(&ctx->bcrypt_ctx, data,
-                                                    len));
+  return svn_error_trace(bcrypt_ctx_update(&md5, &ctx->bcrypt_ctx,
+                                           data, len));
 }
 
 svn_error_t *
@@ -255,10 +260,6 @@ svn_checksum__sha1_ctx_t *
 svn_checksum__sha1_ctx_create(apr_pool_t *pool)
 {
   svn_checksum__sha1_ctx_t *ctx = apr_pcalloc(pool, sizeof(*ctx));
-  svn_error_t *err;
-
-  err = bcrypt_ctx_init(&ctx->bcrypt_ctx, &sha1);
-  SVN_ERR_ASSERT_NO_RETURN(err == SVN_NO_ERROR);
 
   apr_pool_cleanup_register(pool, &ctx->bcrypt_ctx, bcrypt_ctx_cleanup, NULL);
 
@@ -276,7 +277,8 @@ svn_checksum__sha1_ctx_update(svn_checksum__sha1_ctx_t *ctx,
                               const void *data,
                               apr_size_t len)
 {
-  return svn_error_trace(bcrypt_ctx_update(&ctx->bcrypt_ctx, data, len));
+  return svn_error_trace(bcrypt_ctx_update(&sha1, &ctx->bcrypt_ctx,
+                                           data, len));
 }
 
 svn_error_t *
