@@ -89,7 +89,6 @@ algorithm_init(void *baton, apr_pool_t *null_pool)
 typedef struct bcrypt_ctx_t
 {
   BCRYPT_HASH_HANDLE handle;
-  const algorithm_state_t *algorithm;
 } bcrypt_ctx_t;
 
 /* A cleanup handler. */
@@ -121,7 +120,6 @@ bcrypt_ctx_init(bcrypt_ctx_t *ctx,
                                         /* dwFlags */ 0)));
 
   ctx->handle = handle;
-  ctx->algorithm = algorithm;
   return SVN_NO_ERROR;
 }
 
