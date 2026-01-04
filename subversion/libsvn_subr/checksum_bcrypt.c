@@ -166,6 +166,7 @@ bcrypt_ctx_final(algorithm_state_t *algorithm,
 static svn_error_t *
 bcrypt_ctx_reset(algorithm_state_t *algorithm, bcrypt_ctx_t *ctx)
 {
+  bcrypt_ctx_cleanup(ctx);
   ctx->handle = NULL;
   return SVN_NO_ERROR;
 }
