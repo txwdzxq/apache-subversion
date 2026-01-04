@@ -89,24 +89,9 @@ algorithm_init(void *baton, apr_pool_t *null_pool)
 typedef struct bcrypt_ctx_t
 {
   BCRYPT_HASH_HANDLE handle;
+  void *object_buf;
+  apr_pool_t *pool;
 } bcrypt_ctx_t;
-
-/* A cleanup handler. */
-static apr_status_t
-bcrypt_ctx_cleanup(void *data)
-{
-  bcrypt_ctx_t *ctx = (bcrypt_ctx_t *)data;
-
-  if (ctx->handle)
-    {
-      NTSTATUS status = BCryptDestroyHash(ctx->handle);
-
-      if (! BCRYPT_SUCCESS(status))
-        SVN_ERR_MALFUNCTION_NO_RETURN();
-    }
-
-  return APR_SUCCESS;
-}
 
 static svn_error_t *
 bcrypt_ctx_init(algorithm_state_t *algorithm,
@@ -117,9 +102,12 @@ bcrypt_ctx_init(algorithm_state_t *algorithm,
   SVN_ERR(svn_atomic__init_once(&algorithm->initialized, algorithm_init,
                                 algorithm, NULL));
 
+  if (! ctx->object_buf)
+    ctx->object_buf = apr_pcalloc(ctx->pool, algorithm->object_length);
+
   SVN_ERR(handle_error(BCryptCreateHash(algorithm->alg_handle,
                                         &handle,
-                                        NULL, 0,
+                                        ctx->object_buf, algorithm->object_length,
                                         /* pbSecret */ NULL,
                                         /* cbSecret */ 0,
                                         /* dwFlags */ 0)));
@@ -166,7 +154,7 @@ bcrypt_ctx_final(algorithm_state_t *algorithm,
 static svn_error_t *
 bcrypt_ctx_reset(algorithm_state_t *algorithm, bcrypt_ctx_t *ctx)
 {
-  bcrypt_ctx_cleanup(ctx);
+  memset(ctx->object_buf, 0, algorithm->object_length);
   ctx->handle = NULL;
   return SVN_NO_ERROR;
 }
@@ -221,9 +209,7 @@ svn_checksum__md5_ctx_t *
 svn_checksum__md5_ctx_create(apr_pool_t *pool)
 {
   svn_checksum__md5_ctx_t *ctx = apr_pcalloc(pool, sizeof(*ctx));
-
-  apr_pool_cleanup_register(pool, &ctx->bcrypt_ctx, bcrypt_ctx_cleanup, NULL);
-
+  ctx->bcrypt_ctx.pool = pool;
   return ctx;
 }
 
@@ -269,9 +255,7 @@ svn_checksum__sha1_ctx_t *
 svn_checksum__sha1_ctx_create(apr_pool_t *pool)
 {
   svn_checksum__sha1_ctx_t *ctx = apr_pcalloc(pool, sizeof(*ctx));
-
-  apr_pool_cleanup_register(pool, &ctx->bcrypt_ctx, bcrypt_ctx_cleanup, NULL);
-
+  ctx->bcrypt_ctx.pool = pool;
   return ctx;
 }
 
