@@ -165,8 +165,10 @@ bcrypt_checksum(algorithm_state_t *algorithm,
                 const void *data,
                 apr_size_t len)
 {
-  bcrypt_ctx_t bcrypt_ctx = { 0 };
+  BCRYPT_HANDLE handle;
   void *object_buf;
+
+  SVN_ERR_ASSERT(len <= ULONG_MAX);
 
   SVN_ERR(svn_atomic__init_once(&algorithm->initialized, algorithm_init,
                                 algorithm, NULL));
@@ -175,17 +177,21 @@ bcrypt_checksum(algorithm_state_t *algorithm,
   object_buf = alloca(algorithm->object_length);
 
   SVN_ERR(handle_error(BCryptCreateHash(algorithm->alg_handle,
-                                        &bcrypt_ctx.handle,
+                                        &handle,
                                         object_buf, algorithm->object_length,
                                         /* pbSecret */ NULL,
                                         /* cbSecret */ 0,
                                         /* dwFlags */ 0)));
 
-  SVN_ERR(bcrypt_ctx_update(algorithm, &bcrypt_ctx,
-                            data, len));
+  SVN_ERR(handle_error(BCryptHashData(handle,
+                                      (PUCHAR) data,
+                                      (ULONG) len,
+                                      /* dwFlags */ 0)));
 
-  SVN_ERR(bcrypt_ctx_final(algorithm, &bcrypt_ctx,
-                           digest));
+  SVN_ERR(handle_error(BCryptFinishHash(handle,
+                                        (PUCHAR) digest,
+                                        algorithm->hash_length,
+                                        /* dwFlags */ 0)));
 
   return SVN_NO_ERROR;
 }
