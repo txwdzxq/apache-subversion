@@ -682,6 +682,10 @@ if (HAVE_UNISTD_H)
   autocheck_symbol_exists("getpid" "unistd.h" HAVE_GETPID)
 endif()
 
+set(CMAKE_REQUIRED_LIBRARIES external-zlib)
+autocheck_symbol_exists("adler32_z" "zlib.h" SVN_ZLIB_HAS_ADLER32_Z)
+unset(CMAKE_REQUIRED_LIBRARIES)
+
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
 file(GLOB public_headers "subversion/include/*.h")
