@@ -67,12 +67,12 @@ svn__adler32(apr_uint32_t checksum, const char *data, apr_off_t len)
 {
   /* Process large amounts of data in max-sized chunks.
    *
-   * Note: > not >=, then if sizeof(apr_off_t) <= SVN__ADLER32_SIZE_MAX
-   *                 this whole block can be deleted at compile time ...
+   * Note: > not >=; then if sizeof(apr_off_t) <= sizeof(svn__adler32_size_t),
+   *                 this whole code block can be elided at compile time ...
    */
   if (SVN__PREDICT_FALSE(len > SVN__ADLER32_SIZE_MAX))
     {
-      uLong partial = checksum;
+      uLong partial = checksum; /* Avoid typecasts in the while loop. */
       /* ... but >= here because we just might get lucky and
        *     consume all the data in this loop.
        */
