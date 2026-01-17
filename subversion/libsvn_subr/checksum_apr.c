@@ -87,7 +87,7 @@ svn_checksum__md5_ctx_final(unsigned char *digest,
 /*** SHA1 checksum ***/
 static void
 sha1_update(apr_sha1_ctx_t *ctx,
-            const void *data,
+            const char *data,
             apr_size_t len)
 {
   while (len > 0)
