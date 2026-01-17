@@ -99,7 +99,7 @@ sha1_update(apr_sha1_ctx_t *ctx,
       else
         block = UINT_MAX;
 
-      apr_sha1_update(ctx, data, block);
+      apr_sha1_update(ctx, (const char *)data, block);
 
       len -= block;
       data += block;
@@ -146,7 +146,7 @@ svn_checksum__sha1_ctx_update(svn_checksum__sha1_ctx_t *ctx,
                               const void *data,
                               apr_size_t len)
 {
-  sha1_update(&ctx->apr_ctx, data, len);
+  sha1_update(&ctx->apr_ctx, (const char *)data, len);
   return SVN_NO_ERROR;
 }
 
