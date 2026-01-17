@@ -386,14 +386,14 @@ if (SVN_ENABLE_RA_SERF)
 endif()
 
 if (SVN_CHECKSUM_BACKEND STREQUAL "apr")
-  add_library(external-openssl INTERFACE)
+  add_library(external-checksum-libs INTERFACE)
   add_private_config_definition(
     "Defined if svn should use APR to compute checksums."
     "SVN_CHECKSUM_BACKEND_APR" "1"
   )
 elseif (SVN_CHECKSUM_BACKEND STREQUAL "openssl")
   find_package(OpenSSL REQUIRED)
-  add_library(external-openssl ALIAS OpenSSL::Crypto)
+  add_library(external-checksum-libs ALIAS OpenSSL::Crypto)
   add_private_config_definition(
     "Defined if svn should use OpenSSL to compute checksums."
     "SVN_CHECKSUM_BACKEND_OPENSSL" "1"
@@ -403,8 +403,8 @@ elseif (SVN_CHECKSUM_BACKEND STREQUAL "bcrypt")
     message(SEND_ERROR "BCrypt checksum backend is only available on Win32 platform.")
   endif()
 
-  add_library(external-openssl INTERFACE)
-  target_link_libraries(external-openssl INTERFACE Bcrypt.lib)
+  add_library(external-checksum-libs INTERFACE)
+  target_link_libraries(external-checksum-libs INTERFACE Bcrypt.lib)
 
   add_private_config_definition(
     "Defined if svn should use BCrypt to compute checksums."
