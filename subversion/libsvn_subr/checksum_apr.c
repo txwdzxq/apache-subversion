@@ -95,7 +95,7 @@ sha1_update(apr_sha1_ctx_t *ctx,
       unsigned int block;
 
       if (len < UINT_MAX)
-        block = len;
+        block = (unsigned int)len;
       else
         block = UINT_MAX;
 
