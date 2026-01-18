@@ -51,6 +51,8 @@ static const char *make_random_data(apr_uint32_t *initial_seed,
 }
 
 
+/* NOTE: The following constant arrays of data sizes must
+         be sorted in ascending order. */
 static const apr_off_t magic[8] = {
   0, 1, 79, 80, 81, 5551, 5552, 5553
 };
@@ -110,59 +112,86 @@ static const apr_off_t power2[66] = {
 
 
 static svn_error_t *
-do_random_test(apr_uint32_t *seed,
-               const apr_off_t lengths[],
+do_random_test(const apr_off_t lengths[],
                const apr_size_t array_size,
                apr_pool_t *pool)
 {
-  const char *data = make_random_data(seed, lengths[array_size - 1], pool);
+  apr_uint32_t seed;
+  const apr_off_t length = lengths[array_size - 1];
+  const char *data = make_random_data(&seed, length, pool);
+
+  apr_uint32_t value_from_svn;
+  uLong value_from_zlib;
   int i;
 
   for (i = 0; i < array_size; ++i)
     {
-      apr_uint32_t value_from_svn = svn__adler32(0, data, lengths[i]);
-      uLong value_from_zlib = adler32(0, (const Bytef*)data, (uInt)lengths[i]);
-      SVN_TEST_ASSERT(value_from_svn == value_from_zlib);
+      /* This will blow up if the lengths array isn't sorted. */
+      SVN_TEST_ASSERT(lengths[i] <= length);
+
+      value_from_svn = svn__adler32(0, data, lengths[i]);
+      value_from_zlib = adler32(0, (const Bytef*)data, (uInt)lengths[i]);
+      if (value_from_svn != value_from_zlib)
+        {
+          fprintf(stderr, "SEED: %lu\n", (unsigned long)seed);
+          SVN_TEST_ASSERT(value_from_svn == value_from_zlib);
+        }
     }
 
   return SVN_NO_ERROR;
 }
 
-
 static svn_error_t *
-test_random_magic(apr_pool_t *pool)
+test_magic_length(apr_pool_t *pool)
 {
-  apr_uint32_t seed;
-  svn_error_t *err = do_random_test(&seed, magic,
-                                    sizeof(magic) / sizeof(magic[0]),
-                                    pool);
-  if (err)
-    fprintf(stderr, "SEED: %lu\n", (unsigned long)seed);
-  return err;
+  return do_random_test(magic, sizeof(magic) / sizeof(magic[0]), pool);
 }
 
 static svn_error_t *
-test_random_prime(apr_pool_t *pool)
+test_prime_length(apr_pool_t *pool)
 {
-  apr_uint32_t seed;
-  svn_error_t *err = do_random_test(&seed, prime,
-                                    sizeof(prime) / sizeof(prime[0]),
-                                    pool);
-  if (err)
-    fprintf(stderr, "SEED: %lu\n", (unsigned long)seed);
-  return err;
+  return do_random_test(prime, sizeof(prime) / sizeof(prime[0]), pool);
 }
 
 static svn_error_t *
-test_random_power2(apr_pool_t *pool)
+test_power2_length(apr_pool_t *pool)
+{
+  return do_random_test(power2, sizeof(power2) / sizeof(power2[0]), pool);
+}
+
+
+/* Insert a static implementation of svn__adler32() with the maximum data
+   size set low enough that we can test the rarely used large-block branch
+   of the code without allocating too many terabytes of memory. */
+#define SVN__ADLER32_STATIC static
+#define svn__adler32 local_adler32
+#define SVN__ADLER32_SIZE_MAX (256U * 256U - 1U) /* 2^16 - 1 = 0xFFFF */
+#include "../../libsvn_subr/adler32.c"
+#undef svn__adler32
+#undef SVN__ADLER32_STATIC
+
+static svn_error_t *
+test_large_size(apr_pool_t *pool)
 {
   apr_uint32_t seed;
-  svn_error_t *err = do_random_test(&seed, power2,
-                                    sizeof(power2) / sizeof(power2[0]),
-                                    pool);
-  if (err)
-    fprintf(stderr, "SEED: %lu\n", (unsigned long)seed);
-  return err;
+  const svn__adler32_size_t length = 256 * 256 * 256; /* 2^24 = 16 MiB */
+  const char *data = make_random_data(&seed, length, pool);
+
+  apr_uint32_t value_from_svn;
+  uLong value_from_zlib;
+
+  SVN_TEST_ASSERT(length > 256 * SVN__ADLER32_SIZE_MAX);
+
+  value_from_svn = local_adler32(0, data, length);
+  value_from_zlib = svn__adler32_fn(0, data, length);
+
+  if (value_from_svn != value_from_zlib)
+    {
+      fprintf(stderr, "SEED: %lu\n", (unsigned long)seed);
+      SVN_TEST_ASSERT(value_from_svn == value_from_zlib);
+    }
+
+  return SVN_NO_ERROR;
 }
 
 
@@ -173,12 +202,14 @@ static int max_threads = 4;
 static struct svn_test_descriptor_t test_funcs[] =
   {
     SVN_TEST_NULL,
-    SVN_TEST_PASS2(test_random_magic,
-                   "adler32 random with magic length"),
-    SVN_TEST_PASS2(test_random_prime,
-                   "adler32 random with prime length"),
-    SVN_TEST_PASS2(test_random_power2,
-                   "adler32 random with 2^n length"),
+    SVN_TEST_PASS2(test_magic_length,
+                   "adler32 with magic length"),
+    SVN_TEST_PASS2(test_prime_length,
+                   "adler32 with prime length"),
+    SVN_TEST_PASS2(test_power2_length,
+                   "adler32 with 2^n length"),
+    SVN_TEST_PASS2(test_large_size,
+                   "adler32 with data size > block size"),
     SVN_TEST_NULL
   };
 

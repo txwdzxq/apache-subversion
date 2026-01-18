@@ -47,9 +47,16 @@ typedef z_size_t svn__adler32_size_t;
 #else
 typedef uInt svn__adler32_size_t;
 #define svn__adler32_impl adler32
-#endif
-#define SVN__ADLER32_SIZE_MAX (~(svn__adler32_size_t)0)
+#endif  /* SVN_ZLIB_HAS_ADLER32_Z */
+
 #define svn__adler32_fn(c,d,s) svn__adler32_impl((c), (const Bytef *)(d), (s))
+
+/* See adler32-test.c which invokes dark magic in order to test the
+   (len > SVN__ADLER32_SIZE_MAX) branch of the implementation. */
+#ifndef SVN__ADLER32_STATIC
+#define SVN__ADLER32_STATIC
+#define SVN__ADLER32_SIZE_MAX (~(svn__adler32_size_t)0)
+#endif
 
 /*
  * 65521 is the largest prime less than 65536.
@@ -62,7 +69,7 @@ typedef uInt svn__adler32_size_t;
  * Start with CHECKSUM and update the checksum by processing a chunk
  * of DATA sized LEN.
  */
-apr_uint32_t
+SVN__ADLER32_STATIC apr_uint32_t
 svn__adler32(apr_uint32_t checksum, const char *data, apr_off_t len)
 {
   /* Process large amounts of data in max-sized chunks.
