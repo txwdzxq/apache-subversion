@@ -374,11 +374,8 @@ endif()
 ### Serf
 if (SVN_ENABLE_RA_SERF)
   if(SVN_USE_PKG_CONFIG)
-    pkg_search_module(serf IMPORTED_TARGET serf-2 serf-1)
-
-    if(serf_FOUND)
-      add_library(external-serf ALIAS PkgConfig::serf)
-    endif()
+    pkg_search_module(serf IMPORTED_TARGET REQUIRED serf-2 serf-1)
+    add_library(external-serf ALIAS PkgConfig::serf)
   else()
     find_package(Serf REQUIRED)
     add_library(external-serf ALIAS Serf::Serf)
