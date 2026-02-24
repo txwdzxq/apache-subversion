@@ -160,4 +160,3 @@ svn_checksum__sha1_ctx_final(unsigned char *digest,
 }
 
 #endif /* SVN_CHECKSUM_BACKEND_OPENSSL */
-
