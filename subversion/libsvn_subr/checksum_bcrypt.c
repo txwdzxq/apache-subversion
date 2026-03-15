@@ -119,18 +119,28 @@ bcrypt_ctx_init(algorithm_state_t *algorithm,
 static svn_error_t *
 bcrypt_ctx_update(algorithm_state_t *algorithm,
                   bcrypt_ctx_t *ctx,
-                  const void *data,
+                  const char *data,
                   apr_size_t len)
 {
-  SVN_ERR_ASSERT(len <= ULONG_MAX);
-
   if (! ctx->handle)
     SVN_ERR(bcrypt_ctx_init(algorithm, ctx));
 
-  SVN_ERR(handle_error(BCryptHashData(ctx->handle,
-                                      (PUCHAR) data,
-                                      (ULONG) len,
-                                      /* dwFlags */ 0)));
+  while (len > 0)
+    {
+      ULONG block;
+
+      if (len < ULONG_MAX)
+        block = (ULONG)len;
+      else
+        block = UINT_MAX;
+
+      SVN_ERR(handle_error(BCryptHashData(ctx->handle,
+                                          (PUCHAR) data, block,
+                                          /* dwFlags */ 0)));
+
+      len -= block;
+      data += block;
+    }
 
   return SVN_NO_ERROR;
 }
