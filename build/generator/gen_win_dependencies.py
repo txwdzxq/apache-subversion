@@ -125,6 +125,7 @@ class GenDependenciesBase(gen_base.GeneratorBase):
         'java_sdk',
         'openssl',
         'apr_memcache',
+        'checksum-libs',
 
         # So optional, we don't even have any code to detect them on Windows
         'magic',
@@ -1374,7 +1375,7 @@ class GenDependenciesBase(gen_base.GeneratorBase):
       lib_name = 'serf-%d.lib' % (serf_ver_maj,)
     else:
       lib_name = 'serf.lib'
-    
+
     if self.shared_serf:
       lib_name = 'lib' + lib_name
 

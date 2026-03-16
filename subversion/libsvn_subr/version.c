@@ -144,7 +144,7 @@ svn_version_extended(svn_boolean_t verbose,
   info->build_time = __TIME__;
   info->build_host = SVN_BUILD_HOST;
   info->copyright = apr_pstrdup
-    (pool, _("Copyright (C) 2025 The Apache Software Foundation.\n"
+    (pool, _("Copyright (C) 2026 The Apache Software Foundation.\n"
              "This software consists of contributions made by many people;\n"
              "see the NOTICE file for more information.\n"
              "Subversion is open source software, see "
@@ -253,7 +253,7 @@ svn_version__parse_version_string(svn_version_t **version_p,
      require that it be present. */
   if (pieces->nelts == 3)
     {
-      const char *piece = APR_ARRAY_IDX(pieces, 2, const char *);
+      char *piece = APR_ARRAY_IDX(pieces, 2, char *);
       char *hyphen = strchr(piece, '-');
       if (hyphen)
         {

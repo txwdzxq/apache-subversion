@@ -32,6 +32,9 @@ function(read_version path var major minor patch)
     string(REGEX REPLACE ".*${minor} +([0-9]+).*" "\\1" VER_MINOR ${VERSION_STRINGS})
     string(REGEX REPLACE ".*${patch} +([0-9]+).*" "\\1" VER_PATCH ${VERSION_STRINGS})
 
+    set(${major} "${VER_MAJOR}" PARENT_SCOPE)
+    set(${minor} "${VER_MINOR}" PARENT_SCOPE)
+    set(${patch} "${VER_PATCH}" PARENT_SCOPE)
     set(${var} "${VER_MAJOR}.${VER_MINOR}.${VER_PATCH}" PARENT_SCOPE)
   endif()
 endfunction()
@@ -92,7 +95,7 @@ option(SVN_ENABLE_SWIG_RUBY "Enable Subversion SWIG bindings into Ruby" OFF)
 
 # Enable modules and features
 option(SVN_ENABLE_RA_LOCAL "Enable Subversion Local Repository Access Library" ON)
-option(SVN_ENABLE_RA_SERF "Enable Subversion HTTP/WebDAV Protocol Repository Access Library" OFF)
+option(SVN_ENABLE_RA_SERF "Enable Subversion HTTP/WebDAV Protocol Repository Access Library" ON)
 option(SVN_ENABLE_RA_SVN "Enable Subversion SVN Protocol Repository Access Library" ON)
 option(SVN_ENABLE_FS_FS "Enable Subversion FSFS Repository Filesystem Library" ON)
 option(SVN_ENABLE_FS_X "Enable Subversion FSX Repository Filesystem Library" ON)
@@ -111,6 +114,8 @@ cmake_dependent_option(SVN_BUILD_SHARED_RA "Build shared RA modules" ON "BUILD_S
 option(SVN_DEBUG "Enables specific features for developer builds" OFF)
 cmake_dependent_option(SVN_USE_WIN32_CRASHHANDLER "Enables WIN32 crash handler." ON "WIN32" OFF)
 option(SVN_USE_DSO "Defined if svn should try to load DSOs" OFF)
+set(SVN_CHECKSUM_BACKEND "apr" CACHE STRING "Checksum backend to use (possible values are 'apr', 'openssl', 'bcrypt', 'xdigest')" )
+set_property(CACHE SVN_CHECKSUM_BACKEND PROPERTY STRINGS "apr" "openssl" "bcrypt" "xdigest")
 set(SVN_SOVERSION "0" CACHE STRING "Subversion library ABI version")
 mark_as_advanced(SVN_SOVERSION)
 
@@ -372,15 +377,57 @@ endif()
 ### Serf
 if (SVN_ENABLE_RA_SERF)
   if(SVN_USE_PKG_CONFIG)
-    pkg_search_module(serf IMPORTED_TARGET serf-2 serf-1)
-
-    if(serf_FOUND)
-      add_library(external-serf ALIAS PkgConfig::serf)
-    endif()
+    pkg_search_module(serf IMPORTED_TARGET REQUIRED serf-2 serf-1>=1.3.4)
+    add_library(external-serf ALIAS PkgConfig::serf)
   else()
-    find_package(Serf REQUIRED)
+    find_package(Serf 1.3.4 REQUIRED)
     add_library(external-serf ALIAS Serf::Serf)
   endif()
+endif()
+
+if (SVN_CHECKSUM_BACKEND STREQUAL "apr")
+  add_library(external-checksum-libs INTERFACE)
+  add_private_config_definition(
+    "Defined if svn should use APR to compute checksums."
+    "SVN_CHECKSUM_BACKEND_APR" "1"
+  )
+elseif (SVN_CHECKSUM_BACKEND STREQUAL "openssl")
+  find_package(OpenSSL REQUIRED)
+  add_library(external-checksum-libs ALIAS OpenSSL::Crypto)
+  add_private_config_definition(
+    "Defined if svn should use OpenSSL to compute checksums."
+    "SVN_CHECKSUM_BACKEND_OPENSSL" "1"
+  )
+elseif (SVN_CHECKSUM_BACKEND STREQUAL "bcrypt")
+  if (NOT WIN32)
+    message(SEND_ERROR "BCrypt checksum backend is only available on Win32 platform.")
+  endif()
+
+  add_library(external-checksum-libs INTERFACE)
+  target_link_libraries(external-checksum-libs INTERFACE Bcrypt.lib)
+
+  add_private_config_definition(
+    "Defined if svn should use BCrypt to compute checksums."
+    "SVN_CHECKSUM_BACKEND_BCRYPT" "1"
+  )
+elseif (SVN_CHECKSUM_BACKEND STREQUAL "xdigest")
+  if (SVN_USE_PKG_CONFIG)
+    pkg_check_modules(xdigest REQUIRED IMPORTED_TARGET xdigest)
+    add_library(external-checksum-libs ALIAS PkgConfig::xdigest)
+  else()
+    find_package(XDIGEST REQUIRED)
+    add_library(external-checksum-libs ALIAS XDIGEST::XDIGEST)
+  endif()
+
+  add_private_config_definition(
+    "Defined if svn should use xdigest to compute checksums."
+    "SVN_CHECKSUM_BACKEND_XDIGEST" "1"
+  )
+else()
+  message(SEND_ERROR
+    "Invalid value of SVN_CHECKSUM_BACKEND: '${SVN_CHECKSUM_BACKEND}'. "
+    "Possible options are 'apr' or 'openssl'."
+  )
 endif()
 
 ### Python
@@ -647,6 +694,10 @@ if (HAVE_UNISTD_H)
   autocheck_symbol_exists("readlink" "unistd.h" HAVE_READLINK)
   autocheck_symbol_exists("getpid" "unistd.h" HAVE_GETPID)
 endif()
+
+set(CMAKE_REQUIRED_LIBRARIES external-zlib)
+autocheck_symbol_exists("adler32_z" "zlib.h" SVN_ZLIB_HAS_ADLER32_Z)
+unset(CMAKE_REQUIRED_LIBRARIES)
 
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
@@ -952,6 +1003,7 @@ message(STATUS "    Build shared libraries ........ : ${BUILD_SHARED_LIBS}")
 message(STATUS "    Build shared FS Modues ........ : ${SVN_BUILD_SHARED_FS}")
 message(STATUS "    Build shared RA Modues ........ : ${SVN_BUILD_SHARED_RA}")
 message(STATUS "    Use pkg-config dependencies ... : ${SVN_USE_PKG_CONFIG}")
+message(STATUS "    Checksum Backend .............. : ${SVN_CHECKSUM_BACKEND}")
 message(STATUS "  FS modules:")
 message(STATUS "    Enable FSFS ................... : ${SVN_ENABLE_FS_FS}")
 message(STATUS "    Enable FSX .................... : ${SVN_ENABLE_FS_X}")

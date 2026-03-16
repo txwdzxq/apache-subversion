@@ -51,7 +51,7 @@ from svntest import Failure
 from svntest import Skip
 from svntest.wc import StateItem as Item
 
-SVN_VER_MINOR = 15
+SVN_VER_MINOR = 16
 DEFAULT_COMPATIBLE_VERSION = "1.8"
 
 def svn_wc__min_supported_format_version():
@@ -784,7 +784,7 @@ def trust_ssl_cert(cfgdir, ssl_cert, ssl_url):
   ssl_dir = os.path.join(cfgdir, 'auth', 'svn.ssl.server')
   if not os.path.isdir(ssl_dir):
     os.makedirs(ssl_dir)
-  md5_name = hashlib.md5(netloc_url).hexdigest()
+  md5_name = hashlib.md5(netloc_url.encode()).hexdigest()
   md5_file = os.path.join(ssl_dir, md5_name)
   md5_file_contents = """K 10
 ascii_cert

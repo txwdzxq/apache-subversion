@@ -143,7 +143,7 @@ class Paragraph:
   def unparse(self, stream):
     "Write this paragraph to STREAM, an open file-like object."
     stream.write(self.__str__())
-    
+
   def __str__(self):
     s = ""
     if self.kind in (Kind.preamble, Kind.section_header, Kind.unknown):
