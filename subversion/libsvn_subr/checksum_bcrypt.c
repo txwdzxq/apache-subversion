@@ -134,8 +134,7 @@ bcrypt_ctx_update(algorithm_state_t *algorithm,
       else
         block = UINT_MAX;
 
-      SVN_ERR(handle_error(BCryptHashData(ctx->handle,
-                                          (PUCHAR) data, block,
+      SVN_ERR(handle_error(BCryptHashData(ctx->handle, data, block,
                                           /* dwFlags */ 0)));
 
       len -= block;
@@ -154,8 +153,7 @@ bcrypt_ctx_final(algorithm_state_t *algorithm,
     SVN_ERR(bcrypt_ctx_init(algorithm, ctx));
 
   SVN_ERR(handle_error(BCryptFinishHash(ctx->handle,
-                                        (PUCHAR) digest,
-                                        algorithm->hash_length,
+                                        digest, algorithm->hash_length,
                                         /* dwFlags */ 0)));
 
   return SVN_NO_ERROR;
@@ -200,16 +198,14 @@ bcrypt_checksum(algorithm_state_t *algorithm,
       else
         block = UINT_MAX;
 
-      SVN_ERR(handle_error(BCryptHashData(handle,
-                                          (PUCHAR) data, block,
+      SVN_ERR(handle_error(BCryptHashData(handle, data, block,
                                           /* dwFlags */ 0)));
 
       len -= block;
       data += block;
     }
 
-  SVN_ERR(handle_error(BCryptFinishHash(handle,
-                                        (PUCHAR) digest,
+  SVN_ERR(handle_error(BCryptFinishHash(handle, digest,
                                         algorithm->hash_length,
                                         /* dwFlags */ 0)));
 
