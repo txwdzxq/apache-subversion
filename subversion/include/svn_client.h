@@ -1170,7 +1170,7 @@ svn_client_create_context(svn_client_ctx_t **ctx,
  * literal path "@abc" with no peg revision, or the form ".@abc" to refer to
  * the empty path with peg revision "abc".
  *
- * @since New in 1.15
+ * @since New in 1.16
  */
 svn_error_t *
 svn_client_args_to_target_array3(apr_array_header_t **targets_p,
@@ -1186,7 +1186,7 @@ svn_client_args_to_target_array3(apr_array_header_t **targets_p,
  *
  * @since New in 1.7
  *
- * @deprecated Provided for backward compatibility with the 1.14 API.
+ * @deprecated Provided for backward compatibility with the 1.15 API.
  */
 SVN_DEPRECATED
 svn_error_t *

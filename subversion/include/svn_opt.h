@@ -630,7 +630,7 @@ svn_opt_resolve_revisions(svn_opt_revision_t *peg_rev,
  * error, and if this is the only type of error encountered, complete
  * the operation before returning the error(s).
  *
- * @since New in 1.15.
+ * @since New in 1.16.
  * @see svn_client_args_to_target_array()
  */
 svn_error_t *
@@ -644,7 +644,7 @@ svn_opt_args_to_target_array4(apr_array_header_t **targets_p,
  * conversion of the targets to UTF-8.
  *
  * @since New in 1.5.
- * @deprecated Provided for backward compatibility with the 1.5 API.
+ * @deprecated Provided for backward compatibility with the 1.15 API.
  */
 SVN_DEPRECATED
 svn_error_t *
@@ -702,7 +702,7 @@ svn_opt_args_to_target_array(apr_array_header_t **targets_p,
  * const char * revprop names to svn_string_t * revprop values for use
  * with svn_repos_get_commit_editor5 and other get_commit_editor APIs.
  *
- * @since New in 1.15.
+ * @since New in 1.16.
  */
 svn_error_t *
 svn_opt_parse_revprop2(apr_hash_t **revprops,
@@ -714,7 +714,7 @@ svn_opt_parse_revprop2(apr_hash_t **revprops,
  * to UTF-8 before parsing it.
  *
  * @since New in 1.6.
- * @deprecated Provided for backward compatibility with the 1.14 API.
+ * @deprecated Provided for backward compatibility with the 1.15 API.
  */
 SVN_DEPRECATED
 svn_error_t *
