@@ -3179,23 +3179,37 @@ sub_main(int *exit_code,
       if (opt_state.message)
         {
           apr_finfo_t finfo;
-          if (apr_stat(&finfo, opt_state.message /* not converted to UTF-8 */,
-                       APR_FINFO_MIN, pool) == APR_SUCCESS)
+          const char *utf8_message;
+
+          SVN_ERR(svn_utf_cstring_to_utf8(&utf8_message, opt_state.message,
+                                          pool));
+
+          /* We don't want to warn for '' */
+          if (opt_state.message[0] != '\0')
             {
-              if (subcommand->cmd_func != svn_cl__lock)
+              err = svn_io_stat(&finfo, opt_state.message,
+                                APR_FINFO_MIN, pool);
+
+              if (!err)
                 {
-                  return svn_error_create
-                    (SVN_ERR_CL_LOG_MESSAGE_IS_PATHNAME, NULL,
-                     _("The log message is a pathname "
-                       "(was -F intended?); use '--force-log' to override"));
+                  if (subcommand->cmd_func != svn_cl__lock)
+                    {
+                      return svn_error_create(
+                          SVN_ERR_CL_LOG_MESSAGE_IS_PATHNAME, NULL,
+                          _("The log message is a pathname "
+                            "(was -F intended?); use '--force-log' to "
+                            "override"));
+                    }
+                  else
+                    {
+                      return svn_error_create(
+                          SVN_ERR_CL_LOG_MESSAGE_IS_PATHNAME, NULL,
+                          _("The lock comment is a pathname "
+                            "(was -F intended?); use '--force-log' to "
+                            "override"));
+                    }
                 }
-              else
-                {
-                  return svn_error_create
-                    (SVN_ERR_CL_LOG_MESSAGE_IS_PATHNAME, NULL,
-                     _("The lock comment is a pathname "
-                       "(was -F intended?); use '--force-log' to override"));
-                }
+              svn_error_clear(err);
             }
         }
     }
