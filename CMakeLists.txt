@@ -349,12 +349,12 @@ else()
   if(SQLite3_FOUND)
     # Support for CMake < 4.3
     # In prior versions of cmake, the sqlite targets were exported in the
-    # SQLite namespace, which was then changed to SQLite3.
-    if(NOT TARGET SQLite3::SQLite3)
-      add_library(SQLite3::SQLite3 ALIAS SQLite::SQLite3)
+    # SQLite namespace.
+    if(TARGET SQLite3::SQLite3)
+      add_library(external-sqlite ALIAS SQLite3::SQLite3)
+    else()
+      add_library(external-sqlite ALIAS SQLite::SQLite3)
     endif()
-
-    add_library(external-sqlite ALIAS SQLite3::SQLite3)
   else()
     find_package(SQLiteAmalgamation REQUIRED)
     add_library(external-sqlite ALIAS SQLite::SQLite3Amalgamation)
