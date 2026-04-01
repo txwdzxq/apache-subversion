@@ -162,22 +162,34 @@ model_create(svn_browse__model_t **model_p,
   return SVN_NO_ERROR;
 }
 
+typedef struct svn_browse__view_t {
+  /* TODO: store information about terminal screen (a WINDOW* in curses world) */
+  svn_browse__model_t *model;
+} svn_browse__view_t;
+
+static svn_browse__view_t *
+view_make(svn_browse__model_t *model, apr_pool_t *result_pool)
+{
+  svn_browse__view_t *view = apr_pcalloc(result_pool, sizeof(*view));
+  view->model = model;
+  return view;
+}
+
 static void
-ui_draw(svn_browse__model_t *ctx, apr_pool_t *pool)
+view_draw(svn_browse__view_t *view, apr_pool_t *pool)
 {
   int i;
-  const char *abspath = svn_path_url_add_component2(ctx->root,
-                                                    ctx->current->relpath,
-                                                    pool);
+  const char *abspath = svn_path_url_add_component2(
+      view->model->root, view->model->current->relpath, pool);
 
   mvprintw(0, 4, "Browsing: %s", abspath);
 
-  for (i = 0; i < ctx->current->list->nelts; i++)
+  for (i = 0; i < view->model->current->list->nelts; i++)
     {
-      svn_browse__item_t *item = APR_ARRAY_IDX(ctx->current->list, i,
+      svn_browse__item_t *item = APR_ARRAY_IDX(view->model->current->list, i,
                                                svn_browse__item_t *);
 
-      if (i == ctx->current->selection)
+      if (i == view->model->current->selection)
         standout();
 
       if (i == 0)
@@ -194,7 +206,7 @@ ui_draw(svn_browse__model_t *ctx, apr_pool_t *pool)
                item->dirent->created_rev,
                item->dirent->last_author);
 
-      if (i == ctx->current->selection)
+      if (i == view->model->current->selection)
         standend();
     }
 }
@@ -205,6 +217,7 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
   const char *url;
   svn_opt_revision_t revision;
   svn_browse__model_t *ctx;
+  svn_browse__view_t *view;
   apr_pool_t *iterpool;
 
   if (argc != 2)
@@ -224,6 +237,8 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
   keypad(stdscr, TRUE);
   nonl();
 
+  view = view_make(ctx, pool);
+
   iterpool = svn_pool_create(pool);
 
   while (TRUE)
@@ -234,7 +249,7 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
       const char *new_url;
 
       clear();
-      ui_draw(ctx, iterpool);
+      view_draw(view, iterpool);
       refresh();
 
       /* getch() reads the next character/key with the following additional
