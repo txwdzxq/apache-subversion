@@ -37,10 +37,10 @@
  * alphabetical order. */
 #define CTRL(ch) (ch - 'a' + 1)
 
-typedef struct item_t {
+typedef struct svn_browse__item_t {
   const char *relpath;
   const svn_dirent_t *dirent;
-} item_t;
+} svn_browse__item_t;
 
 typedef struct svn_browse__ctx_t {
   const char *root;
@@ -83,10 +83,10 @@ list_cb(void *baton,
         apr_pool_t *scratch_pool)
 {
   svn_browse__ctx_t *ctx = baton;
-  item_t *item = apr_pcalloc(ctx->list_pool, sizeof(*item));
+  svn_browse__item_t *item = apr_pcalloc(ctx->list_pool, sizeof(*item));
   item->relpath = apr_pstrdup(ctx->list_pool, path);
   item->dirent = svn_dirent_dup(dirent, ctx->list_pool);
-  APR_ARRAY_PUSH(ctx->list, item_t *) = item;
+  APR_ARRAY_PUSH(ctx->list, svn_browse__item_t *) = item;
   return SVN_NO_ERROR;
 }
 
@@ -96,7 +96,7 @@ enter_path(svn_browse__ctx_t *ctx, const char *relpath, apr_pool_t *pool)
   ctx->relpath = apr_pstrdup(pool, relpath);
   ctx->abspath = svn_path_url_add_component2(ctx->root, relpath, pool);
 
-  ctx->list = apr_array_make(pool, 0, sizeof(item_t *));
+  ctx->list = apr_array_make(pool, 0, sizeof(svn_browse__item_t *));
   ctx->selection = 0;
 
   SVN_ERR(svn_client_list4(ctx->abspath, &ctx->revision, &ctx->revision, NULL,
@@ -115,7 +115,8 @@ ui_draw(svn_browse__ctx_t *ctx, apr_pool_t *pool)
 
   for (i = 0; i < ctx->list->nelts; i++)
     {
-      item_t *item = APR_ARRAY_IDX(ctx->list, i, item_t *);
+      svn_browse__item_t *item = APR_ARRAY_IDX(ctx->list, i,
+                                               svn_browse__item_t *);
 
       if (i == ctx->selection)
         standout();
@@ -193,7 +194,8 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
         }
       else if (ch == '\n' || ch == '\r')
         {
-          item_t *item = APR_ARRAY_IDX(ctx.list, ctx.selection, item_t *);
+          svn_browse__item_t *item = APR_ARRAY_IDX(ctx.list, ctx.selection,
+                                                   svn_browse__item_t *);
           const char *new_url = svn_relpath_join(ctx.relpath, item->relpath, pool);
           SVN_ERR(enter_path(&ctx, new_url, pool));
         }
