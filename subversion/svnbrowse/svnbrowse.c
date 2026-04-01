@@ -45,7 +45,6 @@ typedef struct svn_browse__item_t {
 typedef struct svn_browse__ctx_t {
   const char *root;
   const char *relpath;
-  const char *abspath;
   svn_opt_revision_t revision;
 
   svn_client_ctx_t *client;
@@ -93,13 +92,13 @@ list_cb(void *baton,
 static svn_error_t *
 enter_path(svn_browse__ctx_t *ctx, const char *relpath, apr_pool_t *pool)
 {
+  const char *abspath = svn_path_url_add_component2(ctx->root, relpath, pool);
   ctx->relpath = apr_pstrdup(pool, relpath);
-  ctx->abspath = svn_path_url_add_component2(ctx->root, relpath, pool);
 
   ctx->list = apr_array_make(pool, 0, sizeof(svn_browse__item_t *));
   ctx->selection = 0;
 
-  SVN_ERR(svn_client_list4(ctx->abspath, &ctx->revision, &ctx->revision, NULL,
+  SVN_ERR(svn_client_list4(abspath, &ctx->revision, &ctx->revision, NULL,
                            svn_depth_immediates, SVN_DIRENT_ALL, TRUE, TRUE,
                            list_cb, ctx, ctx->client, pool));
 
@@ -110,8 +109,10 @@ static void
 ui_draw(svn_browse__ctx_t *ctx, apr_pool_t *pool)
 {
   int i;
+  const char *abspath = svn_path_url_add_component2(ctx->root, ctx->relpath,
+                                                    pool);
 
-  mvprintw(0, 4, "Browsing: %s", ctx->abspath);
+  mvprintw(0, 4, "Browsing: %s", abspath);
 
   for (i = 0; i < ctx->list->nelts; i++)
     {
