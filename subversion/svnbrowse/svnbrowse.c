@@ -145,6 +145,7 @@ static svn_error_t *
 sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
 {
   svn_browse__ctx_t ctx = { 0 };
+  apr_pool_t *iterpool;
 
   if (argc != 2)
     return svn_error_create(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
@@ -165,13 +166,17 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
   keypad(stdscr, TRUE);
   nonl();
 
+  iterpool = svn_pool_create(pool);
+
   while (TRUE)
     {
+      svn_pool_clear(iterpool);
+
       svn_browse__item_t *item;
       const char *new_url;
 
       clear();
-      ui_draw(&ctx, pool);
+      ui_draw(&ctx, iterpool);
       refresh();
 
       /* getch() reads the next character/key with the following additional
@@ -197,14 +202,14 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
           case '\r':
             item = APR_ARRAY_IDX(ctx.list, ctx.selection,
                                  svn_browse__item_t *);
-            new_url = svn_relpath_join(ctx.relpath, item->relpath, pool);
-            SVN_ERR(enter_path(&ctx, new_url, pool));
+            new_url = svn_relpath_join(ctx.relpath, item->relpath, iterpool);
+            SVN_ERR(enter_path(&ctx, new_url, iterpool));
             break;
           case KEY_BACKSPACE:
           case '-':
           case 'u':
-            new_url = svn_relpath_dirname(ctx.relpath, pool);
-            SVN_ERR(enter_path(&ctx, new_url, pool));
+            new_url = svn_relpath_dirname(ctx.relpath, iterpool);
+            SVN_ERR(enter_path(&ctx, new_url, iterpool));
             break;
           /* TODO: quit via escape. some say just check for 27, but it I think it's
            * a bit ugly. */
