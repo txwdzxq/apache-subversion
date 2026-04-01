@@ -166,13 +166,12 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
 
   while (TRUE)
     {
-      int ch;
+      svn_browse__item_t *item;
+      const char *new_url;
 
       clear();
       ui_draw(&ctx, pool);
       refresh();
-
-      ch = getch();
 
       /* getch() reads the next character/key with the following additional
        * rules:
@@ -183,35 +182,37 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
        * 3. The rest of keys remain as their equivalents on the current layout.
        * 4. If shift is held, they just become uppercased.
        */
-
-      if (ch == KEY_UP || ch == 'k')
+      switch (getch())
         {
-          ctx.selection--;
-        }
-      else if (ch == KEY_DOWN || ch == 'j')
-        {
-          ctx.selection++;
-        }
-      else if (ch == '\n' || ch == '\r')
-        {
-          svn_browse__item_t *item = APR_ARRAY_IDX(ctx.list, ctx.selection,
-                                                   svn_browse__item_t *);
-          const char *new_url = svn_relpath_join(ctx.relpath, item->relpath, pool);
-          SVN_ERR(enter_path(&ctx, new_url, pool));
-        }
-      else if (ch == KEY_BACKSPACE || ch == '-' || ch == 'u')
-        {
-          const char *new_url = svn_relpath_dirname(ctx.relpath, pool);
-          SVN_ERR(enter_path(&ctx, new_url, pool));
-        }
-      /* TODO: quit via escape. some say just check for 27, but it I think it's
-       * a bit ugly. */
-      else if (ch == 'q')
-        {
-          break;
+          case KEY_UP:
+          case 'k':
+            ctx.selection--;
+            break;
+          case KEY_DOWN:
+          case 'j':
+            ctx.selection++;
+            break;
+          case '\n':
+          case '\r':
+            item = APR_ARRAY_IDX(ctx.list, ctx.selection,
+                                 svn_browse__item_t *);
+            new_url = svn_relpath_join(ctx.relpath, item->relpath, pool);
+            SVN_ERR(enter_path(&ctx, new_url, pool));
+            break;
+          case KEY_BACKSPACE:
+          case '-':
+          case 'u':
+            new_url = svn_relpath_dirname(ctx.relpath, pool);
+            SVN_ERR(enter_path(&ctx, new_url, pool));
+            break;
+          /* TODO: quit via escape. some say just check for 27, but it I think it's
+           * a bit ugly. */
+          case 'q':
+            goto quit;
         }
     }
 
+quit:
 	endwin();
 
   return SVN_NO_ERROR;
