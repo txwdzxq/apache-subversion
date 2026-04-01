@@ -69,23 +69,6 @@ typedef struct svn_browse__model_t {
 } svn_browse__model_t;
 
 static svn_error_t *
-init_client(svn_browse__model_t *ctx, apr_pool_t *pool)
-{
-  svn_auth_baton_t *auth;
-
-  SVN_ERR(svn_client_create_context2(&ctx->client, NULL, pool));
-
-  /* Set up Authentication stuff. */
-  SVN_ERR(svn_cmdline_create_auth_baton2(&auth, FALSE, NULL, NULL, NULL, FALSE,
-                                         FALSE, FALSE, FALSE, FALSE, FALSE,
-                                         NULL, NULL, NULL, pool));
-
-  ctx->client->auth_baton = auth;
-
-  return SVN_NO_ERROR;
-}
-
-static svn_error_t *
 list_cb(void *baton,
         const char *path,
         const svn_dirent_t *dirent,
@@ -144,6 +127,41 @@ enter_path(svn_browse__model_t *ctx, const char *relpath,
   return SVN_NO_ERROR;
 }
 
+static svn_error_t *
+model_create(svn_browse__model_t **model_p,
+             const char *url,
+             svn_opt_revision_t revision,
+             apr_pool_t *result_pool,
+             apr_pool_t *scratch_pool)
+{
+  svn_browse__model_t *model = apr_pcalloc(result_pool, sizeof(*model));
+  svn_auth_baton_t *auth;
+  svn_client_ctx_t *client;
+  apr_pool_t *state_pool;
+  svn_browse__state_t *state;
+
+  /* Set up Authentication stuff. */
+  SVN_ERR(svn_cmdline_create_auth_baton2(&auth, FALSE, NULL, NULL, NULL, FALSE,
+                                         FALSE, FALSE, FALSE, FALSE, FALSE,
+                                         NULL, NULL, NULL, result_pool));
+
+  SVN_ERR(svn_client_create_context2(&client, NULL, result_pool));
+  client->auth_baton = auth;
+
+  /* TODO: we must use the repository root URL */
+  model->root = apr_pstrdup(result_pool, url);
+  model->revision = revision;
+  model->client = client;
+  model->pool = result_pool;
+
+  /* the state should be in a separate pool so it's safe to free it */
+  state_pool = svn_pool_create(result_pool);
+  SVN_ERR(state_create(&model->current, model, "", state_pool, scratch_pool));
+
+  *model_p = model;
+  return SVN_NO_ERROR;
+}
+
 static void
 ui_draw(svn_browse__model_t *ctx, apr_pool_t *pool)
 {
@@ -184,19 +202,19 @@ ui_draw(svn_browse__model_t *ctx, apr_pool_t *pool)
 static svn_error_t *
 sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
 {
-  svn_browse__model_t ctx = { 0 };
+  const char *url;
+  svn_opt_revision_t revision;
+  svn_browse__model_t *ctx;
   apr_pool_t *iterpool;
 
   if (argc != 2)
     return svn_error_create(SVN_ERR_CL_ARG_PARSING_ERROR, NULL,
                             "usage: svnbrowse <URL>");
 
-  SVN_ERR(svn_uri_canonicalize_safe(&ctx.root, NULL, argv[1], pool, pool));
-  ctx.revision.kind = svn_opt_revision_head;
-  ctx.pool = pool;
+  SVN_ERR(svn_uri_canonicalize_safe(&url, NULL, argv[1], pool, pool));
+  revision.kind = svn_opt_revision_head;
 
-  SVN_ERR(init_client(&ctx, pool));
-  SVN_ERR(state_create(&ctx.current, &ctx, "", svn_pool_create(pool), pool));
+  SVN_ERR(model_create(&ctx, url, revision, pool, pool));
 
   /* init the display */
   initscr();
@@ -216,7 +234,7 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
       const char *new_url;
 
       clear();
-      ui_draw(&ctx, iterpool);
+      ui_draw(ctx, iterpool);
       refresh();
 
       /* getch() reads the next character/key with the following additional
@@ -232,25 +250,25 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
         {
           case KEY_UP:
           case 'k':
-            ctx.current->selection--;
+            ctx->current->selection--;
             break;
           case KEY_DOWN:
           case 'j':
-            ctx.current->selection++;
+            ctx->current->selection++;
             break;
           case '\n':
           case '\r':
-            item = APR_ARRAY_IDX(ctx.current->list, ctx.current->selection,
+            item = APR_ARRAY_IDX(ctx->current->list, ctx->current->selection,
                                  svn_browse__item_t *);
-            new_url = svn_relpath_join(ctx.current->relpath, item->relpath,
+            new_url = svn_relpath_join(ctx->current->relpath, item->relpath,
                                        iterpool);
-            SVN_ERR(enter_path(&ctx, new_url, iterpool));
+            SVN_ERR(enter_path(ctx, new_url, iterpool));
             break;
           case KEY_BACKSPACE:
           case '-':
           case 'u':
-            new_url = svn_relpath_dirname(ctx.current->relpath, iterpool);
-            SVN_ERR(enter_path(&ctx, new_url, iterpool));
+            new_url = svn_relpath_dirname(ctx->current->relpath, iterpool);
+            SVN_ERR(enter_path(ctx, new_url, iterpool));
             break;
           /* TODO: quit via escape. some say just check for 27, but it I think it's
            * a bit ugly. */
