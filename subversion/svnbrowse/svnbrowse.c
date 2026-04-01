@@ -42,16 +42,30 @@ typedef struct svn_browse__item_t {
   const svn_dirent_t *dirent;
 } svn_browse__item_t;
 
+/* a state of a single directory */
+typedef struct svn_browse__state_t {
+  /* information about this node */
+  const char *relpath;
+  svn_opt_revision_t revision;
+
+  /* stores the list of nodes in this state; an array of svn_browse__item_t */
+  apr_array_header_t *list;
+
+  /* the index of hovered item */
+  int selection;
+
+  /* a pool where the structure is allocated */
+  apr_pool_t *pool;
+} svn_browse__state_t;
+
 typedef struct svn_browse__ctx_t {
   const char *root;
-  const char *relpath;
   svn_opt_revision_t revision;
 
   svn_client_ctx_t *client;
 
-  apr_array_header_t *list;
-  int selection;
-  apr_pool_t *list_pool;
+  svn_browse__state_t *current;
+  apr_pool_t *pool;
 } svn_browse__ctx_t;
 
 static svn_error_t *
@@ -81,26 +95,51 @@ list_cb(void *baton,
         const char *external_target,
         apr_pool_t *scratch_pool)
 {
-  svn_browse__ctx_t *ctx = baton;
-  svn_browse__item_t *item = apr_pcalloc(ctx->list_pool, sizeof(*item));
-  item->relpath = apr_pstrdup(ctx->list_pool, path);
-  item->dirent = svn_dirent_dup(dirent, ctx->list_pool);
-  APR_ARRAY_PUSH(ctx->list, svn_browse__item_t *) = item;
+  svn_browse__state_t *state = baton;
+  svn_browse__item_t *item = apr_pcalloc(state->pool, sizeof(*item));
+  item->relpath = apr_pstrdup(state->pool, path);
+  item->dirent = svn_dirent_dup(dirent, state->pool);
+  APR_ARRAY_PUSH(state->list, svn_browse__item_t *) = item;
   return SVN_NO_ERROR;
 }
 
 static svn_error_t *
-enter_path(svn_browse__ctx_t *ctx, const char *relpath, apr_pool_t *pool)
+state_create(svn_browse__state_t **state_p,
+             svn_browse__ctx_t *ctx,
+             const char *relpath,
+             apr_pool_t *result_pool,
+             apr_pool_t *scratch_pool)
 {
-  const char *abspath = svn_path_url_add_component2(ctx->root, relpath, pool);
-  ctx->relpath = apr_pstrdup(pool, relpath);
+  svn_browse__state_t *state = apr_pcalloc(result_pool, sizeof(*state));
+  const char *abspath = svn_path_url_add_component2(ctx->root, relpath,
+                                                    scratch_pool);
 
-  ctx->list = apr_array_make(pool, 0, sizeof(svn_browse__item_t *));
-  ctx->selection = 0;
+  state->relpath = apr_pstrdup(result_pool, relpath);
+  state->revision = state->revision;
+  state->list = apr_array_make(result_pool, 0, sizeof(svn_browse__item_t *));
+  state->selection = 0;
+  state->pool = result_pool;
 
   SVN_ERR(svn_client_list4(abspath, &ctx->revision, &ctx->revision, NULL,
                            svn_depth_immediates, SVN_DIRENT_ALL, TRUE, TRUE,
-                           list_cb, ctx, ctx->client, pool));
+                           list_cb, state, ctx->client, scratch_pool));
+
+  *state_p = state;
+  return SVN_NO_ERROR;
+}
+
+static svn_error_t *
+enter_path(svn_browse__ctx_t *ctx, const char *relpath,
+           apr_pool_t *scratch_pool)
+{
+  svn_browse__state_t *newstate;
+  apr_pool_t *state_pool = svn_pool_create(ctx->pool);
+
+  SVN_ERR(state_create(&newstate, ctx, relpath, state_pool, scratch_pool));
+
+  /* switch to the next state and nuke the previous one */
+  apr_pool_destroy(ctx->current->pool);
+  ctx->current = newstate;
 
   return SVN_NO_ERROR;
 }
@@ -109,17 +148,18 @@ static void
 ui_draw(svn_browse__ctx_t *ctx, apr_pool_t *pool)
 {
   int i;
-  const char *abspath = svn_path_url_add_component2(ctx->root, ctx->relpath,
+  const char *abspath = svn_path_url_add_component2(ctx->root,
+                                                    ctx->current->relpath,
                                                     pool);
 
   mvprintw(0, 4, "Browsing: %s", abspath);
 
-  for (i = 0; i < ctx->list->nelts; i++)
+  for (i = 0; i < ctx->current->list->nelts; i++)
     {
-      svn_browse__item_t *item = APR_ARRAY_IDX(ctx->list, i,
+      svn_browse__item_t *item = APR_ARRAY_IDX(ctx->current->list, i,
                                                svn_browse__item_t *);
 
-      if (i == ctx->selection)
+      if (i == ctx->current->selection)
         standout();
 
       if (i == 0)
@@ -136,7 +176,7 @@ ui_draw(svn_browse__ctx_t *ctx, apr_pool_t *pool)
                item->dirent->created_rev,
                item->dirent->last_author);
 
-      if (i == ctx->selection)
+      if (i == ctx->current->selection)
         standend();
     }
 }
@@ -153,10 +193,10 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
 
   SVN_ERR(svn_uri_canonicalize_safe(&ctx.root, NULL, argv[1], pool, pool));
   ctx.revision.kind = svn_opt_revision_head;
-  ctx.list_pool = pool;
+  ctx.pool = pool;
 
   SVN_ERR(init_client(&ctx, pool));
-  SVN_ERR(enter_path(&ctx, "", pool));
+  SVN_ERR(state_create(&ctx.current, &ctx, "", svn_pool_create(pool), pool));
 
   /* init the display */
   initscr();
@@ -192,23 +232,24 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
         {
           case KEY_UP:
           case 'k':
-            ctx.selection--;
+            ctx.current->selection--;
             break;
           case KEY_DOWN:
           case 'j':
-            ctx.selection++;
+            ctx.current->selection++;
             break;
           case '\n':
           case '\r':
-            item = APR_ARRAY_IDX(ctx.list, ctx.selection,
+            item = APR_ARRAY_IDX(ctx.current->list, ctx.current->selection,
                                  svn_browse__item_t *);
-            new_url = svn_relpath_join(ctx.relpath, item->relpath, iterpool);
+            new_url = svn_relpath_join(ctx.current->relpath, item->relpath,
+                                       iterpool);
             SVN_ERR(enter_path(&ctx, new_url, iterpool));
             break;
           case KEY_BACKSPACE:
           case '-':
           case 'u':
-            new_url = svn_relpath_dirname(ctx.relpath, iterpool);
+            new_url = svn_relpath_dirname(ctx.current->relpath, iterpool);
             SVN_ERR(enter_path(&ctx, new_url, iterpool));
             break;
           /* TODO: quit via escape. some say just check for 27, but it I think it's
