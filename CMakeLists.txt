@@ -88,6 +88,7 @@ option(SVN_ENABLE_FS_FS "Enable Subversion FSFS Repository Filesystem Library" O
 option(SVN_ENABLE_FS_X "Enable Subversion FSX Repository Filesystem Library" ON)
 option(SVN_ENABLE_FS_BASE "Enable Subversion Filesystem Base Library (NOT IMPLEMENTED and DEPRECATED)" OFF)
 option(SVN_ENABLE_NLS "Enable gettext functionality" OFF)
+option(SVN_ENABLE_TUI "Enable TUI applications (requires ncurses)" OFF)
 option(SVN_ENABLE_AUTH_KWALLET "Enable KWallet auth library" OFF)
 option(SVN_ENABLE_AUTH_GNOME_KEYRING "Enable GNOME Keyring for auth credentials" OFF)
 cmake_dependent_option(SVN_ENABLE_AUTH_GPG_AGENT "Enable GPG Agent support" OFF "WIN32" ON)
@@ -481,6 +482,17 @@ if(SVN_ENABLE_AUTH_GNOME_KEYRING)
     "Is libsecret support enabled?"
     "SVN_HAVE_LIBSECRET" "1"
   )
+endif()
+
+if (SVN_ENABLE_TUI)
+  add_library(external-ncurses INTERFACE)
+
+  if(SVN_USE_PKG_CONFIG)
+    pkg_check_modules(ncurses REQUIRED IMPORTED_TARGET ncurses)
+    target_link_libraries(external-ncurses INTERFACE PkgConfig::ncurses)
+  else()
+    message(ERROR "not supported")
+  endif()
 endif()
 
 if(SVN_ENABLE_SWIG_PERL OR SVN_ENABLE_SWIG_PYTHON OR SVN_ENABLE_SWIG_RUBY)
@@ -996,6 +1008,7 @@ message(STATUS "  Build type ...................... : ${CMAKE_BUILD_TYPE}")
 message(STATUS "    Build shared libraries ........ : ${BUILD_SHARED_LIBS}")
 message(STATUS "    Build shared FS Modues ........ : ${SVN_BUILD_SHARED_FS}")
 message(STATUS "    Build shared RA Modues ........ : ${SVN_BUILD_SHARED_RA}")
+message(STATUS "    Build TUI applications ........ : ${SVN_ENABLE_TUI}")
 message(STATUS "    Use pkg-config dependencies ... : ${SVN_USE_PKG_CONFIG}")
 message(STATUS "    Checksum Backend .............. : ${SVN_CHECKSUM_BACKEND}")
 message(STATUS "  FS modules:")
