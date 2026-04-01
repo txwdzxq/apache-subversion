@@ -79,8 +79,6 @@ def get_target_conditions(target):
       enable_condition.append("SVN_ENABLE_AUTH_KWALLET")
     elif target.name == "libsvn_auth_gnome_keyring":
       enable_condition.append("SVN_ENABLE_AUTH_GNOME_KEYRING")
-    elif target.name == "svnbrowse":
-      enable_condition.append("SVN_ENABLE_TUI")
 
   if isinstance(target, gen_base.TargetExe):
     if target.install == "test" or target.install == "sub-test":
@@ -89,6 +87,9 @@ def get_target_conditions(target):
       enable_condition.append("SVN_ENABLE_TOOLS")
     else:
       enable_condition.append("SVN_ENABLE_PROGRAMS")
+
+    if target.name == "svnbrowse":
+      enable_condition.append("SVN_ENABLE_TUI")
 
   if isinstance(target, gen_base.TargetSWIG) or \
      isinstance(target, gen_base.TargetSWIGLib):
