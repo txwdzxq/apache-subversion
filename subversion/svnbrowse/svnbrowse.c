@@ -243,10 +243,10 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
 
   while (TRUE)
     {
-      svn_pool_clear(iterpool);
-
       svn_browse__item_t *item;
       const char *new_url;
+
+      svn_pool_clear(iterpool);
 
       clear();
       view_draw(view, iterpool);
