@@ -58,7 +58,7 @@ typedef struct svn_browse__state_t {
   apr_pool_t *pool;
 } svn_browse__state_t;
 
-typedef struct svn_browse__ctx_t {
+typedef struct svn_browse__model_t {
   const char *root;
   svn_opt_revision_t revision;
 
@@ -66,10 +66,10 @@ typedef struct svn_browse__ctx_t {
 
   svn_browse__state_t *current;
   apr_pool_t *pool;
-} svn_browse__ctx_t;
+} svn_browse__model_t;
 
 static svn_error_t *
-init_client(svn_browse__ctx_t *ctx, apr_pool_t *pool)
+init_client(svn_browse__model_t *ctx, apr_pool_t *pool)
 {
   svn_auth_baton_t *auth;
 
@@ -105,7 +105,7 @@ list_cb(void *baton,
 
 static svn_error_t *
 state_create(svn_browse__state_t **state_p,
-             svn_browse__ctx_t *ctx,
+             svn_browse__model_t *ctx,
              const char *relpath,
              apr_pool_t *result_pool,
              apr_pool_t *scratch_pool)
@@ -129,7 +129,7 @@ state_create(svn_browse__state_t **state_p,
 }
 
 static svn_error_t *
-enter_path(svn_browse__ctx_t *ctx, const char *relpath,
+enter_path(svn_browse__model_t *ctx, const char *relpath,
            apr_pool_t *scratch_pool)
 {
   svn_browse__state_t *newstate;
@@ -145,7 +145,7 @@ enter_path(svn_browse__ctx_t *ctx, const char *relpath,
 }
 
 static void
-ui_draw(svn_browse__ctx_t *ctx, apr_pool_t *pool)
+ui_draw(svn_browse__model_t *ctx, apr_pool_t *pool)
 {
   int i;
   const char *abspath = svn_path_url_add_component2(ctx->root,
@@ -184,7 +184,7 @@ ui_draw(svn_browse__ctx_t *ctx, apr_pool_t *pool)
 static svn_error_t *
 sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
 {
-  svn_browse__ctx_t ctx = { 0 };
+  svn_browse__model_t ctx = { 0 };
   apr_pool_t *iterpool;
 
   if (argc != 2)
