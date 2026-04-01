@@ -35,7 +35,7 @@
 
 /* Control+ASCII character are represented as values 1-26 according to their
  * alphabetical order. */
-#define CTRL(ch) (ch - 'a' + 1)
+#define CTRL(ch) ((ch) - 'a' + 1)
 
 typedef struct svn_browse__item_t {
   const char *relpath;
