@@ -171,7 +171,7 @@ ui_draw(svn_browse__ctx_t *ctx, apr_pool_t *pool)
       else
         abort();
 
-			mvprintw(i + 1, COLS - 40, "%8ld KiB  r%-8ld  %s",
+      mvprintw(i + 1, COLS - 40, "%8ld KiB  r%-8ld  %s",
                item->dirent->size / 1024,
                item->dirent->created_rev,
                item->dirent->last_author);
