@@ -138,6 +138,7 @@ model_create(svn_browse__model_t **model_p,
   svn_ra_session_t *session;
   apr_pool_t *state_pool;
   svn_browse__state_t *state;
+  const char *root, *relpath;
 
   /* Set up Authentication stuff. */
   SVN_ERR(svn_cmdline_create_auth_baton2(&auth, FALSE, NULL, NULL, NULL, FALSE,
@@ -150,12 +151,17 @@ model_create(svn_browse__model_t **model_p,
   SVN_ERR(svn_client_open_ra_session2(&session, url, NULL, client, result_pool,
                                       scratch_pool));
 
+  SVN_ERR(svn_ra_get_repos_root2(session, &root, scratch_pool));
+  SVN_ERR(svn_ra_reparent(session, root, scratch_pool));
+
+  relpath = svn_uri_skip_ancestor(root, url, scratch_pool);
+
   /* the state should be in a separate pool so it's safe to free it */
   state_pool = svn_pool_create(result_pool);
-  SVN_ERR(state_create(&state, session, "", revision, state_pool,
+  SVN_ERR(state_create(&state, session, relpath, revision, state_pool,
                        scratch_pool));
-  /* TODO: we must use the repository root URL */
-  SVN_ERR(svn_ra_get_session_url(session, &model->root, result_pool));
+
+  model->root = apr_pstrdup(result_pool, root);
   model->revision = revision;
   model->client = client;
   model->session = session;
