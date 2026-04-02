@@ -39,7 +39,7 @@
 #define CTRL(ch) ((ch) - 'a' + 1)
 
 typedef struct svn_browse__item_t {
-  const char *relpath;
+  const char *name;
   const svn_dirent_t *dirent;
 } svn_browse__item_t;
 
@@ -78,7 +78,7 @@ list_cb(const char *relpath,
 {
   svn_browse__state_t *state = baton;
   svn_browse__item_t *item = apr_pcalloc(state->pool, sizeof(*item));
-  item->relpath = svn_dirent_basename(relpath, state->pool);
+  item->name = svn_dirent_basename(relpath, state->pool);
   item->dirent = svn_dirent_dup(dirent, state->pool);
   APR_ARRAY_PUSH(state->list, svn_browse__item_t *) = item;
   return SVN_NO_ERROR;
@@ -204,9 +204,9 @@ view_draw(svn_browse__view_t *view, apr_pool_t *pool)
       if (i == 0)
         mvprintw(i + 1, 0, "../");
       else if (item->dirent->kind == svn_node_dir)
-        mvprintw(i + 1, 0, "%s/", item->relpath);
+        mvprintw(i + 1, 0, "%s/", item->name);
       else if (item->dirent->kind == svn_node_file)
-        mvprintw(i + 1, 0, "%s", item->relpath);
+        mvprintw(i + 1, 0, "%s", item->name);
       else
         abort();
 
@@ -282,7 +282,7 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
           case '\r':
             item = APR_ARRAY_IDX(ctx->current->list, ctx->current->selection,
                                  svn_browse__item_t *);
-            new_url = svn_relpath_join(ctx->current->relpath, item->relpath,
+            new_url = svn_relpath_join(ctx->current->relpath, item->name,
                                        iterpool);
             SVN_ERR(enter_path(ctx, new_url, iterpool));
             break;
