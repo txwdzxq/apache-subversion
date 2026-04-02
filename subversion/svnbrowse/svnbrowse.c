@@ -71,20 +71,6 @@ typedef struct svn_browse__model_t {
 } svn_browse__model_t;
 
 static svn_error_t *
-list_cb(const char *relpath,
-        svn_dirent_t *dirent,
-        void *baton,
-        apr_pool_t *scratch_pool)
-{
-  svn_browse__state_t *state = baton;
-  svn_browse__item_t *item = apr_pcalloc(state->pool, sizeof(*item));
-  item->name = svn_dirent_basename(relpath, state->pool);
-  item->dirent = svn_dirent_dup(dirent, state->pool);
-  APR_ARRAY_PUSH(state->list, svn_browse__item_t *) = item;
-  return SVN_NO_ERROR;
-}
-
-static svn_error_t *
 state_create(svn_browse__state_t **state_p,
              svn_ra_session_t *session,
              const char *relpath,
@@ -93,21 +79,30 @@ state_create(svn_browse__state_t **state_p,
              apr_pool_t *scratch_pool)
 {
   svn_browse__state_t *state = apr_pcalloc(result_pool, sizeof(*state));
-  svn_revnum_t revnum;
+  svn_revnum_t fetched_revnum;
+  apr_hash_t *dirents;
+  apr_hash_index_t *hi;
+
+  SVN_ERR(svn_ra_get_dir2(session, &dirents, &fetched_revnum, NULL, relpath,
+                          revision, SVN_DIRENT_ALL, scratch_pool));
 
   state->relpath = apr_pstrdup(result_pool, relpath);
-  state->revision = state->revision;
-  state->list = apr_array_make(result_pool, 0, sizeof(svn_browse__item_t *));
+  state->revision = fetched_revnum;
   state->selection = 0;
   state->pool = result_pool;
 
-  /* TODO: use svn_ra_get_dir2() as it automatically treats SVN_INVALID_REVNUM
-   * as HEAD and returns a list directly. */
+  state->list = apr_array_make(result_pool, 0, sizeof(svn_browse__item_t *));
+  for (hi = apr_hash_first(scratch_pool, dirents); hi; hi = apr_hash_next(hi))
+    {
+      const char *name = apr_hash_this_key(hi);
+      const svn_dirent_t *dirent = apr_hash_this_val(hi);
 
-  SVN_ERR(svn_ra_get_latest_revnum(session, &revnum, scratch_pool));
+      svn_browse__item_t *item = apr_pcalloc(result_pool, sizeof(*item));
+      item->name = apr_pstrdup(result_pool, name);
+      item->dirent = svn_dirent_dup(dirent, result_pool);
 
-  SVN_ERR(svn_ra_list(session, relpath, revnum, NULL, svn_depth_immediates,
-                      SVN_DIRENT_ALL, list_cb, state, scratch_pool));
+      APR_ARRAY_PUSH(state->list, svn_browse__item_t *) = item;
+    }
 
   *state_p = state;
   return SVN_NO_ERROR;
@@ -201,9 +196,7 @@ view_draw(svn_browse__view_t *view, apr_pool_t *pool)
       if (i == view->model->current->selection)
         standout();
 
-      if (i == 0)
-        mvprintw(i + 1, 0, "../");
-      else if (item->dirent->kind == svn_node_dir)
+      if (item->dirent->kind == svn_node_dir)
         mvprintw(i + 1, 0, "%s/", item->name);
       else if (item->dirent->kind == svn_node_file)
         mvprintw(i + 1, 0, "%s", item->name);
