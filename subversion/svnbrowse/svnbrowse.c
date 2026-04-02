@@ -26,6 +26,7 @@
 
 #include "svn_client.h"
 #include "svn_opt.h"
+#include "svn_ra.h"
 #include "svn_path.h"
 #include "svn_pools.h"
 #include "svn_cmdline.h"
@@ -45,8 +46,8 @@ typedef struct svn_browse__item_t {
 /* a state of a single directory */
 typedef struct svn_browse__state_t {
   /* information about this node */
-  const char *abspath;
-  svn_opt_revision_t revision;
+  const char *relpath;
+  svn_revnum_t revision;
 
   /* stores the list of nodes in this state; an array of svn_browse__item_t */
   apr_array_header_t *list;
@@ -60,27 +61,24 @@ typedef struct svn_browse__state_t {
 
 typedef struct svn_browse__model_t {
   const char *root;
-  svn_opt_revision_t revision;
+  svn_revnum_t revision;
 
   svn_client_ctx_t *client;
+  svn_ra_session_t *session;
 
   svn_browse__state_t *current;
   apr_pool_t *pool;
 } svn_browse__model_t;
 
 static svn_error_t *
-list_cb(void *baton,
-        const char *path,
-        const svn_dirent_t *dirent,
-        const svn_lock_t *lock,
-        const char *abs_path,
-        const char *external_parent_url,
-        const char *external_target,
+list_cb(const char *relpath,
+        svn_dirent_t *dirent,
+        void *baton,
         apr_pool_t *scratch_pool)
 {
   svn_browse__state_t *state = baton;
   svn_browse__item_t *item = apr_pcalloc(state->pool, sizeof(*item));
-  item->relpath = apr_pstrdup(state->pool, path);
+  item->relpath = svn_dirent_basename(relpath, state->pool);
   item->dirent = svn_dirent_dup(dirent, state->pool);
   APR_ARRAY_PUSH(state->list, svn_browse__item_t *) = item;
   return SVN_NO_ERROR;
@@ -88,36 +86,41 @@ list_cb(void *baton,
 
 static svn_error_t *
 state_create(svn_browse__state_t **state_p,
-             svn_client_ctx_t *ctx,
-             const char *url,
-             svn_opt_revision_t *revision,
+             svn_ra_session_t *session,
+             const char *relpath,
+             svn_revnum_t revision,
              apr_pool_t *result_pool,
              apr_pool_t *scratch_pool)
 {
   svn_browse__state_t *state = apr_pcalloc(result_pool, sizeof(*state));
+  svn_revnum_t revnum;
 
-  state->abspath = apr_pstrdup(result_pool, url);
+  state->relpath = apr_pstrdup(result_pool, relpath);
   state->revision = state->revision;
   state->list = apr_array_make(result_pool, 0, sizeof(svn_browse__item_t *));
   state->selection = 0;
   state->pool = result_pool;
 
-  SVN_ERR(svn_client_list4(url, revision, revision, NULL, svn_depth_immediates,
-                           SVN_DIRENT_ALL, TRUE, TRUE, list_cb, state, ctx,
-                           scratch_pool));
+  /* TODO: use svn_ra_get_dir2() as it automatically treats SVN_INVALID_REVNUM
+   * as HEAD and returns a list directly. */
+
+  SVN_ERR(svn_ra_get_latest_revnum(session, &revnum, scratch_pool));
+
+  SVN_ERR(svn_ra_list(session, relpath, revnum, NULL, svn_depth_immediates,
+                      SVN_DIRENT_ALL, list_cb, state, scratch_pool));
 
   *state_p = state;
   return SVN_NO_ERROR;
 }
 
 static svn_error_t *
-enter_path(svn_browse__model_t *ctx, const char *abspath,
+enter_path(svn_browse__model_t *ctx, const char *relpath,
            apr_pool_t *scratch_pool)
 {
   svn_browse__state_t *newstate;
   apr_pool_t *state_pool = svn_pool_create(ctx->pool);
 
-  SVN_ERR(state_create(&newstate, ctx->client, abspath, &ctx->revision,
+  SVN_ERR(state_create(&newstate, ctx->session, relpath, ctx->revision,
                        state_pool, scratch_pool));
 
   /* switch to the next state and nuke the previous one */
@@ -130,13 +133,14 @@ enter_path(svn_browse__model_t *ctx, const char *abspath,
 static svn_error_t *
 model_create(svn_browse__model_t **model_p,
              const char *url,
-             svn_opt_revision_t revision,
+             svn_revnum_t revision,
              apr_pool_t *result_pool,
              apr_pool_t *scratch_pool)
 {
   svn_browse__model_t *model = apr_pcalloc(result_pool, sizeof(*model));
   svn_auth_baton_t *auth;
   svn_client_ctx_t *client;
+  svn_ra_session_t *session;
   apr_pool_t *state_pool;
   svn_browse__state_t *state;
 
@@ -148,15 +152,18 @@ model_create(svn_browse__model_t **model_p,
   SVN_ERR(svn_client_create_context2(&client, NULL, result_pool));
   client->auth_baton = auth;
 
+  SVN_ERR(svn_client_open_ra_session2(&session, url, NULL, client, result_pool,
+                                      scratch_pool));
+
   /* the state should be in a separate pool so it's safe to free it */
   state_pool = svn_pool_create(result_pool);
-  SVN_ERR(state_create(&state, client, url, &revision, state_pool,
+  SVN_ERR(state_create(&state, session, "", revision, state_pool,
                        scratch_pool));
-
   /* TODO: we must use the repository root URL */
-  model->root = apr_pstrdup(result_pool, url);
+  SVN_ERR(svn_ra_get_session_url(session, &model->root, result_pool));
   model->revision = revision;
   model->client = client;
+  model->session = session;
   model->current = state;
   model->pool = result_pool;
 
@@ -181,8 +188,10 @@ static void
 view_draw(svn_browse__view_t *view, apr_pool_t *pool)
 {
   int i;
+  const char *abspath = svn_path_url_add_component2(
+      view->model->root, view->model->current->relpath, pool);
 
-  mvprintw(0, 4, "Browsing: %s", view->model->current->abspath);
+  mvprintw(0, 4, "Browsing: %s", abspath);
 
   for (i = 0; i < view->model->current->list->nelts; i++)
     {
@@ -215,7 +224,6 @@ static svn_error_t *
 sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
 {
   const char *url;
-  svn_opt_revision_t revision;
   svn_browse__model_t *ctx;
   svn_browse__view_t *view;
   apr_pool_t *iterpool;
@@ -225,9 +233,8 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
                             "usage: svnbrowse <URL>");
 
   SVN_ERR(svn_uri_canonicalize_safe(&url, NULL, argv[1], pool, pool));
-  revision.kind = svn_opt_revision_head;
 
-  SVN_ERR(model_create(&ctx, url, revision, pool, pool));
+  SVN_ERR(model_create(&ctx, url, SVN_INVALID_REVNUM, pool, pool));
 
   /* init the display */
   initscr();
@@ -275,14 +282,14 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
           case '\r':
             item = APR_ARRAY_IDX(ctx->current->list, ctx->current->selection,
                                  svn_browse__item_t *);
-            new_url = svn_path_url_add_component2(ctx->current->abspath,
-                                                  item->relpath, iterpool);
+            new_url = svn_relpath_join(ctx->current->relpath, item->relpath,
+                                       iterpool);
             SVN_ERR(enter_path(ctx, new_url, iterpool));
             break;
           case KEY_BACKSPACE:
           case '-':
           case 'u':
-            new_url = svn_uri_dirname(ctx->current->abspath, iterpool);
+            new_url = svn_relpath_dirname(ctx->current->relpath, iterpool);
             SVN_ERR(enter_path(ctx, new_url, iterpool));
             break;
           /* TODO: quit via escape. some say just check for 27, but it I think it's
