@@ -109,8 +109,8 @@ state_create(svn_browse__state_t **state_p,
 }
 
 static svn_error_t *
-enter_path(svn_browse__model_t *ctx, const char *relpath,
-           apr_pool_t *scratch_pool)
+model_enter_path(svn_browse__model_t *ctx, const char *relpath,
+                 apr_pool_t *scratch_pool)
 {
   svn_browse__state_t *newstate;
   apr_pool_t *state_pool = svn_pool_create(ctx->pool);
@@ -121,6 +121,44 @@ enter_path(svn_browse__model_t *ctx, const char *relpath,
   /* switch to the next state and nuke the previous one */
   apr_pool_destroy(ctx->current->pool);
   ctx->current = newstate;
+
+  return SVN_NO_ERROR;
+}
+
+static svn_browse__item_t *
+model_get_selected_item(svn_browse__model_t *model)
+{
+  return APR_ARRAY_IDX(model->current->list, model->current->selection,
+                       svn_browse__item_t *);
+}
+
+static svn_error_t *
+model_go_enter(svn_browse__model_t *model, apr_pool_t *scratch_pool)
+{
+  svn_browse__item_t *item = model_get_selected_item(model);
+  const char *new_url = svn_relpath_join(model->current->relpath, item->name,
+                                         scratch_pool);
+  return svn_error_trace(model_enter_path(model, new_url, scratch_pool));
+}
+
+static svn_error_t *
+model_go_up(svn_browse__model_t *model, apr_pool_t *scratch_pool)
+{
+  const char *new_url = svn_relpath_dirname(model->current->relpath,
+                                            scratch_pool);
+  return svn_error_trace(model_enter_path(model, new_url, scratch_pool));
+}
+
+static svn_error_t *
+model_move_selection(svn_browse__model_t *model, int delta)
+{
+  model->current->selection += delta;
+
+  if (model->current->selection >= model->current->list->nelts)
+    model->current->selection = model->current->list->nelts - 1;
+
+  if (model->current->selection < 0)
+    model->current->selection = 0;
 
   return SVN_NO_ERROR;
 }
@@ -271,25 +309,20 @@ sub_main(int *code, int argc, char *argv[], apr_pool_t *pool)
         {
           case KEY_UP:
           case 'k':
-            ctx->current->selection--;
+            SVN_ERR(model_move_selection(ctx, -1));
             break;
           case KEY_DOWN:
           case 'j':
-            ctx->current->selection++;
+            SVN_ERR(model_move_selection(ctx, 1));
             break;
           case '\n':
           case '\r':
-            item = APR_ARRAY_IDX(ctx->current->list, ctx->current->selection,
-                                 svn_browse__item_t *);
-            new_url = svn_relpath_join(ctx->current->relpath, item->name,
-                                       iterpool);
-            SVN_ERR(enter_path(ctx, new_url, iterpool));
+            SVN_ERR(model_go_enter(ctx, iterpool));
             break;
           case KEY_BACKSPACE:
           case '-':
           case 'u':
-            new_url = svn_relpath_dirname(ctx->current->relpath, iterpool);
-            SVN_ERR(enter_path(ctx, new_url, iterpool));
+            SVN_ERR(model_go_up(ctx, iterpool));
             break;
           /* TODO: quit via escape. some say just check for 27, but it I think it's
            * a bit ugly. */
