@@ -1435,11 +1435,6 @@ SVN_ERROR_START
              SVN_ERR_MISC_CATEGORY_START + 31,
              "Attempted to write to readonly SQLite db")
 
-  /** @since New in 1.16. */
-  SVN_ERRDEF(SVN_ERR_OPT_REVISION_PARSE_ERROR,
-             SVN_ERR_MISC_CATEGORY_START + 32,
-             "Error parsing revision argument")
-
   /** @since New in 1.6.
    * @deprecated the internal sqlite support code does not manage schemas
    * any longer.  */
@@ -1527,6 +1522,11 @@ SVN_ERROR_START
   SVN_ERRDEF(SVN_ERR_BCRYPT,
              SVN_ERR_MISC_CATEGORY_START + 48,
              "BCrypt method failed.")
+
+  /** @since New in 1.16. */
+  SVN_ERRDEF(SVN_ERR_OPT_REVISION_PARSE_ERROR,
+             SVN_ERR_MISC_CATEGORY_START + 49,
+             "Error parsing revision argument")
 
   /* command-line client errors */
 
