@@ -501,6 +501,18 @@ svn_error_t *
 svn_opt_parse_revnum(svn_revnum_t *rev, const char *str);
 
 /**
+ * Parse one revision specification from @a arg into @a revision. Use @a
+ * scratch_pool for temporary allocation.
+ *
+ * @since New in 1.16
+ * @see svn_opt_parse_revision
+ */
+svn_error_t *
+svn_opt_parse_one_revision(svn_opt_revision_t *revision,
+                           const char *arg,
+                           apr_pool_t *scratch_pool);
+
+/**
  * Set @a *start_revision and/or @a *end_revision according to @a arg,
  * where @a arg is "N" or "N:M", like so:
  *
