@@ -218,6 +218,8 @@ static svn_error_t *
 sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
 {
   const char *url;
+  svn_client_ctx_t *client;
+  svn_auth_baton_t *auth;
   svn_browse__model_t *ctx;
   svn_browse__view_t *view;
   svn_browse__opt_state_t opt_state = { 0 };
@@ -327,7 +329,16 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
 
   SVN_ERR(svn_config_ensure(opt_state.config_dir, pool));
 
-  SVN_ERR(svn_browse__model_create(&ctx, url, SVN_INVALID_REVNUM, pool, pool));
+  /* Set up Authentication stuff. */
+  SVN_ERR(svn_cmdline_create_auth_baton2(&auth, FALSE, NULL, NULL, NULL, FALSE,
+                                         FALSE, FALSE, FALSE, FALSE, FALSE,
+                                         NULL, NULL, NULL, pool));
+
+  SVN_ERR(svn_client_create_context2(&client, NULL, pool));
+  client->auth_baton = auth;
+
+  SVN_ERR(svn_browse__model_create(&ctx, client, url, SVN_INVALID_REVNUM, pool,
+                                   pool));
 
   /* init the display */
   initscr();

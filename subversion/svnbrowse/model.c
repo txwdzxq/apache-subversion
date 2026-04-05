@@ -129,28 +129,19 @@ svn_browse__model_move_selection(svn_browse__model_t *model, int delta)
 
 svn_error_t *
 svn_browse__model_create(svn_browse__model_t **model_p,
+                         svn_client_ctx_t *ctx,
                          const char *url,
                          svn_revnum_t revision,
                          apr_pool_t *result_pool,
                          apr_pool_t *scratch_pool)
 {
   svn_browse__model_t *model = apr_pcalloc(result_pool, sizeof(*model));
-  svn_auth_baton_t *auth;
-  svn_client_ctx_t *client;
   svn_ra_session_t *session;
   apr_pool_t *state_pool;
   svn_browse__state_t *state;
   const char *root, *relpath;
 
-  /* Set up Authentication stuff. */
-  SVN_ERR(svn_cmdline_create_auth_baton2(&auth, FALSE, NULL, NULL, NULL, FALSE,
-                                         FALSE, FALSE, FALSE, FALSE, FALSE,
-                                         NULL, NULL, NULL, result_pool));
-
-  SVN_ERR(svn_client_create_context2(&client, NULL, result_pool));
-  client->auth_baton = auth;
-
-  SVN_ERR(svn_client_open_ra_session2(&session, url, NULL, client, result_pool,
+  SVN_ERR(svn_client_open_ra_session2(&session, url, NULL, ctx, result_pool,
                                       scratch_pool));
 
   SVN_ERR(svn_ra_get_repos_root2(session, &root, scratch_pool));
@@ -165,7 +156,7 @@ svn_browse__model_create(svn_browse__model_t **model_p,
 
   model->root = apr_pstrdup(result_pool, root);
   model->revision = revision;
-  model->client = client;
+  model->client = ctx;
   model->session = session;
   model->current = state;
   model->pool = result_pool;

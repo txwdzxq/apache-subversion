@@ -124,6 +124,7 @@ svn_browse__model_move_selection(svn_browse__model_t *model,
 
 svn_error_t *
 svn_browse__model_create(svn_browse__model_t **model_p,
+                         svn_client_ctx_t *ctx,
                          const char *url,
                          svn_revnum_t revision,
                          apr_pool_t *result_pool,
