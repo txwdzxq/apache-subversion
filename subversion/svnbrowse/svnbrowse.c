@@ -330,9 +330,20 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
   SVN_ERR(svn_config_ensure(opt_state.config_dir, pool));
 
   /* Set up Authentication stuff. */
-  SVN_ERR(svn_cmdline_create_auth_baton2(&auth, FALSE, NULL, NULL, NULL, FALSE,
-                                         FALSE, FALSE, FALSE, FALSE, FALSE,
-                                         NULL, NULL, NULL, pool));
+  SVN_ERR(svn_cmdline_create_auth_baton2(
+            &auth,
+            FALSE /* non_interactive */,
+            opt_state.auth_username,
+            opt_state.auth_password,
+            opt_state.config_dir,
+            opt_state.no_auth_cache,
+            opt_state.trust_server_cert_unknown_ca,
+            opt_state.trust_server_cert_cn_mismatch,
+            opt_state.trust_server_cert_expired,
+            opt_state.trust_server_cert_not_yet_valid,
+            opt_state.trust_server_cert_other_failure,
+            NULL, NULL, NULL,
+            pool));
 
   SVN_ERR(svn_client_create_context2(&client, NULL, pool));
   client->auth_baton = auth;
