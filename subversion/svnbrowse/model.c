@@ -161,7 +161,7 @@ svn_browse__model_create(svn_browse__model_t **model_p,
   model->client = ctx;
   model->session = session;
 
-  /* If the revision is ovbiously HEAD, we are not going to use the resolved
+  /* If the revision is obviously HEAD, we are not going to use the resolved
    * revnum, but rely on svn_ra_get_dir2() doing that for us. It allows the
    * browser to always browse on the latest revision and catch-up recent
    * commits as session is active.
@@ -172,9 +172,9 @@ svn_browse__model_create(svn_browse__model_t **model_p,
    * would be too complicated and rather confusing. That's why we will fallback
    * to what the client is doing instead of reinventing the wheel.
    *
-   * When invoked from a working copy, it's not HEAD either. It's should point
-   * to WORKING, i.e. revnum should not change. Again rescanning the working
-   * copy is possible but we assume it never changes.
+   * When invoked from a working copy, it's not HEAD either. It should point to
+   * WORKING, i.e. revnum should not change. Again rescanning the working copy
+   * is possible but we assume it never changes.
    */
 
   if (peg_rev.kind == svn_opt_revision_head &&
