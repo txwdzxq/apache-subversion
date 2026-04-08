@@ -108,6 +108,8 @@ const apr_getopt_option_t svn_browse__options[] =
  * alphabetical order. */
 #define CTRL(ch) ((ch) - 'a' + 1)
 
+#define KEY_ESC 27
+
 typedef struct svn_browse__view_t {
   /* TODO: store information about terminal screen (a WINDOW* in curses world) */
   svn_browse__model_t *model;
@@ -152,9 +154,8 @@ view_on_event(svn_browse__view_t *view, int ch, apr_pool_t *scratch_pool)
       case 'u':
         SVN_ERR(svn_browse__model_go_up(view->model, scratch_pool));
         break;
-      /* TODO: quit via escape. some say just check for 27, but it I think it's
-       * a bit ugly. */
       case 'q':
+      case KEY_ESC:
         return svn_error_create(SVN_ERR_CANCELLED, NULL, NULL);
     }
 
@@ -400,6 +401,25 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
   intrflush(stdscr, FALSE);
   keypad(stdscr, TRUE);
   nonl();
+
+  /* ESCDELAY is a ncurses-exclusive variable that controls how curses will
+   * handle escape sequences - when a user hits ESC and inputs a command for
+   * the application to potentially do some handling. We don't really care
+   * about this capability and would rather prefer to get out of svnbrowse by
+   * ESC. Other backends may require further testing. It still works fine with
+   * this variable misconfigured.
+   *
+   * Generally, the decision to exit by ESC itself is questionable, as the
+   * majority of default applications don't do that (like vim, less, man). Some
+   * users would spam escape after each action and the others to would expect
+   * it to close a 37-deep stacked dialog. Anyway we can just drop associated
+   * case statement at any time if we found that annoying.
+   *
+   * Find more info in 'man ESCDELAY'. */
+
+#ifdef NCURSES_VERSION
+  ESCDELAY = 0;
+#endif /* NCURSES_VERSION */
 
   view = view_make(ctx, pool);
 
