@@ -121,6 +121,46 @@ view_make(svn_browse__model_t *model, apr_pool_t *result_pool)
   return view;
 }
 
+static svn_error_t *
+view_on_event(svn_browse__view_t *view, int ch, apr_pool_t *scratch_pool)
+{
+  /* ch is received from getch() which would read the next character/key with
+   * the following additional rules:
+   * 1. as we configured it to use keypad(), arrows and other special keys
+   *    are handled as KEY_XXX.
+   * 2. Control (CTRL) version are handled as literal 1-26 values of ch where
+   *    1 is <C-A> and 26 is <C-Z>.
+   * 3. The rest of keys remain as their equivalents on the current layout.
+   * 4. If shift is held, they just become uppercased.
+   */
+  switch (ch)
+    {
+      case KEY_UP:
+      case 'k':
+        SVN_ERR(svn_browse__model_move_selection(view->model, -1));
+        break;
+      case KEY_DOWN:
+      case 'j':
+        SVN_ERR(svn_browse__model_move_selection(view->model, 1));
+        break;
+      case '\n':
+      case '\r':
+        SVN_ERR(svn_browse__model_go_enter(view->model, scratch_pool));
+        break;
+      case KEY_BACKSPACE:
+      case '-':
+      case 'u':
+        SVN_ERR(svn_browse__model_go_up(view->model, scratch_pool));
+        break;
+      /* TODO: quit via escape. some say just check for 27, but it I think it's
+       * a bit ugly. */
+      case 'q':
+        return svn_error_create(SVN_ERR_CANCELLED, NULL, NULL);
+    }
+
+  return SVN_NO_ERROR;
+}
+
 static void
 view_draw(svn_browse__view_t *view, apr_pool_t *pool)
 {
@@ -226,6 +266,7 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
   apr_pool_t *iterpool;
   apr_getopt_t *os;
   apr_array_header_t *targets = NULL;
+  svn_error_t *err = SVN_NO_ERROR;
 
   opt_state.revision.kind = svn_opt_revision_head;
   opt_state.config_options =
@@ -364,10 +405,12 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
 
   iterpool = svn_pool_create(pool);
 
-  while (TRUE)
+  /* Loop forever, unless we're not in an error state. */
+  while (! err)
     {
       svn_browse__item_t *item;
       const char *new_url;
+      int ch;
 
       svn_pool_clear(iterpool);
 
@@ -375,45 +418,20 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
       view_draw(view, iterpool);
       refresh();
 
-      /* getch() reads the next character/key with the following additional
-       * rules:
-       * 1. as we configured it to use keypad(), arrows and other special keys
-       *    are handled as KEY_XXX.
-       * 2. Control (CTRL) version are handled as literal 1-26 values of ch where
-       *    1 is <C-A> and 26 is <C-Z>.
-       * 3. The rest of keys remain as their equivalents on the current layout.
-       * 4. If shift is held, they just become uppercased.
-       */
-      switch (getch())
-        {
-          case KEY_UP:
-          case 'k':
-            SVN_ERR(svn_browse__model_move_selection(ctx, -1));
-            break;
-          case KEY_DOWN:
-          case 'j':
-            SVN_ERR(svn_browse__model_move_selection(ctx, 1));
-            break;
-          case '\n':
-          case '\r':
-            SVN_ERR(svn_browse__model_go_enter(ctx, iterpool));
-            break;
-          case KEY_BACKSPACE:
-          case '-':
-          case 'u':
-            SVN_ERR(svn_browse__model_go_up(ctx, iterpool));
-            break;
-          /* TODO: quit via escape. some say just check for 27, but it I think it's
-           * a bit ugly. */
-          case 'q':
-            goto quit;
-        }
+      ch = getch();
+      err = view_on_event(view, ch, iterpool);
     }
 
-quit:
-	endwin();
+  endwin();
 
-  return SVN_NO_ERROR;
+  /* Treat cancellation success. */
+  if (! err || err->apr_err == SVN_ERR_CANCELLED)
+    return SVN_NO_ERROR;
+  else
+    {
+      *code = EXIT_FAILURE;
+      return err;
+    }
 }
 
 int main(int argc, const char *argv[])
