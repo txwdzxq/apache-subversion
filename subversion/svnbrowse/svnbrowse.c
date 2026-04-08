@@ -159,7 +159,7 @@ view_on_event(svn_browse__view_t *view, int ch, apr_pool_t *scratch_pool)
         return svn_error_create(SVN_ERR_CANCELLED, NULL, NULL);
     }
 
-  /* scrollable height is row one less than the whole view */
+  /* scrollable height is one row less than the whole view */
   SVN_ERR(svn_browse__model_scroll_in_view(view->model, getmaxy(stdscr) - 1));
 
   return SVN_NO_ERROR;
