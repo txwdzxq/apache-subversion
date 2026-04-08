@@ -159,7 +159,32 @@ view_on_event(svn_browse__view_t *view, int ch, apr_pool_t *scratch_pool)
         return svn_error_create(SVN_ERR_CANCELLED, NULL, NULL);
     }
 
+  /* scrollable height is row one less than the whole view */
+  SVN_ERR(svn_browse__model_scroll_in_view(view->model, getmaxy(stdscr) - 1));
+
   return SVN_NO_ERROR;
+}
+
+static void
+view_draw_item(const svn_browse__item_t *item, int y, svn_boolean_t selected)
+{
+  if (selected)
+    standout();
+
+  if (item->dirent->kind == svn_node_dir)
+    mvprintw(y, 0, "%s/", item->name);
+  else if (item->dirent->kind == svn_node_file)
+    mvprintw(y, 0, "%s", item->name);
+  else
+    abort();
+
+  mvprintw(y, COLS - 40, "%8ld KiB  r%-8ld  %s",
+           item->dirent->size / 1024,
+           item->dirent->created_rev,
+           item->dirent->last_author);
+
+  if (selected)
+    standend();
 }
 
 static void
@@ -175,24 +200,11 @@ view_draw(svn_browse__view_t *view, apr_pool_t *pool)
     {
       svn_browse__item_t *item = APR_ARRAY_IDX(view->model->current->list, i,
                                                svn_browse__item_t *);
+      svn_boolean_t selected = (i == view->model->current->selection);
+      int y = i - view->model->current->scroller_offset;
 
-      if (i == view->model->current->selection)
-        standout();
-
-      if (item->dirent->kind == svn_node_dir)
-        mvprintw(i + 1, 0, "%s/", item->name);
-      else if (item->dirent->kind == svn_node_file)
-        mvprintw(i + 1, 0, "%s", item->name);
-      else
-        abort();
-
-      mvprintw(i + 1, COLS - 40, "%8ld KiB  r%-8ld  %s",
-               item->dirent->size / 1024,
-               item->dirent->created_rev,
-               item->dirent->last_author);
-
-      if (i == view->model->current->selection)
-        standend();
+      if (0 <= y && y < LINES)
+        view_draw_item(item, y + 1, selected);
     }
 }
 

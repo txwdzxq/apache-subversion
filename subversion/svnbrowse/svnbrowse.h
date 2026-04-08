@@ -79,6 +79,7 @@ typedef struct svn_browse__state_t {
 
   /* the index of hovered item */
   int selection;
+  int scroller_offset;
 
   /* a pool where the structure is allocated */
   apr_pool_t *pool;
@@ -122,6 +123,10 @@ svn_browse__model_go_up(svn_browse__model_t *model,
 svn_error_t *
 svn_browse__model_move_selection(svn_browse__model_t *model,
                                  int delta);
+
+svn_error_t *
+svn_browse__model_scroll_in_view(svn_browse__model_t *model,
+                                 int scroller_height);
 
 svn_error_t *
 svn_browse__model_create(svn_browse__model_t **model_p,

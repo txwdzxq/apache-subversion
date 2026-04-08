@@ -129,6 +129,24 @@ svn_browse__model_move_selection(svn_browse__model_t *model, int delta)
   return SVN_NO_ERROR;
 }
 
+#define min(a, b) ((a) < (b)) ? (a) : (b)
+#define max(a, b) ((a) > (b)) ? (a) : (b)
+
+svn_error_t *
+svn_browse__model_scroll_in_view(svn_browse__model_t *model,
+                                 int scroller_height)
+{
+  svn_browse__state_t *state = model->current;
+
+  state->scroller_offset = max(state->scroller_offset,
+                               state->selection - scroller_height + 1);
+
+  state->scroller_offset = min(state->scroller_offset,
+                               state->selection);
+
+  return SVN_NO_ERROR;
+}
+
 svn_error_t *
 svn_browse__model_create(svn_browse__model_t **model_p,
                          svn_client_ctx_t *ctx,
