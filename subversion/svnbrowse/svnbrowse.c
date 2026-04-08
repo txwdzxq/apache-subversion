@@ -217,7 +217,6 @@ show_version(apr_pool_t *scratch_pool,
 static svn_error_t *
 sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
 {
-  const char *url;
   svn_client_ctx_t *client;
   svn_auth_baton_t *auth;
   svn_browse__model_t *ctx;
@@ -226,6 +225,7 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
   svn_boolean_t read_pass_from_stdin = FALSE;
   apr_pool_t *iterpool;
   apr_getopt_t *os;
+  apr_array_header_t *targets = NULL;
 
   opt_state.revision.kind = svn_opt_revision_head;
   opt_state.config_options =
@@ -313,20 +313,6 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
       return SVN_NO_ERROR;
     }
 
-  /* TODO: WC paths are not implemented; svn_uri_canonicalize_safe() will just
-   * fail in case of one */
-  url = (os->ind < argc) ? os->argv[os->ind++] : ".";
-  SVN_ERR(svn_uri_canonicalize_safe(&url, NULL, url, pool, pool));
-
-  /* we must fail if there are extra arguments */
-  if (os->ind < argc - 1)
-    {
-      printf("%d\n", os->ind);
-      *code = EXIT_FAILURE;
-      SVN_ERR(show_usage(pool));
-      return SVN_NO_ERROR;
-    }
-
   SVN_ERR(svn_config_ensure(opt_state.config_dir, pool));
 
   /* Set up Authentication stuff. */
@@ -348,8 +334,23 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
   SVN_ERR(svn_client_create_context2(&client, NULL, pool));
   client->auth_baton = auth;
 
-  SVN_ERR(svn_browse__model_create(&ctx, client, url, SVN_INVALID_REVNUM, pool,
-                                   pool));
+  SVN_ERR(svn_client_args_to_target_array2(&targets, os, NULL, client, FALSE,
+                                           pool));
+
+  /* we must fail if there are extra arguments */
+  if (targets->nelts != 1)
+    {
+      *code = EXIT_FAILURE;
+      SVN_ERR(show_usage(pool));
+      return SVN_NO_ERROR;
+    }
+
+  SVN_ERR(svn_opt_parse_path(&opt_state.peg_revision, &opt_state.path_or_url,
+                             APR_ARRAY_IDX(targets, 0, const char *), pool));
+
+  SVN_ERR(svn_browse__model_create(&ctx, client, opt_state.path_or_url,
+                                   &opt_state.peg_revision,
+                                   &opt_state.revision, pool, pool));
 
   /* init the display */
   initscr();

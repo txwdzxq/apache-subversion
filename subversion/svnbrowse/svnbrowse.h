@@ -48,11 +48,12 @@ typedef struct svn_browse__opt_state_t {
 
   const char *auth_username;     /* auth username */
   const char *auth_password;     /* auth password */
-  apr_array_header_t *targets;   /* target list from file */
   svn_boolean_t no_auth_cache;   /* do not cache authentication information */
   const char *config_dir;        /* over-riding configuration directory */
   apr_array_header_t *config_options; /* over-riding configuration options */
-  svn_opt_revision_t revision;
+  svn_opt_revision_t revision;   /* --revision */
+  const char *path_or_url;
+  svn_opt_revision_t peg_revision; /* @PEGREV*/
 
   /* trust server SSL certs that would otherwise be rejected as "untrusted" */
   svn_boolean_t trust_server_cert_unknown_ca;
@@ -125,7 +126,8 @@ svn_browse__model_move_selection(svn_browse__model_t *model,
 svn_error_t *
 svn_browse__model_create(svn_browse__model_t **model_p,
                          svn_client_ctx_t *ctx,
-                         const char *url,
-                         svn_revnum_t revision,
+                         const char *path_or_url,
+                         const svn_opt_revision_t *peg_revision,
+                         const svn_opt_revision_t *revision,
                          apr_pool_t *result_pool,
                          apr_pool_t *scratch_pool);
