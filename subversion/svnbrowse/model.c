@@ -144,6 +144,9 @@ svn_browse__model_scroll_in_view(svn_browse__model_t *model,
   state->scroller_offset = min(state->scroller_offset,
                                state->selection);
 
+  /* forbid scrolling into negatives */
+  state->scroller_offset = max(state->scroller_offset, 0);
+
   return SVN_NO_ERROR;
 }
 

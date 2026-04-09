@@ -126,6 +126,9 @@ view_make(svn_browse__model_t *model, apr_pool_t *result_pool)
 static svn_error_t *
 view_on_event(svn_browse__view_t *view, int ch, apr_pool_t *scratch_pool)
 {
+  /* scrollable height is one row less than the whole view */
+  int scrollsize = getmaxy(stdscr) - 1;
+
   /* ch is received from getch() which would read the next character/key with
    * the following additional rules:
    * 1. as we configured it to use keypad(), arrows and other special keys
@@ -139,10 +142,12 @@ view_on_event(svn_browse__view_t *view, int ch, apr_pool_t *scratch_pool)
     {
       case KEY_UP:
       case 'k':
+      case CTRL('p'):
         SVN_ERR(svn_browse__model_move_selection(view->model, -1));
         break;
       case KEY_DOWN:
       case 'j':
+      case CTRL('n'):
         SVN_ERR(svn_browse__model_move_selection(view->model, 1));
         break;
       case '\n':
@@ -154,13 +159,45 @@ view_on_event(svn_browse__view_t *view, int ch, apr_pool_t *scratch_pool)
       case 'u':
         SVN_ERR(svn_browse__model_go_up(view->model, scratch_pool));
         break;
+      case CTRL('e'):
+        view->model->current->scroller_offset += 1;
+        break;
+      case CTRL('y'):
+        view->model->current->scroller_offset -= 1;
+        break;
+      case CTRL('d'):
+        SVN_ERR(svn_browse__model_move_selection(view->model, scrollsize / 2));
+        break;
+      case CTRL('f'):
+      case KEY_NPAGE:
+        SVN_ERR(svn_browse__model_move_selection(view->model, scrollsize));
+        break;
+      case CTRL('u'):
+        SVN_ERR(svn_browse__model_move_selection(view->model, -scrollsize / 2));
+        break;
+      case CTRL('b'):
+      case KEY_PPAGE:
+        SVN_ERR(svn_browse__model_move_selection(view->model, -scrollsize));
+        break;
+      case 'g':
+      case KEY_HOME:
+        view->model->current->selection = 0;
+        break;
+      case 'G':
+      case KEY_END:
+        view->model->current->selection =
+            view->model->current->list->nelts - 1;
+        break;
+      case 'z':
+        view->model->current->scroller_offset =
+            view->model->current->selection - scrollsize / 2;
+        break;
       case 'q':
       case KEY_ESC:
         return svn_error_create(SVN_ERR_CANCELLED, NULL, NULL);
     }
 
-  /* scrollable height is one row less than the whole view */
-  SVN_ERR(svn_browse__model_scroll_in_view(view->model, getmaxy(stdscr) - 1));
+  SVN_ERR(svn_browse__model_scroll_in_view(view->model, scrollsize));
 
   return SVN_NO_ERROR;
 }
