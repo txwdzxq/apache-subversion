@@ -31,8 +31,58 @@
 #include "svn_error.h"
 
 #include "private/svn_client_private.h"
+#include "private/svn_sorts_private.h"
 
 #include "svnbrowse.h"
+
+/* similar to svn_sort_compare_items_lexically() */
+static int
+compare_cstrings_lexically(const char *a, const char *b)
+{
+  int alen = strlen(a);
+  int blen = strlen(b);
+  int len, val;
+
+  /* Compare bytes of a's key and b's key up to the common length. */
+  len = (alen < blen) ? alen : blen;
+  val = memcmp(a, b, len);
+
+  if (val != 0)
+    return val;
+
+  /* They match up until one of them ends; whichever is longer is greater. */
+  return (alen < blen) ? -1 : (alen > blen) ? 1 : 0;
+}
+
+/* sort comparator that puts directories before files */
+int static
+compare_node_kind(svn_node_kind_t a, svn_node_kind_t b)
+{
+  /* RA API should never return other node kinds */
+  SVN_ERR_ASSERT_NO_RETURN(a == svn_node_file || a == svn_node_dir);
+  SVN_ERR_ASSERT_NO_RETURN(b == svn_node_file || b == svn_node_dir);
+
+  /* so now we can do this safely */
+  return b - a;
+}
+
+/*
+ * 1. we want directories to be before files (compare_node_kind)
+ * 2. the nodes are sorted lexically (compare_cstrings_lexically)
+ */
+int static
+sort_item_comparison_func(const void *left, const void *right)
+{
+  /* don't worry about that... */
+  const svn_browse__item_t *a = *(const svn_browse__item_t **)left;
+  const svn_browse__item_t *b = *(const svn_browse__item_t **)right;
+
+  int val = compare_node_kind(a->dirent->kind, b->dirent->kind);
+  if (val != 0)
+    return val;
+
+  return compare_cstrings_lexically(a->name, b->name);
+}
 
 svn_error_t *
 svn_browse__state_create(svn_browse__state_t **state_p,
@@ -67,6 +117,12 @@ svn_browse__state_create(svn_browse__state_t **state_p,
 
       APR_ARRAY_PUSH(state->list, svn_browse__item_t *) = item;
     }
+
+  /* libsvn_client:list.c, on the other hand, uses svn_sort__hash before coping
+   * items into an array. I prefer this approach instead because it's more
+   * pipeline-ish, I think. Firstly the targets are processed, secondly sorting
+   * rules are applied. */
+  svn_sort__array(state->list, sort_item_comparison_func);
 
   *state_p = state;
   return SVN_NO_ERROR;
