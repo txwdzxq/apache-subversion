@@ -158,6 +158,8 @@ view_on_event(svn_browse__view_t *view, int ch, apr_pool_t *scratch_pool)
       case '-':
       case 'u':
         SVN_ERR(svn_browse__model_go_up(view->model, scratch_pool));
+        view->model->current->scroller_offset =
+            view->model->current->selection - scrollsize / 2;
         break;
       case CTRL('e'):
         view->model->current->scroller_offset += 1;

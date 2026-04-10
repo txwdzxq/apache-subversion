@@ -165,10 +165,27 @@ svn_browse__model_go_enter(svn_browse__model_t *model, apr_pool_t *scratch_pool)
 svn_error_t *
 svn_browse__model_go_up(svn_browse__model_t *model, apr_pool_t *scratch_pool)
 {
-  const char *new_url = svn_relpath_dirname(model->current->relpath,
-                                            scratch_pool);
-  return svn_error_trace(svn_browse__model_enter_path(model, new_url,
-                                                      scratch_pool));
+  const char *dirpath, *name;
+  int i;
+
+  svn_relpath_split(&dirpath, &name, model->current->relpath, scratch_pool);
+
+  SVN_ERR(svn_browse__model_enter_path(model, dirpath, scratch_pool));
+
+  /* find previously visited node in the list to select it as we go a dir up */
+  for (i = 0; i < model->current->list->nelts; i++)
+    {
+      svn_browse__item_t *item = APR_ARRAY_IDX(model->current->list, i,
+                                               svn_browse__item_t *);
+
+      if (strcmp(item->name, name) == 0)
+        {
+          model->current->selection = i;
+          break;
+        }
+    }
+
+  return SVN_NO_ERROR;
 }
 
 svn_error_t *
