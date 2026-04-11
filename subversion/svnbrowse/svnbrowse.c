@@ -110,6 +110,20 @@ const apr_getopt_option_t svn_browse__options[] =
 
 #define KEY_ESC 27
 
+/* handpicked */
+#define COLOR_PRIMARY      238
+#define COLOR_SECONDARY    240
+#define COLOR_BRANDING      96
+
+enum {
+  COLOR_PAIR_INFO_BAR = 1,
+  COLOR_PAIR_DIR,
+  COLOR_PAIR_DIR_SELECTED,
+  COLOR_PAIR_FILE,
+  COLOR_PAIR_FILE_SELECTED,
+  COLOR_COUNT,
+};
+
 typedef struct svn_browse__view_t {
   /* TODO: store information about terminal screen (a WINDOW* in curses world) */
   svn_browse__model_t *model;
@@ -204,36 +218,129 @@ view_on_event(svn_browse__view_t *view, int ch, apr_pool_t *scratch_pool)
   return SVN_NO_ERROR;
 }
 
-static void
-view_draw_item(const svn_browse__item_t *item, int y, svn_boolean_t selected)
+static char *
+rightpad(const char *cstr, int padding, apr_pool_t *result_pool)
 {
-  if (selected)
-    standout();
+  int len = strlen(cstr);
+  char *result = apr_palloc(result_pool, padding + 1);
 
-  if (item->dirent->kind == svn_node_dir)
-    mvprintw(y, 0, "%s/", item->name);
-  else if (item->dirent->kind == svn_node_file)
-    mvprintw(y, 0, "%s", item->name);
+  if (len < padding)
+    {
+      memcpy(result, cstr, len);
+      memset(result + len, ' ', padding - len);
+    }
   else
-    abort();
+    {
+      memcpy(result, cstr, len);
+    }
 
-  mvprintw(y, COLS - 40, "%8ld KiB  r%-8ld  %s",
-           item->dirent->size / 1024,
-           item->dirent->created_rev,
-           item->dirent->last_author);
+  result[padding] = '\0';
+  return result;
+}
 
-  if (selected)
-    standend();
+static char *
+leftpad(const char *cstr, int padding, apr_pool_t *result_pool)
+{
+  int len = strlen(cstr);
+  char *result = apr_palloc(result_pool, padding + 1);
+
+  if (len < padding)
+    {
+      int spaces = padding - len;
+      memset(result, ' ', spaces);
+      memcpy(result + spaces, cstr, len);
+    }
+  else
+    {
+      memcpy(result, cstr, len);
+    }
+
+  result[padding] = '\0';
+  return result;
+}
+
+static const char *
+format_node_size(const svn_browse__item_t *item, apr_pool_t *pool)
+{
+  if (item->dirent->kind == svn_node_dir)
+    return "(dir)";
+  else
+    return apr_psprintf(pool, "%ld KiB", item->dirent->size / 1024);
+}
+
+static const char *
+format_node_name(const svn_browse__item_t *item, apr_pool_t *pool)
+{
+  if (item->dirent->kind == svn_node_dir)
+    return apr_pstrcat(pool, item->name, "/", SVN_VA_NULL);
+  else
+    return item->name;
+}
+
+static int
+get_item_style(svn_node_kind_t kind, svn_boolean_t selected)
+{
+  switch (kind)
+  {
+    case svn_node_dir:
+      return COLOR_PAIR((selected) ? COLOR_PAIR_DIR_SELECTED
+                                   : COLOR_PAIR_DIR);
+    case svn_node_file:
+      return COLOR_PAIR((selected) ? COLOR_PAIR_FILE_SELECTED
+                                   : COLOR_PAIR_FILE);
+    default:
+      abort();
+  }
+}
+
+static void
+view_draw_item(const svn_browse__item_t *item, int y, svn_boolean_t selected,
+               apr_pool_t *scratch_pool)
+{
+  int attrs = 0;
+  const char *prefix;
+
+  move(y, 0);
+  attrset(get_item_style(item->dirent->kind, selected));
+
+  /* 12 + 12 + (20 + 1) + 2 = 47 */
+
+  addch(' ');
+  addstr(rightpad(format_node_name(item, scratch_pool),
+                  COLS - 47, scratch_pool));
+
+  attrset(get_item_style(svn_node_file, selected));
+  addstr(leftpad(format_node_size(item, scratch_pool), 12, scratch_pool));
+  addstr(leftpad(apr_psprintf(scratch_pool, "r%ld", item->dirent->created_rev),
+                 12, scratch_pool));
+  addch(' ');
+  addstr(rightpad(item->dirent->last_author, 20, scratch_pool));
+  addch(' ');
+}
+
+static void
+view_draw_info_bar(svn_browse__view_t *view, apr_pool_t *scratch_pool)
+{
+  const char *abspath = svn_path_url_add_component2(
+      view->model->root, view->model->current->relpath, scratch_pool);
+  svn_stringbuf_t *buf = svn_stringbuf_create_empty(scratch_pool);
+  const char *prefix = "  ";
+  const char *suffix = "Apache Subversion  ";
+
+  move(0, 0);
+  attrset(COLOR_PAIR(COLOR_PAIR_INFO_BAR));
+  addstr(prefix);
+  addstr(rightpad(apr_psprintf(scratch_pool, "URL: %s", abspath),
+                  COLS - strlen(prefix) - strlen(suffix), scratch_pool));
+  addstr(suffix);
 }
 
 static void
 view_draw(svn_browse__view_t *view, apr_pool_t *pool)
 {
   int i;
-  const char *abspath = svn_path_url_add_component2(
-      view->model->root, view->model->current->relpath, pool);
 
-  mvprintw(0, 4, "Browsing: %s", abspath);
+  view_draw_info_bar(view, pool);
 
   for (i = 0; i < view->model->current->list->nelts; i++)
     {
@@ -243,7 +350,7 @@ view_draw(svn_browse__view_t *view, apr_pool_t *pool)
       int y = i - view->model->current->scroller_offset;
 
       if (0 <= y && y < LINES)
-        view_draw_item(item, y + 1, selected);
+        view_draw_item(item, y + 1, selected, pool);
     }
 }
 
@@ -471,6 +578,15 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
 #ifdef NCURSES_VERSION
   ESCDELAY = 0;
 #endif /* NCURSES_VERSION */
+
+  start_color();
+  use_default_colors();
+
+  init_pair(COLOR_PAIR_INFO_BAR, COLOR_YELLOW, COLOR_BRANDING);
+  init_pair(COLOR_PAIR_DIR, COLOR_CYAN, -1);
+  init_pair(COLOR_PAIR_DIR_SELECTED, COLOR_CYAN, COLOR_PRIMARY);
+  init_pair(COLOR_PAIR_FILE, -1, -1);
+  init_pair(COLOR_PAIR_FILE_SELECTED, -1, COLOR_PRIMARY);
 
   view = view_make(ctx, pool);
 
