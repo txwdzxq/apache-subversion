@@ -222,7 +222,12 @@ static char *
 rightpad(const char *cstr, int padding, apr_pool_t *result_pool)
 {
   int len = strlen(cstr);
-  char *result = apr_palloc(result_pool, padding + 1);
+  char *result;
+
+  if (padding < 0)
+    padding = 0;
+
+  result = apr_palloc(result_pool, padding + 1);
 
   if (len < padding)
     {
@@ -242,7 +247,12 @@ static char *
 leftpad(const char *cstr, int padding, apr_pool_t *result_pool)
 {
   int len = strlen(cstr);
-  char *result = apr_palloc(result_pool, padding + 1);
+  char *result;
+
+  if (padding < 0)
+    padding = 0;
+
+  result = apr_palloc(result_pool, padding + 1);
 
   if (len < padding)
     {
