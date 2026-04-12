@@ -125,23 +125,54 @@ enum {
 };
 
 typedef struct svn_browse__view_t {
-  /* TODO: store information about terminal screen (a WINDOW* in curses world) */
   svn_browse__model_t *model;
+  WINDOW *screen;
+  WINDOW *infobar;
+  WINDOW *list;
 } svn_browse__view_t;
 
+static apr_status_t
+view_cleanup(void *ctx)
+{
+  svn_browse__view_t *view = ctx;
+  delwin(view->infobar);
+  delwin(view->list);
+  return APR_SUCCESS;
+}
+
+static void
+view_layout(svn_browse__view_t *view)
+{
+  int infobar_height = 1;
+  int cols = getmaxx(view->screen);
+  int rows = getmaxy(view->screen);
+
+  delwin(view->infobar);
+  delwin(view->list);
+
+  view->infobar = subwin(view->screen, infobar_height, cols, 0, 0);
+  view->list = subwin(view->screen, rows - infobar_height, cols,
+                      infobar_height, 0);
+}
+
 static svn_browse__view_t *
-view_make(svn_browse__model_t *model, apr_pool_t *result_pool)
+view_make(svn_browse__model_t *model, WINDOW *win, apr_pool_t *result_pool)
 {
   svn_browse__view_t *view = apr_pcalloc(result_pool, sizeof(*view));
   view->model = model;
+  view->screen = win;
+  view_layout(view);
+  apr_pool_cleanup_register(result_pool, view, view_cleanup, NULL);
   return view;
 }
 
 static svn_error_t *
 view_on_event(svn_browse__view_t *view, int ch, apr_pool_t *scratch_pool)
 {
+  view_layout(view);
+
   /* scrollable height is one row less than the whole view */
-  int scrollsize = getmaxy(stdscr) - 1;
+  int scrollsize = getmaxy(view->list);
 
   /* ch is received from getch() which would read the next character/key with
    * the following additional rules:
@@ -304,32 +335,35 @@ get_item_style(svn_node_kind_t kind, svn_boolean_t selected)
 }
 
 static void
-view_draw_item(const svn_browse__item_t *item, int y, svn_boolean_t selected,
-               apr_pool_t *scratch_pool)
+view_draw_item(const svn_browse__item_t *item, WINDOW *win, int y,
+               svn_boolean_t selected, apr_pool_t *scratch_pool)
 {
   int attrs = 0;
   const char *prefix;
 
   move(y, 0);
-  attrset(get_item_style(item->dirent->kind, selected));
+  wattrset(win, get_item_style(item->dirent->kind, selected));
 
   /* 12 + 12 + (20 + 1) + 2 = 47 */
 
-  addch(' ');
-  addstr(rightpad(format_node_name(item, scratch_pool),
-                  COLS - 47, scratch_pool));
+  waddch(win, ' ');
+  waddstr(win, rightpad(format_node_name(item, scratch_pool),
+                        getmaxx(win) - 47, scratch_pool));
 
-  attrset(get_item_style(svn_node_file, selected));
-  addstr(leftpad(format_node_size(item, scratch_pool), 12, scratch_pool));
-  addstr(leftpad(apr_psprintf(scratch_pool, "r%ld", item->dirent->created_rev),
-                 12, scratch_pool));
-  addch(' ');
-  addstr(rightpad(item->dirent->last_author, 20, scratch_pool));
-  addch(' ');
+  wattrset(win, get_item_style(svn_node_file, selected));
+  waddstr(win,
+          leftpad(format_node_size(item, scratch_pool), 12, scratch_pool));
+  waddstr(win, leftpad(apr_psprintf(scratch_pool, "r%ld",
+                                    item->dirent->created_rev),
+                       12, scratch_pool));
+  waddch(win, ' ');
+  waddstr(win, rightpad(item->dirent->last_author, 20, scratch_pool));
+  waddch(win, ' ');
 }
 
 static void
-view_draw_info_bar(svn_browse__view_t *view, apr_pool_t *scratch_pool)
+view_draw_info_bar(svn_browse__view_t *view, WINDOW *win,
+                   apr_pool_t *scratch_pool)
 {
   const char *abspath = svn_path_url_add_component2(
       view->model->root, view->model->current->relpath, scratch_pool);
@@ -337,12 +371,13 @@ view_draw_info_bar(svn_browse__view_t *view, apr_pool_t *scratch_pool)
   const char *prefix = "  ";
   const char *suffix = "Apache Subversion  ";
 
-  move(0, 0);
-  attrset(COLOR_PAIR(COLOR_PAIR_INFO_BAR));
-  addstr(prefix);
-  addstr(rightpad(apr_psprintf(scratch_pool, "URL: %s", abspath),
-                  COLS - strlen(prefix) - strlen(suffix), scratch_pool));
-  addstr(suffix);
+  wmove(win, 0, 0);
+  wattrset(win, COLOR_PAIR(COLOR_PAIR_INFO_BAR));
+  waddstr(win, prefix);
+  waddstr(win, rightpad(apr_psprintf(scratch_pool, "URL: %s", abspath),
+                        getmaxx(win) - strlen(prefix) - strlen(suffix),
+                        scratch_pool));
+  waddstr(win, suffix);
 }
 
 static void
@@ -350,7 +385,7 @@ view_draw(svn_browse__view_t *view, apr_pool_t *pool)
 {
   int i;
 
-  view_draw_info_bar(view, pool);
+  view_draw_info_bar(view, view->infobar, pool);
 
   for (i = 0; i < view->model->current->list->nelts; i++)
     {
@@ -360,7 +395,7 @@ view_draw(svn_browse__view_t *view, apr_pool_t *pool)
       int y = i - view->model->current->scroller_offset;
 
       if (0 <= y && y < LINES)
-        view_draw_item(item, y + 1, selected, pool);
+        view_draw_item(item, view->list, y + 1, selected, pool);
     }
 }
 
@@ -598,7 +633,7 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
   init_pair(COLOR_PAIR_FILE, -1, -1);
   init_pair(COLOR_PAIR_FILE_SELECTED, -1, COLOR_PRIMARY);
 
-  view = view_make(ctx, pool);
+  view = view_make(ctx, stdscr, pool);
 
   iterpool = svn_pool_create(pool);
 
