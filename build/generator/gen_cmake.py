@@ -208,7 +208,8 @@ class Generator(gen_base.GeneratorBase):
           else:
             msvc_libs.append(lib)
 
-        if isinstance(target, gen_base.TargetLib) or target.install == "bin":
+        if isinstance(target, gen_base.TargetLib) or target.install in ["bin",
+                                                                        "tui"]:
           install_target = True
         else:
           install_target = False
