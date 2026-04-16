@@ -117,6 +117,7 @@ const apr_getopt_option_t svn_browse__options[] =
 
 enum {
   COLOR_PAIR_INFO_BAR = 1,
+  COLOR_PAIR_STATUS_BAR,
   COLOR_PAIR_DIR,
   COLOR_PAIR_DIR_SELECTED,
   COLOR_PAIR_FILE,
@@ -128,6 +129,7 @@ typedef struct svn_browse__view_t {
   svn_browse__model_t *model;
   WINDOW *screen;
   WINDOW *infobar;
+  WINDOW *statusbar;
   WINDOW *list;
 } svn_browse__view_t;
 
@@ -143,16 +145,20 @@ view_cleanup(void *ctx)
 static void
 view_layout(svn_browse__view_t *view)
 {
-  int infobar_height = 1;
   int cols = getmaxx(view->screen);
   int rows = getmaxy(view->screen);
+  int infobar_height = 1;
+  int statusbar_height = 1;
+  int list_height = rows - infobar_height - statusbar_height;
 
   delwin(view->infobar);
+  delwin(view->statusbar);
   delwin(view->list);
 
   view->infobar = subwin(view->screen, infobar_height, cols, 0, 0);
-  view->list = subwin(view->screen, rows - infobar_height, cols,
-                      infobar_height, 0);
+  view->list = subwin(view->screen, list_height, cols, infobar_height, 0);
+  view->statusbar = subwin(view->screen, statusbar_height, cols,
+                           infobar_height + list_height, 0);
 }
 
 static svn_browse__view_t *
@@ -369,7 +375,7 @@ view_draw_info_bar(svn_browse__view_t *view, WINDOW *win,
       view->model->root, view->model->current->relpath, scratch_pool);
   svn_stringbuf_t *buf = svn_stringbuf_create_empty(scratch_pool);
   const char *prefix = "  ";
-  const char *suffix = "Apache Subversion  ";
+  const char *suffix = "  ";
 
   wmove(win, 0, 0);
   wattrset(win, COLOR_PAIR(COLOR_PAIR_INFO_BAR));
@@ -380,12 +386,59 @@ view_draw_info_bar(svn_browse__view_t *view, WINDOW *win,
   waddstr(win, suffix);
 }
 
+static char *
+format_percentage_scroll(int scroll, int size, int height, apr_pool_t *pool)
+{
+  if (size <= height)
+    return "All";
+  else if (scroll <= 0)
+    return "Top";
+  else if (scroll + height >= size)
+    return "Bot";
+  else
+    {
+      /* Oops, if size and heigth perfectly line up, we would segfault to
+       * division by zero. Nope... We wouldn not. There is a check right
+       * above. */
+
+      int percentage = (scroll) * 100 / (size - height);
+      return apr_psprintf(pool, "%d%%", percentage);
+    }
+}
+
+static void
+view_draw_status_bar(svn_browse__view_t *view, WINDOW *win,
+                     apr_pool_t *scratch_pool)
+{
+  const char *brand = "Apache Subversion  ";
+  const svn_browse__state_t *state = view->model->current;
+
+  wmove(win, 0, 0);
+  wattrset(win, COLOR_PAIR(COLOR_PAIR_STATUS_BAR));
+  waddstr(win, "  ");
+  waddstr(win, rightpad(apr_psprintf(scratch_pool, "Ready"),
+                        getmaxx(win) - 4 - strlen(brand) - 16,
+                        scratch_pool));
+  waddstr(win, brand);
+  waddstr(win, leftpad(apr_psprintf(scratch_pool, "%d/%d",
+                                    state->selection + 1, state->list->nelts),
+                       8, scratch_pool));
+  waddstr(win, leftpad(format_percentage_scroll(state->scroller_offset,
+                                                state->list->nelts,
+                                                getmaxy(view->list),
+                                                scratch_pool),
+                       8, scratch_pool));
+  waddstr(win, "  ");
+}
+
+
 static void
 view_draw(svn_browse__view_t *view, apr_pool_t *pool)
 {
   int i;
 
   view_draw_info_bar(view, view->infobar, pool);
+  view_draw_status_bar(view, view->statusbar, pool);
 
   for (i = 0; i < view->model->current->list->nelts; i++)
     {
@@ -629,6 +682,7 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
   use_default_colors();
 
   init_pair(COLOR_PAIR_INFO_BAR, COLOR_YELLOW, COLOR_BRANDING);
+  init_pair(COLOR_PAIR_STATUS_BAR, COLOR_YELLOW, COLOR_SECONDARY);
   init_pair(COLOR_PAIR_DIR, COLOR_CYAN, -1);
   init_pair(COLOR_PAIR_DIR_SELECTED, COLOR_CYAN, COLOR_PRIMARY);
   init_pair(COLOR_PAIR_FILE, -1, -1);
