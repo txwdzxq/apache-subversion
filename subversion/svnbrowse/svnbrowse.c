@@ -367,6 +367,16 @@ view_draw_item(const svn_browse__item_t *item, WINDOW *win, int y,
   waddch(win, ' ');
 }
 
+static char *
+format_revision_header(svn_revnum_t revnum, svn_revnum_t fetched_revnum,
+                       apr_pool_t *pool)
+{
+  if (! SVN_IS_VALID_REVNUM(revnum))
+    return apr_psprintf(pool, "r%ld (HEAD)", fetched_revnum);
+  else
+    return apr_psprintf(pool, "r%ld", fetched_revnum);
+}
+
 static void
 view_draw_header(svn_browse__view_t *view, WINDOW *win,
                  apr_pool_t *scratch_pool)
@@ -374,8 +384,12 @@ view_draw_header(svn_browse__view_t *view, WINDOW *win,
   const char *abspath = svn_path_url_add_component2(
       view->model->root, view->model->current->relpath, scratch_pool);
   svn_stringbuf_t *buf = svn_stringbuf_create_empty(scratch_pool);
+
   const char *prefix = "  ";
-  const char *suffix = "  ";
+  const char *suffix = format_revision_header(view->model->revision,
+                                              view->model->current->revision,
+                                              scratch_pool);
+  suffix = apr_pstrcat(scratch_pool, suffix, "  ", SVN_VA_NULL);
 
   wmove(win, 0, 0);
   wattrset(win, COLOR_PAIR(COLOR_PAIR_HEADER));
