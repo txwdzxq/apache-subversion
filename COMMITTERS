@@ -9,7 +9,6 @@ directly.
 
 Blanket commit access:
 
-      svn-role   svn role account <svnsvn@svn-qavm2.apache.org>
           jimb   Jim Blandy <jimb@red-bean.com>
        sussman   Ben Collins-Sussman <sussman@red-bean.com>
         kfogel   Karl Fogel <kfogel@red-bean.com>
