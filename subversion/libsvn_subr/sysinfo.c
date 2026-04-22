@@ -962,7 +962,7 @@ win32_canonical_host(apr_pool_t *pool)
 }
 
 /* Convert a Unicode string to UTF-8. */
-static char *
+static const char *
 wcs_to_utf8(const wchar_t *wcs, apr_pool_t *pool)
 {
   const int bufsize = WideCharToMultiByte(CP_UTF8, 0, wcs, -1,
@@ -977,7 +977,7 @@ wcs_to_utf8(const wchar_t *wcs, apr_pool_t *pool)
 }
 
 /* Query the value called NAME of the registry key HKEY. */
-static char *
+static const char *
 registry_value(HKEY hkey, wchar_t *name, apr_pool_t *pool)
 {
   DWORD size;
