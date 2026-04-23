@@ -375,23 +375,27 @@ do_bench_test(apr_size_t blocksize, svn_checksum_kind_t kind, apr_pool_t *pool)
   apr_size_t count = 0;
   apr_uint32_t seed = 67;
   apr_size_t i;
+  apr_interval_time_t elapsed;
 
   for (i = 0; i < blocksize; i++)
     buf[i] = (char)svn_test_rand(&seed);
 
   start = apr_time_now();
 
-  while (apr_time_now() < start + apr_time_from_sec(1))
-    {
+  do
+  {
       SVN_ERR(svn_checksum_update(ctx, buf, blocksize));
       count++;
-    }
+      elapsed = apr_time_now() - start;
+  } while (elapsed < apr_time_from_sec(1));
 
   SVN_ERR(svn_checksum_final(&checksum, ctx, pool));
 
   {
     apr_size_t bytes_in_gb = 1024 * 1024 * 1024;
-    apr_size_t bytes = count * blocksize;
+    double elapsed_sec = (double)elapsed / apr_time_from_sec(1);
+    double gb_per_sec =
+      (double)count * blocksize /(bytes_in_gb * elapsed_sec);
 
     /* Calling svn_checksum_serialize() is the simplest way to stringify
      * checksum kind yet, although it also includes extra information such as
@@ -401,8 +405,10 @@ do_bench_test(apr_size_t blocksize, svn_checksum_kind_t kind, apr_pool_t *pool)
     fprintf(stderr,
             "%s: processed "
             "%" APR_SIZE_T_FMT " blocks of "
-            "%" APR_SIZE_T_FMT " bytes (%.2f GB) in 1 second\n",
-            checksum_str, count, blocksize, (double)bytes / bytes_in_gb);
+            "%" APR_SIZE_T_FMT " bytes in "
+            "%" APR_TIME_T_FMT "ms (%.2f GB/s)\n",
+            checksum_str, count, blocksize, apr_time_as_msec(elapsed),
+            gb_per_sec);
   }
 
   return SVN_NO_ERROR;
