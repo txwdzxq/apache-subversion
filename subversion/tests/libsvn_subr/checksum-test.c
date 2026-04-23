@@ -399,7 +399,9 @@ do_bench_test(apr_size_t blocksize, svn_checksum_kind_t kind, apr_pool_t *pool)
     const char *checksum_str = svn_checksum_serialize(checksum, pool, pool);
 
     fprintf(stderr,
-            "%s: processed %ld blocks of %ld bytes (%.2f GB) in 1 second\n",
+            "%s: processed "
+            "%" APR_SIZE_T_FMT " blocks of "
+            "%" APR_SIZE_T_FMT " bytes (%.2f GB) in 1 second\n",
             checksum_str, count, blocksize, (double)bytes / bytes_in_gb);
   }
 
