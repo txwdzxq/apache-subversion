@@ -1624,7 +1624,7 @@ svn_subst_translate_cstring2(const char *src,
                              apr_pool_t *pool)
 {
   return translate_cstring(dst, NULL, src, eol_str, repair, keywords, expand,
-                            pool);
+                           pool);
 }
 
 /* Given a special file at SRC, generate a textual representation of
