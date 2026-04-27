@@ -882,7 +882,7 @@ def roll_tarballs(args):
     # line endings and won't run, so use the one in the working copy.
     run_script(args.verbose,
                '%s/tools/po/po-update.sh pot' % get_workdir(args.base_dir))
-    if not args.version < Version("1.15.0"):
+    if not args.version < Version("1.15.0-alpha1"):
       run_script(args.verbose,
                  'python gen-make.py -t cmake --release')
     clean_pycache()  # as with clean_autom4te, is this pointless on Windows?
@@ -901,7 +901,7 @@ def roll_tarballs(args):
                '''tools/po/po-update.sh pot
                   ./autogen.sh --release''',
                hide_stderr=True) # SWIG is noisy
-    if not args.version < Version("1.15.0"):
+    if not args.version < Version("1.15.0-alpha1"):
       run_script(args.verbose,
                  'python gen-make.py -t cmake --release')
     clean_pycache()  # without this, tarballs contain empty __pycache__ dirs
