@@ -205,8 +205,14 @@ svn_subr__win32_xlate_to_stringbuf(svn_subr__win32_xlate_t *handle,
     return APR_SUCCESS;
   }
 
-  retval = MultiByteToWideChar(handle->from_page_id, 0, src_data, src_length,
-                               NULL, 0);
+  /* Use ERROR_INVALID_PARAMETER in case of integer overflow:
+     MultiByteToWideChar() returns ERROR_INVALID_PARAMETER in case source
+     string is longer than 2GB and cbMultiByte is -1 (use strlen). */
+  if (src_length > INT_MAX)
+    return APR_FROM_OS_ERROR(ERROR_INVALID_PARAMETER);
+
+  retval = MultiByteToWideChar(handle->from_page_id, 0, src_data,
+                               (int)src_length, NULL, 0);
   if (retval == 0)
     return apr_get_os_error();
 
@@ -222,8 +228,8 @@ svn_subr__win32_xlate_to_stringbuf(svn_subr__win32_xlate_t *handle,
       wide_str = apr_palloc(pool, wide_size * sizeof(WCHAR));
     }
 
-  retval = MultiByteToWideChar(handle->from_page_id, 0, src_data, src_length,
-                               wide_str, wide_size);
+  retval = MultiByteToWideChar(handle->from_page_id, 0, src_data,
+                               (int)src_length, wide_str, wide_size);
 
   if (retval == 0)
     return apr_get_os_error();
