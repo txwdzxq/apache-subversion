@@ -1054,10 +1054,10 @@ http://svn.apache.org/repos/asf/subversion/tags/1.9.6
     * fsfs: improve error message upon failure to open rep-cache (r1781655)
     * fsfs: never attempt to share directory representations (r1785053)
     * fsfs: make consistency independent of hash algorithms (r1785737 et al)
-	This change makes Subversion resilient to collision attacks, including
-	SHA-1 collision attacks such as <http://shattered.io/>.  See also our
-	documentation at <https://subversion.apache.org/faq#shattered-sha1> and
-	<https://subversion.apache.org/docs/release-notes/1.9#shattered-sha1>.
+    This change makes Subversion resilient to collision attacks, including
+    SHA-1 collision attacks such as <http://shattered.io/>.  See also our
+    documentation at <https://subversion.apache.org/faq#shattered-sha1> and
+    <https://subversion.apache.org/docs/release-notes/1.9#shattered-sha1>.
 
   - Client-side and server-side bugfixes:
     * work around an APR bug related to file truncation (r1759116)
@@ -2043,10 +2043,10 @@ http://svn.apache.org/repos/asf/subversion/tags/1.8.18
   - Server-side bugfixes:
     * fsfs: never attempt to share directory representations (r1785053)
     * fsfs: make consistency independent of hash algorithms (r1785737 et al)
-	This change makes Subversion resilient to collision attacks, including
-	SHA-1 collision attacks such as <http://shattered.io/>.  See also our
-	documentation at <https://subversion.apache.org/faq#shattered-sha1> and
-	<https://subversion.apache.org/docs/release-notes/1.8#shattered-sha1>.
+    This change makes Subversion resilient to collision attacks, including
+    SHA-1 collision attacks such as <http://shattered.io/>.  See also our
+    documentation at <https://subversion.apache.org/faq#shattered-sha1> and
+    <https://subversion.apache.org/docs/release-notes/1.8#shattered-sha1>.
 
   - Client-side and server-side bugfixes:
     * work around an APR bug related to file truncation (r1759116)
@@ -6294,8 +6294,8 @@ http://svn.apache.org/repos/asf/subversion/tags/0.32.1
 
  NOTICE: This release is to correct for the problems in the 0.32.0
          release.  There are no user or developer changes in this release
-	 other than the subversion/include/svn_version.h now reflects
-	 the correct version number.
+         other than the subversion/include/svn_version.h now reflects
+         the correct version number.
 
  NOTICE: This release of Subversion causes an ra_dav client/server
          compatibility break with Subversions older than 0.28.0.
