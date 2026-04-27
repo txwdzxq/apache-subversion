@@ -51,6 +51,8 @@ the 1.14 release:  https://subversion.apache.org/docs/release-notes/1.15.html
       edits (r1885997)
     * Expand ~username directories in tab completion (r1896619, issue #3714)
     * Reimplement macOS Keychain auth provider with SecItem* API (r1926564)
+    * Add Windows manifest with compatibility information to executable files
+      (r1933257)
 
   - Server-side improvements and bugfixes:
     * fsfs: Fix uninitialized read in the logical addressing code (r1880374)
@@ -102,9 +104,11 @@ the 1.14 release:  https://subversion.apache.org/docs/release-notes/1.15.html
     * Add 'reverse-merge' attribute to the log schema (r1892455)
     * tests: Allow testing ra_serf using Digest authentication (r1926790)
     * tests: Close file descriptor using the context manager (r1884279)
+    * tests: Fix an error when running 'davautocheck USE_SSL=1' (r1931266)
     * tests: Fix TypeError in some test cases (r1897708)
     * tests: Stop encoding a test's number in the svntest library (r1897443)
     * tests: Verify command output against Relax NG XML schemas (r1925717)
+    * tests: Use 2048-bit RSA for the server certificate and key (r1931265)
 
   - Bindings:
     * JavaHL: Fix JNI setup for translateOutputStream (r1886280)
