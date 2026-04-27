@@ -85,8 +85,6 @@ tool_versions = dist_metadata['tool_versions']
 recommended_release = dist_metadata['recommended_release']
 # For clean-dist, a whitelist of artifacts to keep, by version.
 supported_release_lines = frozenset(dist_metadata['supported_release_lines'])
-# Long-Term Support (LTS) versions
-lts_release_lines = frozenset(dist_metadata['lts_release_lines'])
 
 # Some constants
 svn_repos = os.getenv('SVN_RELEASE_SVN_REPOS',
@@ -307,9 +305,6 @@ def run_svnmucc(cmd, verbose=True, dry_run=False, username=None):
     run_command(['svnmucc'] + cmd, verbose=verbose, dry_run=dry_run)
 
 #----------------------------------------------------------------------
-def is_lts(version):
-    return version.branch in lts_release_lines
-
 def is_recommended(version):
     return version.branch == recommended_release
 
@@ -675,8 +670,7 @@ def write_release_notes(args):
 
     # Create a skeleton release notes file from template
 
-    template_filename = \
-        'release-notes-lts.ezt' if is_lts(args.version) else 'release-notes.ezt'
+    template_filename = 'release-notes.ezt'
 
     prev_ver = Version('%d.%d.0' % (args.version.major, args.version.minor - 1))
     data = { 'major-minor'          : args.version.branch,
