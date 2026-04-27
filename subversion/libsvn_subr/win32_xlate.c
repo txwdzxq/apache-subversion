@@ -237,13 +237,14 @@ svn_subr__win32_xlate_to_stringbuf(svn_subr__win32_xlate_t *handle,
   /* Ensure that buffer is enough to hold result string and termination
      character. */
   *dest = svn_stringbuf_create_ensure(retval + 1, pool);
-  (*dest)->len = retval;
 
   retval = WideCharToMultiByte(handle->to_page_id, 0, wide_str, wide_size,
-                               (*dest)->data, (*dest)->len, NULL, NULL);
+                               (*dest)->data, retval, NULL, NULL);
   if (retval == 0)
     return apr_get_os_error();
 
+  /* The data in svn_stringbuf_t is always NUL terminated string. */
+  (*dest)->data[retval] = '\0';
   (*dest)->len = retval;
   return APR_SUCCESS;
 }
