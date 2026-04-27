@@ -228,6 +228,10 @@ svn_subr__win32_xlate_to_stringbuf(svn_subr__win32_xlate_t *handle,
   if (retval == 0)
     return apr_get_os_error();
 
+  /* Theoretically the actual size can be different from the estimated
+     size. */
+  wide_size = retval;
+
   retval = WideCharToMultiByte(handle->to_page_id, 0, wide_str, wide_size,
                                NULL, 0, NULL, NULL);
 
