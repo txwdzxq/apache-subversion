@@ -403,14 +403,14 @@ get_item_style(const svn_browse__style_t *style, svn_node_kind_t kind,
                svn_boolean_t selected)
 {
   switch (kind)
-  {
-    case svn_node_dir:
-      return (selected) ? style->dir_selected : style->dir;
-    case svn_node_file:
-      return (selected) ? style->file_selected : style->file;
-    default:
-      abort();
-  }
+    {
+      case svn_node_dir:
+        return (selected) ? style->dir_selected : style->dir;
+      case svn_node_file:
+        return (selected) ? style->file_selected : style->file;
+      default:
+        abort();
+    }
 }
 
 static void
