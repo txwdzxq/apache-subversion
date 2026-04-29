@@ -125,8 +125,80 @@ enum {
   COLOR_COUNT,
 };
 
+typedef enum svn_browse__color_mode_e {
+  /* use this color mode when we have no colors at all (other attributes like
+   * A_BOLD or A_STANDOUT are still possible). */
+  svn_browse__color_none,
+
+  /* a limited color support of only 8 basic ones */
+  svn_browse__color_limited,
+
+  /* full, 255 color pallete */
+  svn_browse__color_full,
+} svn_browse__color_mode_e;
+
+typedef struct svn_browse__style_t {
+  attr_t file;
+  attr_t file_selected;
+  attr_t dir;
+  attr_t dir_selected;
+  attr_t header;
+  attr_t footer;
+} svn_browse__style_t;
+
+/* creates a new instance of style, initializing all required colors along the
+ * way. it will as well change global state of curses. */
+static svn_browse__style_t *
+style_init(svn_browse__color_mode_e color_mode, apr_pool_t *result_pool)
+{
+  svn_browse__style_t *result = apr_pcalloc(result_pool, sizeof(*result));
+
+  if (color_mode > svn_browse__color_none)
+    {
+      init_pair(COLOR_PAIR_HEADER, COLOR_YELLOW, COLOR_BRANDING);
+      init_pair(COLOR_PAIR_FOOTER, COLOR_YELLOW, COLOR_SECONDARY);
+      init_pair(COLOR_PAIR_DIR, COLOR_CYAN, -1);
+      init_pair(COLOR_PAIR_DIR_SELECTED, COLOR_CYAN, COLOR_PRIMARY);
+      init_pair(COLOR_PAIR_FILE, -1, -1);
+      init_pair(COLOR_PAIR_FILE_SELECTED, -1, COLOR_PRIMARY);
+    }
+
+  switch (color_mode)
+    {
+      case svn_browse__color_none:
+        result->file = 0;
+        result->file_selected = A_STANDOUT;
+        result->dir = A_BOLD;
+        result->dir_selected = A_STANDOUT | A_BOLD;
+        result->header = A_DIM;
+        result->footer = A_DIM;
+        break;
+      case svn_browse__color_limited:
+        result->file = COLOR_PAIR(COLOR_PAIR_FILE);
+        result->file_selected = A_STANDOUT;
+        result->dir = COLOR_PAIR(COLOR_PAIR_DIR);
+        result->dir_selected = A_STANDOUT;
+        result->header = A_DIM;
+        result->footer = A_DIM;
+        break;
+      case svn_browse__color_full:
+        result->file = COLOR_PAIR(COLOR_PAIR_FILE);
+        result->file_selected = COLOR_PAIR(COLOR_PAIR_FILE_SELECTED);
+        result->dir = COLOR_PAIR(COLOR_PAIR_DIR);
+        result->dir_selected = COLOR_PAIR(COLOR_PAIR_DIR_SELECTED);
+        result->header = COLOR_PAIR(COLOR_PAIR_HEADER);
+        result->footer = COLOR_PAIR(COLOR_PAIR_FOOTER);
+        break;
+      default:
+        abort();
+    }
+
+  return result;
+}
+
 typedef struct svn_browse__view_t {
   svn_browse__model_t *model;
+  svn_browse__style_t *style;
   WINDOW *screen;
   WINDOW *header;
   WINDOW *footer;
@@ -162,10 +234,12 @@ view_layout(svn_browse__view_t *view)
 }
 
 static svn_browse__view_t *
-view_make(svn_browse__model_t *model, WINDOW *win, apr_pool_t *result_pool)
+view_make(svn_browse__model_t *model, svn_browse__style_t *style, WINDOW *win,
+          apr_pool_t *result_pool)
 {
   svn_browse__view_t *view = apr_pcalloc(result_pool, sizeof(*view));
   view->model = model;
+  view->style = style;
   view->screen = win;
   view_layout(view);
   apr_pool_cleanup_register(result_pool, view, view_cleanup, NULL);
@@ -325,30 +399,30 @@ format_node_name(const svn_browse__item_t *item, apr_pool_t *pool)
 }
 
 static int
-get_item_style(svn_node_kind_t kind, svn_boolean_t selected)
+get_item_style(const svn_browse__style_t *style, svn_node_kind_t kind,
+               svn_boolean_t selected)
 {
   switch (kind)
   {
     case svn_node_dir:
-      return COLOR_PAIR((selected) ? COLOR_PAIR_DIR_SELECTED
-                                   : COLOR_PAIR_DIR);
+      return (selected) ? style->dir_selected : style->dir;
     case svn_node_file:
-      return COLOR_PAIR((selected) ? COLOR_PAIR_FILE_SELECTED
-                                   : COLOR_PAIR_FILE);
+      return (selected) ? style->file_selected : style->file;
     default:
       abort();
   }
 }
 
 static void
-view_draw_item(const svn_browse__item_t *item, WINDOW *win, int y,
+view_draw_item(const svn_browse__style_t *style,
+               const svn_browse__item_t *item, WINDOW *win, int y,
                svn_boolean_t selected, apr_pool_t *scratch_pool)
 {
   int attrs = 0;
   const char *prefix;
 
   move(y, 0);
-  wattrset(win, get_item_style(item->dirent->kind, selected));
+  wattrset(win, get_item_style(style, item->dirent->kind, selected));
 
   /* 12 + 12 + (20 + 1) + 2 = 47 */
 
@@ -356,7 +430,7 @@ view_draw_item(const svn_browse__item_t *item, WINDOW *win, int y,
   waddstr(win, rightpad(format_node_name(item, scratch_pool),
                         getmaxx(win) - 47, scratch_pool));
 
-  wattrset(win, get_item_style(svn_node_file, selected));
+  wattrset(win, get_item_style(style, svn_node_file, selected));
   waddstr(win,
           leftpad(format_node_size(item, scratch_pool), 12, scratch_pool));
   waddstr(win, leftpad(apr_psprintf(scratch_pool, "r%ld",
@@ -392,7 +466,7 @@ view_draw_header(svn_browse__view_t *view, WINDOW *win,
   suffix = apr_pstrcat(scratch_pool, suffix, "  ", SVN_VA_NULL);
 
   wmove(win, 0, 0);
-  wattrset(win, COLOR_PAIR(COLOR_PAIR_HEADER));
+  wattrset(win, view->style->header);
   waddstr(win, prefix);
   waddstr(win, rightpad(apr_psprintf(scratch_pool, "URL: %s", abspath),
                         getmaxx(win) - strlen(prefix) - strlen(suffix),
@@ -428,7 +502,7 @@ view_draw_footer(svn_browse__view_t *view, WINDOW *win,
   const svn_browse__state_t *state = view->model->current;
 
   wmove(win, 0, 0);
-  wattrset(win, COLOR_PAIR(COLOR_PAIR_FOOTER));
+  wattrset(win, view->style->footer);
   waddstr(win, "  ");
   waddstr(win, rightpad(apr_psprintf(scratch_pool, "Ready"),
                         getmaxx(win) - 4 - strlen(brand) - 16,
@@ -462,7 +536,7 @@ view_draw(svn_browse__view_t *view, apr_pool_t *pool)
       int y = i - view->model->current->scroller_offset;
 
       if (0 <= y && y < LINES)
-        view_draw_item(item, view->list, y + 1, selected, pool);
+        view_draw_item(view->style, item, view->list, y + 1, selected, pool);
     }
 }
 
@@ -525,6 +599,20 @@ show_version(apr_pool_t *scratch_pool,
   return SVN_NO_ERROR;
 }
 
+static svn_browse__color_mode_e
+detect_color_mode()
+{
+  if (has_colors())
+    {
+      if (COLORS >= 255)
+        return svn_browse__color_full;
+      else
+        return svn_browse__color_limited;
+    }
+  else
+    return svn_browse__color_none;
+}
+
 static svn_error_t *
 sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
 {
@@ -532,6 +620,7 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
   svn_auth_baton_t *auth;
   svn_browse__model_t *ctx;
   svn_browse__view_t *view;
+  svn_browse__style_t *style;
   svn_browse__opt_state_t opt_state = { 0 };
   svn_boolean_t read_pass_from_stdin = FALSE;
   apr_pool_t *iterpool;
@@ -695,14 +784,8 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
   start_color();
   use_default_colors();
 
-  init_pair(COLOR_PAIR_HEADER, COLOR_YELLOW, COLOR_BRANDING);
-  init_pair(COLOR_PAIR_FOOTER, COLOR_YELLOW, COLOR_SECONDARY);
-  init_pair(COLOR_PAIR_DIR, COLOR_CYAN, -1);
-  init_pair(COLOR_PAIR_DIR_SELECTED, COLOR_CYAN, COLOR_PRIMARY);
-  init_pair(COLOR_PAIR_FILE, -1, -1);
-  init_pair(COLOR_PAIR_FILE_SELECTED, -1, COLOR_PRIMARY);
-
-  view = view_make(ctx, stdscr, pool);
+  style = style_init(detect_color_mode(), pool);
+  view = view_make(ctx, style, stdscr, pool);
 
   iterpool = svn_pool_create(pool);
 
