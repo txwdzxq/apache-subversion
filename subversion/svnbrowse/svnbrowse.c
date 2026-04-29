@@ -486,7 +486,7 @@ format_percentage_scroll(int scroll, int size, int height, apr_pool_t *pool)
   else
     {
       /* Oops, if size and heigth perfectly line up, we would segfault to
-       * division by zero. Nope... We wouldn not. There is a check right
+       * division by zero. Nope... We would not. There is a check right
        * above. */
 
       int percentage = (scroll) * 100 / (size - height);
