@@ -430,7 +430,7 @@ endif()
 if(SVN_ENABLE_SWIG_PYTHON)
   find_package(Python3 REQUIRED COMPONENTS
       Interpreter
-      Development.Embed
+      Development.Module
   )
 elseif(SVN_ENABLE_TESTS)
   find_package(Python3 REQUIRED COMPONENTS
@@ -561,7 +561,7 @@ if(SVN_ENABLE_SWIG_PYTHON)
 
   add_library(external-python INTERFACE)
   target_link_libraries(external-python INTERFACE
-    Python3::Python
+    Python3::Module
     Python::py3c
   )
   target_include_directories(external-python INTERFACE
