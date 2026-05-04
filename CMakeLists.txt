@@ -233,7 +233,7 @@ else()
 endif()
 
 if(SVN_ENABLE_FS_BASE)
-  message(FATAL_ERROR "SVN_ENABLE_FS_BASE is NOT implemented and deprecated.")
+  message(SEND_ERROR "SVN_ENABLE_FS_BASE is NOT implemented and deprecated.")
 endif()
 
 if(BUILD_SHARED_LIBS OR SVN_BUILD_SHARED_FS OR SVN_BUILD_SHARED_RA)
@@ -775,7 +775,7 @@ if (MSVC)
 endif()
 
 if (NOT EXISTS "${CMAKE_SOURCE_DIR}/build/cmake/targets.cmake")
-  message(FATAL_ERROR
+  message(SEND_ERROR
     "The 'build/cmake/targets.cmake' file does NOT exist. "
     "Use the following command to generate it:\n"
     "  python gen-make.py -t cmake"
@@ -885,7 +885,7 @@ if(SVN_ENABLE_TESTS)
       RESULT_VARIABLE command_result
   )
   if (command_result)
-    message(FATAL_ERROR "run_tests.py --create-python-venv failed.")
+    message(SEND_ERROR "run_tests.py --create-python-venv failed.")
   endif()
   string(STRIP "${command_output}" python3_test_executable)
 
@@ -934,7 +934,7 @@ if(SVN_ENABLE_TESTS)
     )
 
     if (command_result)
-      message(FATAL_ERROR "list_tests.py failed.")
+      message(SEND_ERROR "list_tests.py failed.")
     endif()
 
     string(REGEX MATCHALL "[^\n\r]+" tests_list "${tests_list_output}")
