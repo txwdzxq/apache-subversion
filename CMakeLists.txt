@@ -475,7 +475,7 @@ if(SVN_ENABLE_AUTH_GNOME_KEYRING)
     pkg_check_modules(libsecret-1 REQUIRED IMPORTED_TARGET libsecret-1)
     target_link_libraries(external-gnome-keyring INTERFACE PkgConfig::libsecret-1)
   else()
-    message(ERROR "GNOME Keyring requires pkg-config")
+    message(SEND_ERROR "GNOME Keyring requires pkg-config")
   endif()
 
   add_private_config_definition(
@@ -491,7 +491,7 @@ if (SVN_ENABLE_TUI)
     pkg_check_modules(ncurses REQUIRED IMPORTED_TARGET ncurses)
     target_link_libraries(external-ncurses INTERFACE PkgConfig::ncurses)
   else()
-    message(ERROR "not supported")
+    message(SEND_ERROR "not supported")
   endif()
 endif()
 
