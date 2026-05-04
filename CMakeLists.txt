@@ -178,17 +178,6 @@ if (SVN_ENABLE_FS_X)
   )
 endif()
 
-if(SVN_ENABLE_AUTH_KWALLET)
-  if(NOT BUILD_SHARED_LIBS)
-    message(SEND_ERROR "SVN_ENABLE_AUTH_KWALLET is not supported in static build.")
-  endif()
-
-  add_private_config_definition(
-    "Defined if KWallet support is enabled"
-    "SVN_HAVE_KWALLET" "1"
-  )
-endif()
-
 if(SVN_ENABLE_AUTH_GPG_AGENT)
   add_private_config_definition(
     "Is GPG Agent support enabled?"
@@ -505,6 +494,10 @@ endif()
 ### KWallet
 
 if(SVN_ENABLE_AUTH_KWALLET)
+  if(NOT BUILD_SHARED_LIBS)
+    message(SEND_ERROR "SVN_ENABLE_AUTH_KWALLET is not supported in static build.")
+  endif()
+
   find_package(KF5Wallet REQUIRED)
   find_package(KF5CoreAddons REQUIRED)
   find_package(KF5I18n REQUIRED)
@@ -520,6 +513,12 @@ if(SVN_ENABLE_AUTH_KWALLET)
     dbus-1
   )
   target_compile_definitions(external-kwallet INTERFACE SVN_HAVE_KF5)
+
+  add_private_config_definition(
+    "Defined if KWallet support is enabled"
+    "SVN_HAVE_KWALLET" "1"
+  )
+
 endif()
 
 ### GNOME Keyring
