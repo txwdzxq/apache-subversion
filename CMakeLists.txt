@@ -244,6 +244,62 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake")
 
+function(target_exports target_name)
+  if (WIN32)
+    set(filter_names
+      # svn_config_enumerator_t looks like (to our regex) a
+      # function declaration for svn_boolean_t
+      "svn_boolean_t"
+      # Not available on Windows
+      "svn_auth_get_keychain_simple_provider"
+      "svn_auth_get_keychain_ssl_client_cert_pw_provider"
+      "svn_auth_get_gnome_keyring_simple_provider"
+      "svn_auth_get_gnome_keyring_ssl_client_cert_pw_provider"
+      "svn_auth_get_kwallet_simple_provider"
+      "svn_auth_get_kwallet_ssl_client_cert_pw_provider"
+      "svn_auth_gnome_keyring_version"
+      "svn_auth_kwallet_version"
+      "svn_auth_get_gpg_agent_simple_provider"
+      "svn_auth_gpg_agent_version"
+      # Unavailable in release mode
+      "svn_fs_base__trail_debug"
+    )
+
+    set(def_file_path ${CMAKE_BINARY_DIR}/${target_name}.def)
+    set(headers)
+
+    foreach(file ${ARGN})
+      list(APPEND headers "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
+    endforeach()
+
+    add_custom_command(
+      OUTPUT "${def_file_path}"
+      DEPENDS ${headers}
+      COMMAND ${CMAKE_COMMAND}
+              "-DEXPORT_HEADER_FILE_PATHS=${headers}"
+              "-DEXPORT_DEF_FILE_PATH=${def_file_path}"
+              "-DEXPORT_BLACKLIST=${filter_names}"
+              -P "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake/extractor.cmake"
+      WORKING_DIRECTORY "${SERF_SOURCE_DIR}"
+    )
+
+    target_sources("${target_name}" PRIVATE "${def_file_path}")
+  endif()
+endfunction()
+
+if (NOT EXISTS "${CMAKE_SOURCE_DIR}/build/cmake/targets.cmake")
+  message(SEND_ERROR
+    "The 'build/cmake/targets.cmake' file does NOT exist. "
+    "Use the following command to generate it:\n"
+    "  python gen-make.py -t cmake"
+  )
+endif()
+
+add_library(ra-libs INTERFACE)
+add_library(fs-libs INTERFACE)
+
+include("build/cmake/targets.cmake")
+
 # Require pkg-config if we are going to use it, to show the `Found PkgConfig`
 # meassge and insure it has actually been found. (yea, this invokes the module
 # for second time, but we are guaranteed to from it to not perform actual look
@@ -606,49 +662,6 @@ if(SVN_ENABLE_SWIG_RUBY)
   swig_target_external_runtime(external-ruby ruby)
 endif()
 
-function(target_exports target_name)
-  if (WIN32)
-    set(filter_names
-      # svn_config_enumerator_t looks like (to our regex) a
-      # function declaration for svn_boolean_t
-      "svn_boolean_t"
-      # Not available on Windows
-      "svn_auth_get_keychain_simple_provider"
-      "svn_auth_get_keychain_ssl_client_cert_pw_provider"
-      "svn_auth_get_gnome_keyring_simple_provider"
-      "svn_auth_get_gnome_keyring_ssl_client_cert_pw_provider"
-      "svn_auth_get_kwallet_simple_provider"
-      "svn_auth_get_kwallet_ssl_client_cert_pw_provider"
-      "svn_auth_gnome_keyring_version"
-      "svn_auth_kwallet_version"
-      "svn_auth_get_gpg_agent_simple_provider"
-      "svn_auth_gpg_agent_version"
-      # Unavailable in release mode
-      "svn_fs_base__trail_debug"
-    )
-
-    set(def_file_path ${CMAKE_BINARY_DIR}/${target_name}.def)
-    set(headers)
-
-    foreach(file ${ARGN})
-      list(APPEND headers "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
-    endforeach()
-
-    add_custom_command(
-      OUTPUT "${def_file_path}"
-      DEPENDS ${headers}
-      COMMAND ${CMAKE_COMMAND}
-              "-DEXPORT_HEADER_FILE_PATHS=${headers}"
-              "-DEXPORT_DEF_FILE_PATH=${def_file_path}"
-              "-DEXPORT_BLACKLIST=${filter_names}"
-              -P "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake/extractor.cmake"
-      WORKING_DIRECTORY "${SERF_SOURCE_DIR}"
-    )
-
-    target_sources("${target_name}" PRIVATE "${def_file_path}")
-  endif()
-endfunction()
-
 ### Checks
 
 include(CheckIncludeFiles)
@@ -774,17 +787,6 @@ if (MSVC)
   )
 endif()
 
-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/build/cmake/targets.cmake")
-  message(SEND_ERROR
-    "The 'build/cmake/targets.cmake' file does NOT exist. "
-    "Use the following command to generate it:\n"
-    "  python gen-make.py -t cmake"
-  )
-endif()
-
-add_library(ra-libs INTERFACE)
-add_library(fs-libs INTERFACE)
-
 if(SVN_ENABLE_NLS)
   # Note: when installing these dependecies with vcpkg, you will need to
   # install 'gettext' package with 'tools' feature. Use the following command
@@ -865,8 +867,6 @@ set(CMAKE_IMPORT_LIBRARY_PREFIX "lib")
 # This tells CMake to build static libraries without any prefix
 # (just svn_subr-1.[lib|a])
 set(CMAKE_STATIC_LIBRARY_PREFIX "")
-
-include("build/cmake/targets.cmake")
 
 if(SVN_ENABLE_TESTS)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
