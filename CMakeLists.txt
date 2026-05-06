@@ -231,6 +231,15 @@ endif()
 
 if (SVN_ENABLE_SWIG_PERL OR SVN_ENABLE_SWIG_PYTHON OR SVN_ENABLE_SWIG_RUBY)
   include(UseSWIG)
+
+  set(SWIG_INCLUDE_DIRECTORIES
+    ${CMAKE_CURRENT_SOURCE_DIR}/subversion/bindings/swig/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/subversion/bindings/swig
+    ${CMAKE_CURRENT_SOURCE_DIR}/subversion/include
+
+    ${CMAKE_CURRENT_BINARY_DIR}/subversion/bindings/swig/proxy
+    ${CMAKE_CURRENT_BINARY_DIR}
+  )
 endif()
 
 # Setup modules path
@@ -558,15 +567,6 @@ if(SVN_ENABLE_SWIG_PERL OR SVN_ENABLE_SWIG_PYTHON OR SVN_ENABLE_SWIG_RUBY)
   find_package(SWIG REQUIRED)
 
   file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/subversion/bindings/swig/proxy")
-
-  set(SWIG_INCLUDE_DIRECTORIES
-    ${CMAKE_CURRENT_SOURCE_DIR}/subversion/bindings/swig/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/subversion/bindings/swig
-    ${CMAKE_CURRENT_SOURCE_DIR}/subversion/include
-
-    ${CMAKE_CURRENT_BINARY_DIR}/subversion/bindings/swig/proxy
-    ${CMAKE_CURRENT_BINARY_DIR}
-  )
 
   add_library(external-swig INTERFACE)
 
