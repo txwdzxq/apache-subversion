@@ -238,9 +238,10 @@ public class BasicTests extends SVNTests
      */
     public void testRuntimeVersion() throws Throwable
     {
+        RuntimeVersion runtimeVersion = null;
         try
         {
-            RuntimeVersion runtimeVersion = client.getRuntimeVersion();
+            runtimeVersion = client.getRuntimeVersion();
             String versionString = runtimeVersion.toString();
             if (versionString == null || versionString.trim().length() == 0)
             {
@@ -253,11 +254,103 @@ public class BasicTests extends SVNTests
                  "native libraries failed to initialize: " + e);
         }
 
-        RuntimeVersion runtimeVersion = client.getRuntimeVersion();
+        assertNotNull(runtimeVersion);
         Version version = client.getVersion();
         assertTrue(runtimeVersion.getMajor() > version.getMajor()
                    || (runtimeVersion.getMajor() == version.getMajor()
                        && runtimeVersion.getMinor() >= version.getMinor()));
+    }
+
+    /**
+     * Test defaultWcVersion
+     * @throws Throwable
+     */
+    public void testDefaultWcVersion() throws Throwable
+    {
+        try
+        {
+            Version defaultWcVersion = client.defaultWcVersion();
+            String versionString = defaultWcVersion.toString();
+            if (versionString == null || versionString.trim().length() == 0)
+            {
+                throw new Exception("Version string empty");
+            }
+        }
+        catch (Exception e)
+        {
+            fail("defaultWcVersion should always be available unless " +
+                 "the native libraries failed to initialize: " + e);
+        }
+    }
+
+    /**
+     * Test oldestWcVersion
+     */
+    public void testOldestWcVersion()
+    {
+        try
+        {
+            Version oldestWcVersion = SVNClient.oldestWcVersion();
+            String versionString = oldestWcVersion.toString();
+            if (versionString == null || versionString.trim().length() == 0)
+            {
+                throw new Exception("Version string empty");
+            }
+        }
+        catch (Exception e)
+        {
+            fail("oldestWcVersion should always be available unless " +
+                 "the native libraries failed to initialize: " + e);
+        }
+    }
+
+    /**
+     * Test latestWcVersion
+     */
+    public void testLatestWcVersion()
+    {
+        try
+        {
+            Version latestWcVersion = SVNClient.latestWcVersion();
+            String versionString = latestWcVersion.toString();
+            if (versionString == null || versionString.trim().length() == 0)
+            {
+                throw new Exception("Version string empty");
+            }
+        }
+        catch (Exception e)
+        {
+            fail("latestWcVersion should always be available unless " +
+                 "the native libraries failed to initialize: " + e);
+        }
+
+    }
+
+    /**
+     * Test relationships between WC versions
+     * @throws Throwable
+     */
+    public void testWcVersionOrder() throws Throwable
+    {
+        Version defaultWcVersion = client.defaultWcVersion();
+        Version oldestWcVersion = SVNClient.oldestWcVersion();
+        Version latestWcVersion = SVNClient.latestWcVersion();
+
+        assertNotEquals(0, defaultWcVersion.getMajor());
+        assertNotEquals(0, defaultWcVersion.getMinor());
+        assertEquals(0, defaultWcVersion.getPatch());
+
+        assertNotEquals(0, oldestWcVersion.getMajor());
+        assertNotEquals(0, oldestWcVersion.getMinor());
+        assertEquals(0, oldestWcVersion.getPatch());
+
+        assertNotEquals(0, latestWcVersion.getMajor());
+        assertNotEquals(0, latestWcVersion.getMinor());
+        assertEquals(0, latestWcVersion.getPatch());
+
+        assertTrue(latestWcVersion.isAtLeast(oldestWcVersion));
+        assertTrue(latestWcVersion.isAtLeast(defaultWcVersion));
+        assertTrue(defaultWcVersion.isAtLeast(oldestWcVersion));
     }
 
     /**

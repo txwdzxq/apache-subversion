@@ -52,11 +52,13 @@
 #include "StringArray.h"
 #include "PropertyTable.h"
 #include "CreateJ.h"
+#include "Version.hpp"
 #include "VersionExtended.h"
 #include "DiffOptions.h"
-#include "svn_version.h"
+#include "svn_client.h"
 #include "svn_private_config.h"
 #include "version.h"
+#include "jniwrapper/jni_env.hpp"
 #include <iostream>
 
 JNIEXPORT jlong JNICALL
@@ -382,7 +384,8 @@ JNIEXPORT jlong JNICALL
 Java_org_apache_subversion_javahl_SVNClient_checkout
 (JNIEnv *env, jobject jthis, jstring jmoduleName, jstring jdestPath,
  jobject jrevision, jobject jpegRevision, jobject jdepth,
- jboolean jignoreExternals, jboolean jallowUnverObstructions)
+ jboolean jignoreExternals, jboolean jallowUnverObstructions,
+ jobject jwcFormatVersion, jobject jstorePristines)
 {
   JNIEntry(SVNClient, checkout);
   SVNClient *cl = SVNClient::getCppObject(jthis);
@@ -407,10 +410,22 @@ Java_org_apache_subversion_javahl_SVNClient_checkout
   if (JNIUtil::isExceptionThrown())
     return -1;
 
+  svn_version_t version_data;
+  const svn_version_t *version_ptr = NULL;
+  if (jwcFormatVersion != 0)
+    {
+      JavaHL::Version wcFormatVersion(::Java::Env(env), jwcFormatVersion);
+      if (JNIUtil::isExceptionThrown())
+        return -1;
+      wcFormatVersion.getVersion(version_data);
+      version_ptr = &version_data;
+    }
+
   return cl->checkout(moduleName, destPath, revision, pegRevision,
                       EnumMapper::toDepth(jdepth),
                       jignoreExternals ? true : false,
-                      jallowUnverObstructions ? true : false);
+                      jallowUnverObstructions ? true : false,
+                      version_ptr, EnumMapper::toTristate(jstorePristines));
 }
 
 JNIEXPORT void JNICALL
@@ -1991,6 +2006,43 @@ Java_org_apache_subversion_javahl_SVNClient_vacuum
              jremoveUnversionedItems, jremoveIgnoredItems,
              jfixRecordedTimestamps, jremoveUnusedPristines,
              jincludeExternals);
+}
+
+JNIEXPORT jobject JNICALL
+Java_org_apache_subversion_javahl_SVNClient_defaultWcVersion
+(JNIEnv *env, jobject jthis)
+{
+  JNIEntry(SVNClient, defaultWcVersion);
+  SVNClient *cl = SVNClient::getCppObject(jthis);
+  if (cl == NULL)
+    {
+      JNIUtil::throwError("bad C++ this");
+      return NULL;
+    }
+
+  return cl->defaultWcVersion(::Java::Env(env));
+}
+
+JNIEXPORT jobject JNICALL
+Java_org_apache_subversion_javahl_SVNClient_oldestWcVersion
+(JNIEnv *env, jclass jclazz)
+{
+  JNIEntryStatic(SVNClient, oldestWcVersion);
+  SVN::Pool tmpPool;
+  return JavaHL::Version::getInstance(
+      ::Java::Env(env),
+      *svn_client_oldest_wc_version(tmpPool.getPool()));
+}
+
+JNIEXPORT jobject JNICALL
+Java_org_apache_subversion_javahl_SVNClient_latestWcVersion
+(JNIEnv *env, jclass jclazz)
+{
+  JNIEntryStatic(SVNClient, latestWcVersion);
+  SVN::Pool tmpPool;
+  return JavaHL::Version::getInstance(
+      ::Java::Env(env),
+      *svn_client_latest_wc_version(tmpPool.getPool()));
 }
 
 JNIEXPORT jobject JNICALL

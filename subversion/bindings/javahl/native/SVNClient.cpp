@@ -60,6 +60,7 @@
 #include "DiffOptions.h"
 #include "CreateJ.h"
 #include "JNIStringHolder.h"
+#include "Version.hpp"
 
 #include "svn_auth.h"
 #include "svn_dso.h"
@@ -302,7 +303,9 @@ void SVNClient::logMessages(const char *path, Revision &pegRevision,
 jlong SVNClient::checkout(const char *moduleName, const char *destPath,
                           Revision &revision, Revision &pegRevision,
                           svn_depth_t depth, bool ignoreExternals,
-                          bool allowUnverObstructions)
+                          bool allowUnverObstructions,
+                          const svn_version_t *wcFormatVersion,
+                          svn_tristate_t storePristines)
 {
     SVN::Pool subPool;
 
@@ -319,13 +322,15 @@ jlong SVNClient::checkout(const char *moduleName, const char *destPath,
     if (ctx == NULL)
         return -1;
 
-    SVN_JNI_ERR(svn_client_checkout3(&rev, url.c_str(),
+    SVN_JNI_ERR(svn_client_checkout4(&rev, url.c_str(),
                                      path.c_str(),
                                      pegRevision.revision(),
                                      revision.revision(),
                                      depth,
                                      ignoreExternals,
                                      allowUnverObstructions,
+                                     wcFormatVersion,
+                                     storePristines,
                                      ctx,
                                      subPool.getPool()),
                 -1);
@@ -1584,6 +1589,21 @@ void SVNClient::vacuum(const char *path,
                                   remove_unused_pristines,
                                   include_externals,
                                   ctx, subPool.getPool()), );
+}
+
+jobject SVNClient::defaultWcVersion(::Java::Env env)
+{
+    SVN::Pool subPool(pool);
+    svn_client_ctx_t *ctx = context.getContext(NULL, subPool);
+    if (ctx == NULL)
+        return NULL;
+
+    apr_pool_t *pool = subPool.getPool();
+    const svn_version_t *version = NULL;
+    SVN_JNI_ERR(svn_client_default_wc_version(&version, ctx,
+                                              pool, pool),
+                NULL);
+    return JavaHL::Version::getInstance(env, *version);
 }
 
 jobject

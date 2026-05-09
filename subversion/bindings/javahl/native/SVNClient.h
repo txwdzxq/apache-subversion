@@ -58,6 +58,7 @@ class DiffOptions;
 #include "svn_types.h"
 #include "svn_client.h"
 #include "SVNBase.h"
+#include "jniwrapper/jni_env.hpp"
 
 class SVNClient :public SVNBase
 {
@@ -168,7 +169,9 @@ class SVNClient :public SVNBase
               CommitCallback *callback);
   jlong checkout(const char *moduleName, const char *destPath,
                  Revision &revision, Revision &pegRevsion, svn_depth_t depth,
-                 bool ignoreExternals, bool allowUnverObstructions);
+                 bool ignoreExternals, bool allowUnverObstructions,
+                 const svn_version_t *wcFormatVersion,
+                 svn_tristate_t storePristines);
   void logMessages(const char *path, Revision &pegRevision,
                    std::vector<RevisionRange> &ranges, bool stopOnCopy,
                    bool discoverPaths, bool includeMergedRevisions,
@@ -224,6 +227,7 @@ class SVNClient :public SVNBase
                      Revision &startRevision, Revision &endRevision,
                      svn_depth_t depth, StringArray &changelists,
                      bool ignoreAncestry, DiffSummaryReceiver &receiver);
+  jobject defaultWcVersion(::Java::Env env);
 
   ClientContext &getClientContext();
 

@@ -204,11 +204,28 @@ public class SVNClient implements ISVNClient
                                    long limit, LogMessageCallback callback)
             throws ClientException;
 
-    public native long checkout(String moduleName, String destPath,
+    @Deprecated
+    @Override
+    public long checkout(String moduleName, String destPath,
                                 Revision revision, Revision pegRevision,
                                 Depth depth, boolean ignoreExternals,
                                 boolean allowUnverObstructions)
-            throws ClientException;
+            throws ClientException
+    {
+        return checkout(moduleName, destPath,
+                        revision, pegRevision, depth,
+                        ignoreExternals, allowUnverObstructions,
+                        null, Tristate.Unknown);
+    }
+
+    @Override
+    public native long checkout(String moduleName, String destPath,
+                                Revision revision, Revision pegRevision,
+                                Depth depth, boolean ignoreExternals,
+                                boolean allowUnverObstructions,
+                                Version wcFormatVersion,
+                                Tristate storePristines)
+        throws ClientException;
 
     public void notification2(ClientNotifyCallback notify)
     {
@@ -805,28 +822,36 @@ public class SVNClient implements ISVNClient
     /**
      * Returns version information of subversion and the javahl binding
      * @return version information
+     * @deprecated
      */
+    @Deprecated
     public static native String version();
 
     /**
      * Returns the major version of the javahl binding. Same version of the
      * javahl support the same interfaces
      * @return major version number
+     * @deprecated
      */
+    @Deprecated
     public static native int versionMajor();
 
     /**
      * Returns the minor version of the javahl binding. Same version of the
      * javahl support the same interfaces
      * @return minor version number
+     * @deprecated
      */
+    @Deprecated
     public static native int versionMinor();
 
     /**
      * Returns the micro (patch) version of the javahl binding. Same version of
      * the javahl support the same interfaces
      * @return micro version number
+     * @deprecated
      */
+    @Deprecated
     public static native int versionMicro();
 
     public native void lock(Set<String> paths, String comment, boolean force)
@@ -866,6 +891,10 @@ public class SVNClient implements ISVNClient
                               boolean removeUnusedPristines,
                               boolean includeExternals)
             throws ClientException;
+
+    public native Version defaultWcVersion() throws ClientException;
+    public static native Version oldestWcVersion();
+    public static native Version latestWcVersion();
 
     public ISVNRemote openRemoteSession(String pathOrUrl)
             throws ClientException, SubversionException

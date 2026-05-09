@@ -237,6 +237,19 @@ public interface ISVNClient
 
     /**
      * Executes a revision checkout.
+     * <p>
+     * Behaves like the 1.15 version with <code>wcFormatVersion = null</code>
+     * and <code>storePristines = Tristate.Unknown</code>
+     * @deprecated
+     */
+    @Deprecated
+    long checkout(String moduleName, String destPath, Revision revision,
+                  Revision pegRevision, Depth depth,
+                  boolean ignoreExternals,
+                  boolean allowUnverObstructions) throws ClientException;
+
+    /**
+     * Executes a revision checkout.
      * @param moduleName name of the module to checkout.
      * @param destPath destination directory for checkout.
      * @param revision the revision to checkout.
@@ -244,12 +257,16 @@ public interface ISVNClient
      * @param depth how deep to checkout files recursively.
      * @param ignoreExternals if externals are ignored during checkout
      * @param allowUnverObstructions allow unversioned paths that obstruct adds
+     * @param wcFormatVersion desired WC compatibiliy version or NULL default
+     * @param storePristines whether to store pristine files
      * @throws ClientException
      */
     long checkout(String moduleName, String destPath, Revision revision,
                   Revision pegRevision, Depth depth,
                   boolean ignoreExternals,
-                  boolean allowUnverObstructions) throws ClientException;
+                  boolean allowUnverObstructions,
+                  Version wcFormatVersion,
+                  Tristate storePristines) throws ClientException;
 
     /**
      * Sets the notification callback used to send processing information back
@@ -1655,6 +1672,8 @@ public interface ISVNClient
                 boolean removeUnusedPristines,
                 boolean includeExternals)
             throws ClientException;
+
+    Version defaultWcVersion() throws ClientException;
 
     /**
      * Open a persistent session to a repository.
