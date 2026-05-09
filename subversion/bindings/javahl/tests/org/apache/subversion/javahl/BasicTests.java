@@ -768,8 +768,7 @@ public class BasicTests extends SVNTests
         {
             // obstructed checkout must fail
             client.checkout(thisTest.getUrl() + "/A", thisTest.getWCPath(),
-                            null, null, Depth.infinity, false, false,
-                            null, Tristate.Unknown);
+                            null, null, Depth.infinity, false, false);
             fail("missing exception");
         }
         catch (ClientException expected)
@@ -807,43 +806,6 @@ public class BasicTests extends SVNTests
 
         // check the status of the working copy
         thisTest.checkStatus();
-    }
-
-    /**
-     * Test checkout with the current runtime WC version
-     * @throws Throwable
-     */
-    public void testCurrentWcVersionCheckout() throws Throwable
-    {
-        OneTest thisTest = new OneTest();
-        client.checkout(thisTest.getUrl() + "/A",
-                        thisTest.getWCPath()  + "/ZZZ"
-                        null, null, Depth.infinity, false, false,
-                        client.getRuntimeVersion(),
-                        Tristate.Unknown);
-    }
-
-    /**
-     * Test checkout with unsupported WC version
-     * @throws Throwable
-     */
-    public void testAncientWcVersionCheckout() throws Throwable
-    {
-        OneTest thisTest = new OneTest();
-
-        try
-        {
-            // Checkout with invalid version must fail
-            client.checkout(thisTest.getUrl() + "/A",
-                            thisTest.getWCPath()  + "/ZZZ"
-                            null, null, Depth.infinity, false, false,
-                            Version.getInstance(0, 9, 0),
-                            Tristate.Unknown);
-            fail("missing exception");
-        }
-        catch (ClientException expected)
-        {
-        }
     }
 
     /**
