@@ -298,6 +298,14 @@ if (NOT EXISTS "${CMAKE_SOURCE_DIR}/build/cmake/targets.cmake")
   )
 endif()
 
+### Httpd
+
+if(SVN_ENABLE_APACHE_MODULES)
+  find_package(Httpd REQUIRED)
+  add_library(external-libhttpd ALIAS httpd::httpd)
+  add_library(external-mod_dav ALIAS httpd::mod_dav)
+endif()
+
 add_library(ra-libs INTERFACE)
 add_library(fs-libs INTERFACE)
 
@@ -495,14 +503,6 @@ elseif(SVN_ENABLE_TESTS)
   find_package(Python3 REQUIRED COMPONENTS
       Interpreter
   )
-endif()
-
-### Httpd
-
-if(SVN_ENABLE_APACHE_MODULES)
-  find_package(Httpd REQUIRED)
-  add_library(external-libhttpd ALIAS httpd::httpd)
-  add_library(external-mod_dav ALIAS httpd::mod_dav)
 endif()
 
 ### KWallet
