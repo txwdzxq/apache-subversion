@@ -1045,7 +1045,7 @@ void SVNClient::diff(const char *target1, Revision &revision1,
 
     if (pegRevision)
     {
-        SVN_JNI_ERR(svn_client_diff_peg6(diffOptions,
+        SVN_JNI_ERR(svn_client_diff_peg7(diffOptions,
                                    path1.c_str(),
                                    pegRevision->revision(),
                                    revision1.revision(),
@@ -1060,6 +1060,7 @@ void SVNClient::diff(const char *target1, Revision &revision1,
                                    ignoreProps,
                                    propsOnly,
                                    options.useGitDiffFormat(),
+                                   options.formatMergeinfo(),
                                    SVN_APR_LOCALE_CHARSET,
                                    outputStream.getStream(subPool),
                                    // Discard stderr; TODO: Update JavaHL API
@@ -1075,7 +1076,7 @@ void SVNClient::diff(const char *target1, Revision &revision1,
         Path path2(target2, subPool);
         SVN_JNI_ERR(path2.error_occurred(), );
 
-        SVN_JNI_ERR(svn_client_diff6(diffOptions,
+        SVN_JNI_ERR(svn_client_diff7(diffOptions,
                                path1.c_str(),
                                revision1.revision(),
                                path2.c_str(),
@@ -1090,6 +1091,7 @@ void SVNClient::diff(const char *target1, Revision &revision1,
                                ignoreProps,
                                propsOnly,
                                options.useGitDiffFormat(),
+                               options.formatMergeinfo(),
                                SVN_APR_LOCALE_CHARSET,
                                outputStream.getStream(subPool),
                                // Discard stderr; TODO: Update JavaHL API

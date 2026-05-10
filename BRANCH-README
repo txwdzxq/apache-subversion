@@ -4,11 +4,7 @@
 This is a temporary working branch to update JavaHL for 1.15.0.
 
 TODO:
-  * Update use of deprecated Subversion APIs:
-    - svn_client_diff6 -> svn_client_diff7
-    - svn_client_diff_peg6 -> svn_client_diff_peg7
-  * Add Java wrappers for some new functionality
-  * Update use of deprecated JavaHL APIs
+  * Update SVNClient.diff to capture stderr.
   * Fix Java warnings where possible without breaking the JRE ABI
 
 DONE:
@@ -16,12 +12,14 @@ DONE:
     - svn_client_checkout3 -> svn_client_checkout4
     - svn_client_upgrade -> svn_client_upgrade2
     - svn_client_revert3 -> svn_client_revert4
+    - svn_client_diff6 -> svn_client_diff7
+    - svn_client_diff_peg6 -> svn_client_diff_peg7
   * Add Java wrappers for some new functionality
     - .types.VersionNumber extends Version (package scope)
     - .types.Version::getInstance(int major, int minor, int patch)
     - SVNClient.defaultWcVersion()
     - SVNClient.oldestWcVersion()
     - SVNClient.latestWcVersion()
-  * Update use of deprecated JavaHL APIs:
+  * Use updated JavaHL APIs (in tests):
     - SVNClient.checkout
     - SVNClient.list, .callback.ListCallback
