@@ -1619,10 +1619,22 @@ public interface ISVNClient
 
     /**
      * Recursively upgrade a working copy to a new metadata storage format.
-     * @param path                  path of the working copy
-     * @throws ClientException
+     * <p>
+     * Behaves like the 1.15 version with <code>targetWcVersion = null</code>.
+     * @deprecated
      */
-    void upgrade(String path)
+    @Deprecated
+    void upgrade(String path) throws ClientException;
+
+
+    /**
+     * Recursively upgrade a working copy to a new metadata storage format.
+     * @param path             the working copy path
+     * @param targetWcVersion  the working copy version to upgrade to
+     * @throws ClientException
+     * @since 1.15
+     */
+    Version upgrade(String path, Version targetWcVersion)
             throws ClientException;
 
     /**

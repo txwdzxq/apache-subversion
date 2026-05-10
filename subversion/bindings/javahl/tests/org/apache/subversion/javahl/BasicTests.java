@@ -941,6 +941,42 @@ public class BasicTests extends SVNTests
     }
 
     /**
+     * Test the basic SVNClient.upgrade functionality.
+     * @throws Throwable
+     */
+    public void testBasicUpgrade() throws Throwable
+    {
+        OneTest thisTest = new OneTest(true, true, true);
+        Version oldestVersion = SVNClient.oldestWcVersion();
+        Version defaultVersion = client.defaultWcVersion();
+
+        Version upgradedVersion =
+            client.upgrade(thisTest.getWCPath(), null);
+
+        assertNotNull(upgradedVersion);
+        assertTrue(upgradedVersion.isAtLeast(oldestVersion));
+        assertTrue(upgradedVersion.isAtLeast(defaultVersion));
+        assertTrue(defaultVersion.isAtLeast(upgradedVersion));
+    }
+
+    /**
+     * Test SVNClient.upgrade to the latest version.
+     * @throws Throwable
+     */
+    public void testLatestUpgrade() throws Throwable
+    {
+        OneTest thisTest = new OneTest(true, true, true);
+        Version latestVersion = SVNClient.latestWcVersion();
+
+        Version upgradedVersion =
+            client.upgrade(thisTest.getWCPath(), latestVersion);
+
+        assertNotNull(upgradedVersion);
+        assertTrue(upgradedVersion.isAtLeast(latestVersion));
+        assertTrue(latestVersion.isAtLeast(upgradedVersion));
+    }
+
+    /**
      * Test the basic SVNClient.commit functionality.
      * @throws Throwable
      */

@@ -789,7 +789,15 @@ public class SVNClient implements ISVNClient
                                         boolean lastChanged)
             throws ClientException;
 
-    public native void upgrade(String path)
+    @Deprecated
+    @Override
+    public void upgrade(String path) throws ClientException
+    {
+        upgrade(path, (Version) null);
+    }
+
+    @Override
+    public native Version upgrade(String path, Version targetWcVersion)
             throws ClientException;
 
     /**

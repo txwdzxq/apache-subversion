@@ -201,7 +201,8 @@ class SVNClient :public SVNBase
                       const char *original_value, bool force);
   jstring getVersionInfo(const char *path, const char *trailUrl,
                          bool lastChanged);
-  void upgrade(const char *path);
+  jobject upgrade(::Java::Env env, const char *path,
+                  const svn_version_t *targetWcVersion);
   jbyteArray propertyGet(const char *path, const char *name,
                          Revision &revision, Revision &pegRevision,
                          StringArray &changelists);

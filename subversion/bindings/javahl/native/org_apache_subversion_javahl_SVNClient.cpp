@@ -1582,21 +1582,32 @@ Java_org_apache_subversion_javahl_SVNClient_getVersionInfo
   return cl->getVersionInfo(path, trailUrl, jlastChanged ? true:false);
 }
 
-JNIEXPORT void JNICALL Java_org_apache_subversion_javahl_SVNClient_upgrade
-  (JNIEnv *env, jobject jthis, jstring jpath)
+JNIEXPORT jobject JNICALL Java_org_apache_subversion_javahl_SVNClient_upgrade
+(JNIEnv *env, jobject jthis, jstring jpath, jobject jtargetWcVersion)
 {
   JNIEntry(SVNClient, upgrade);
   SVNClient *cl = SVNClient::getCppObject(jthis);
   if (cl == NULL)
     {
       JNIUtil::throwError(_("bad C++ this"));
-      return;
+      return NULL;
     }
   JNIStringHolder path(jpath);
   if (JNIUtil::isExceptionThrown())
-    return;
+    return NULL;
 
-  cl->upgrade(path);
+  svn_version_t target_version_data;
+  const svn_version_t *target_version_ptr = NULL;
+  if (jtargetWcVersion != NULL)
+    {
+      ::JavaHL::Version targetWcVersion(::Java::Env(env), jtargetWcVersion);
+      if (JNIUtil::isExceptionThrown())
+        return NULL;
+      targetWcVersion.getVersion(target_version_data);
+      target_version_ptr = &target_version_data;
+    }
+
+  return cl->upgrade(::Java::Env(env), path, target_version_ptr);
 }
 
 JNIEXPORT void JNICALL

@@ -1470,19 +1470,27 @@ jstring SVNClient::getVersionInfo(const char *path, const char *trailUrl,
     return JNIUtil::makeJString(value.str().c_str());
 }
 
-void SVNClient::upgrade(const char *path)
+jobject SVNClient::upgrade(::Java::Env env, const char *path,
+                           const svn_version_t *targetWcVersion)
 {
     SVN::Pool subPool(pool);
-    SVN_JNI_NULL_PTR_EX(path, "path", );
+    SVN_JNI_NULL_PTR_EX(path, "path", NULL);
 
     svn_client_ctx_t *ctx = context.getContext(NULL, subPool);
     if (ctx == NULL)
-        return;
+        return NULL;
 
     Path checkedPath(path, subPool);
-    SVN_JNI_ERR(checkedPath.error_occurred(), );
+    SVN_JNI_ERR(checkedPath.error_occurred(), NULL);
 
-    SVN_JNI_ERR(svn_client_upgrade(path, ctx, subPool.getPool()), );
+    apr_pool_t *pool = subPool.getPool();
+    const svn_version_t *wc_version = NULL;
+    SVN_JNI_ERR(svn_client_upgrade2(&wc_version, path, targetWcVersion,
+                                    ctx, pool, pool),
+                NULL);
+    if (wc_version != NULL)
+      return ::JavaHL::Version::getInstance(env, *wc_version);
+    return NULL;
 }
 
 jobject SVNClient::revProperties(const char *path, Revision &revision)
