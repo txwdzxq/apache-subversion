@@ -861,7 +861,8 @@ public class BasicTests extends SVNTests
         {
             // obstructed checkout must fail
             client.checkout(thisTest.getUrl() + "/A", thisTest.getWCPath(),
-                            null, null, Depth.infinity, false, false);
+                            null, null, Depth.infinity, false, false,
+                            null, Tristate.Unknown);
             fail("missing exception");
         }
         catch (ClientException expected)
@@ -892,13 +893,51 @@ public class BasicTests extends SVNTests
 
         // recheckout the working copy
         client.checkout(thisTest.getUrl().toString(), thisTest.getWCPath(),
-                   null, null, Depth.infinity, false, false);
+                        null, null, Depth.infinity, false, false,
+                        null, Tristate.Unknown);
 
         // deleted file should reapear
         thisTest.getWc().setItemTextStatus("A/B/lambda", Status.Kind.normal);
 
         // check the status of the working copy
         thisTest.checkStatus();
+    }
+
+    /**
+     * Test checkout with the current runtime WC version
+     * @throws Throwable
+     */
+    public void testCurrentWcVersionCheckout() throws Throwable
+    {
+        OneTest thisTest = new OneTest();
+        client.checkout(thisTest.getUrl() + "/A",
+                        thisTest.getWCPath()  + "/ZZZ",
+                        null, null, Depth.infinity, false, false,
+                        client.getRuntimeVersion(),
+                        Tristate.Unknown);
+    }
+
+    /**
+     * Test checkout with unsupported WC version
+     * @throws Throwable
+     */
+    public void testAncientWcVersionCheckout() throws Throwable
+    {
+        OneTest thisTest = new OneTest();
+
+        try
+        {
+            // Checkout with invalid version must fail
+            client.checkout(thisTest.getUrl() + "/A",
+                            thisTest.getWCPath()  + "/ZZZ",
+                            null, null, Depth.infinity, false, false,
+                            Version.getInstance(0, 9, 0),
+                            Tristate.Unknown);
+            fail("missing exception");
+        }
+        catch (ClientException expected)
+        {
+        }
     }
 
     /**
@@ -2308,8 +2347,9 @@ public class BasicTests extends SVNTests
 
         // check out the previous revision
         client.checkout(thisTest.getUrl()+"/A/D",
-                thisTest.getWCPath()+"/new_D", new Revision.Number(1),
-                new Revision.Number(1), Depth.infinity, false, false);
+                        thisTest.getWCPath()+"/new_D", new Revision.Number(1),
+                        new Revision.Number(1), Depth.infinity, false, false,
+                        null, Tristate.Unknown);;
     }
 
     /**
@@ -2683,8 +2723,9 @@ public class BasicTests extends SVNTests
         String secondWC = thisTest.getWCPath() + ".empty";
         removeDirOrFile(new File(secondWC));
 
-        client.checkout(thisTest.getUrl().toString(), secondWC, null, null,
-                       Depth.empty, false, true);
+        client.checkout(thisTest.getUrl().toString(), secondWC,
+                        null, null, Depth.empty, false, true,
+                        null, Tristate.Unknown);
 
         infos = collectInfos(secondWC, null, null, Depth.empty, null);
 
@@ -4824,7 +4865,9 @@ public class BasicTests extends SVNTests
                                null,
                                Depth.infinity,
                                true,
-                               false);
+                               false,
+                               null,
+                               Tristate.Unknown);
 
             svnClient.dispose();
         }

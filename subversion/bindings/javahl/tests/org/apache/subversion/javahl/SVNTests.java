@@ -879,7 +879,8 @@ class SVNTests extends TestCase
             trackDir(workingCopy);
             // checkout the repository
             client.checkout(uri.toString(), workingCopy.getAbsolutePath(),
-                   null, null, Depth.infinity, false, false);
+                            null, null, Depth.infinity, false, false,
+                            null, Tristate.Unknown);
             // sanity check the working with its expected status
             checkStatus();
             return workingCopy;
