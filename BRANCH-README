@@ -3,9 +3,6 @@
 
 This is a temporary working branch to update JavaHL for 1.15.0.
 
-TODO:
-  * Fix Java warnings where possible without breaking the JRE ABI
-
 DONE:
   * Update use of deprecated Subversion APIs:
     - svn_client_checkout3 -> svn_client_checkout4
