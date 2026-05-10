@@ -1017,8 +1017,8 @@ void SVNClient::propertySetRemote(const char *path, long base_rev,
 void SVNClient::diff(const char *target1, Revision &revision1,
                      const char *target2, Revision &revision2,
                      Revision *pegRevision, const char *relativeToDir,
-                     OutputStream &outputStream, svn_depth_t depth,
-                     StringArray &changelists,
+                     OutputStream &outputStream, OutputStream &errorStream,
+                     svn_depth_t depth, StringArray &changelists,
                      bool ignoreAncestry, bool noDiffDelete, bool force,
                      bool showCopiesAsAdds, bool ignoreProps, bool propsOnly,
                      DiffOptions const& options)
@@ -1063,8 +1063,7 @@ void SVNClient::diff(const char *target1, Revision &revision1,
                                    options.formatMergeinfo(),
                                    SVN_APR_LOCALE_CHARSET,
                                    outputStream.getStream(subPool),
-                                   // Discard stderr; TODO: Update JavaHL API
-                                   svn_stream_empty(subPool.getPool()),
+                                   errorStream.getStream(subPool),
                                    changelists.array(subPool),
                                    ctx,
                                    subPool.getPool()),
@@ -1094,8 +1093,7 @@ void SVNClient::diff(const char *target1, Revision &revision1,
                                options.formatMergeinfo(),
                                SVN_APR_LOCALE_CHARSET,
                                outputStream.getStream(subPool),
-                               // Discard stderr; TODO: Update JavaHL API
-                               svn_stream_empty(subPool.getPool()),
+                               errorStream.getStream(subPool),
                                changelists.array(subPool),
                                ctx,
                                subPool.getPool()),
@@ -1105,27 +1103,30 @@ void SVNClient::diff(const char *target1, Revision &revision1,
 
 void SVNClient::diff(const char *target1, Revision &revision1,
                      const char *target2, Revision &revision2,
-                     const char *relativeToDir, OutputStream &outputStream,
+                     const char *relativeToDir,
+                     OutputStream &outputStream, OutputStream &errorStream,
                      svn_depth_t depth, StringArray &changelists,
                      bool ignoreAncestry, bool noDiffDelete, bool force,
                      bool showCopiesAsAdds, bool ignoreProps, bool propsOnly,
                      DiffOptions const& options)
 {
     diff(target1, revision1, target2, revision2, NULL, relativeToDir,
-         outputStream, depth, changelists, ignoreAncestry, noDiffDelete, force,
-         showCopiesAsAdds, ignoreProps, propsOnly, options);
+         outputStream, errorStream, depth, changelists, ignoreAncestry,
+         noDiffDelete, force, showCopiesAsAdds, ignoreProps, propsOnly,
+         options);
 }
 
 void SVNClient::diff(const char *target, Revision &pegRevision,
                      Revision &startRevision, Revision &endRevision,
-                     const char *relativeToDir, OutputStream &outputStream,
+                     const char *relativeToDir,
+                     OutputStream &outputStream, OutputStream &errorStream,
                      svn_depth_t depth, StringArray &changelists,
                      bool ignoreAncestry, bool noDiffDelete, bool force,
                      bool showCopiesAsAdds, bool ignoreProps, bool propsOnly,
                      DiffOptions const& options)
 {
     diff(target, startRevision, NULL, endRevision, &pegRevision,
-         relativeToDir, outputStream, depth, changelists,
+         relativeToDir, outputStream, errorStream, depth, changelists,
          ignoreAncestry, noDiffDelete, force, showCopiesAsAdds,
          ignoreProps, propsOnly, options);
 }

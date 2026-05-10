@@ -951,6 +951,7 @@ public interface ISVNClient
      * @param revision2     second revision
      * @param relativeToDir index path is relative to this path
      * @param outStream     the stream to which difference are written
+     * @param errStream     the stream to which error messages are written
      * @param depth         how deep to traverse into subdirectories
      * @param ignoreAncestry ignore if files are not related
      * @param noDiffDeleted no output on deleted files
@@ -960,6 +961,23 @@ public interface ISVNClient
      * @param ignoreProps   don't show property diffs
      * @param propsOnly     show property changes only
      * @param options       additional options for controlling the output
+     * @throws ClientException
+     * @since 1.15
+     * @see svn_client_diff7
+     */
+    void diff(String target1, Revision revision1, String target2,
+              Revision revision2, String relativeToDir,
+              OutputStream outStream, OutputStream errStream,
+              Depth depth, Collection<String> changelists,
+              boolean ignoreAncestry, boolean noDiffDeleted, boolean force,
+              boolean copiesAsAdds, boolean ignoreProps, boolean propsOnly,
+              DiffOptions options)
+            throws ClientException;
+
+    /**
+     * Display the differences between two paths
+     * <p>
+     * Behaves exactly like the 1.15 version except that it discards stderr.
      * @throws ClientException
      * @since 1.8
      */
@@ -979,6 +997,7 @@ public interface ISVNClient
      * @param revision2     second revision
      * @param relativeToDir index path is relative to this path
      * @param outFileName   file name where difference are written
+     * @param errFileName   file name where error messages are written
      * @param depth         how deep to traverse into subdirectories
      * @param ignoreAncestry ignore if files are not related
      * @param noDiffDeleted no output on deleted files
@@ -988,6 +1007,23 @@ public interface ISVNClient
      * @param ignoreProps   don't show property diffs
      * @param propsOnly     show property changes only
      * @param options       additional options for controlling the output
+     * @throws ClientException
+     * @since 1.15
+     * @see svn_client_diff7
+     */
+    void diff(String target1, Revision revision1, String target2,
+              Revision revision2, String relativeToDir,
+              String outFileName, String errFileName,
+              Depth depth, Collection<String> changelists,
+              boolean ignoreAncestry, boolean noDiffDeleted, boolean force,
+              boolean copiesAsAdds, boolean ignoreProps, boolean propsOnly,
+              DiffOptions options)
+            throws ClientException;
+
+    /**
+     * Display the differences between two paths
+     * <p>
+     * Behaves exactly like the 1.15 version except that it discards stderr.
      * @throws ClientException
      * @since 1.8
      */
@@ -1057,6 +1093,7 @@ public interface ISVNClient
      * @param endRevision   second Revision to compare
      * @param relativeToDir index path is relative to this path
      * @param outStream     the stream to which difference are written
+     * @param errStream     the stream to which error messages are written
      * @param depth         how deep to traverse into subdirectories
      * @param changelists  if non-null, filter paths using changelists
      * @param ignoreAncestry ignore if files are not related
@@ -1067,6 +1104,23 @@ public interface ISVNClient
      * @param ignoreProps   don't show property diffs
      * @param propsOnly     show property changes only
      * @param options       additional options for controlling the output
+     * @throws ClientException
+     * @since 1.15
+     * @see svn_client_diff_peg7
+     */
+    void diff(String target, Revision pegRevision, Revision startRevision,
+              Revision endRevision, String relativeToDir,
+              OutputStream outStream, OutputStream errStream,
+              Depth depth, Collection<String> changelists,
+              boolean ignoreAncestry, boolean noDiffDeleted, boolean force,
+              boolean copiesAsAdds, boolean ignoreProps, boolean propsOnly,
+              DiffOptions options)
+            throws ClientException;
+
+    /**
+     * Display the differences between two paths
+     * <p>
+     * Behaves exactly like the 1.15 version except that it discards stderr.
      * @throws ClientException
      * @since 1.8
      */
@@ -1086,6 +1140,7 @@ public interface ISVNClient
      * @param endRevision   second Revision to compare
      * @param relativeToDir index path is relative to this path
      * @param outFileName   file name where difference are written
+     * @param errFileName   file name where error messages are written
      * @param depth         how deep to traverse into subdirectories
      * @param changelists  if non-null, filter paths using changelists
      * @param ignoreAncestry ignore if files are not related
@@ -1096,6 +1151,23 @@ public interface ISVNClient
      * @param ignoreProps   don't show property diffs
      * @param propsOnly     show property changes only
      * @param options       additional options for controlling the output
+     * @throws ClientException
+     * @since 1.15
+     * @see svn_client_diff_peg7
+     */
+    void diff(String target, Revision pegRevision, Revision startRevision,
+              Revision endRevision, String relativeToDir,
+              String outFileName, String errFileName,
+              Depth depth, Collection<String> changelists,
+              boolean ignoreAncestry, boolean noDiffDeleted, boolean force,
+              boolean copiesAsAdds, boolean ignoreProps, boolean propsOnly,
+              DiffOptions options)
+            throws ClientException;
+
+    /**
+     * Display the differences between two paths
+     * <p>
+     * Behaves exactly like the 1.15 version except that it discards stderr.
      * @throws ClientException
      * @since 1.8
      */

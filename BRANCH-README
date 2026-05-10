@@ -4,7 +4,6 @@
 This is a temporary working branch to update JavaHL for 1.15.0.
 
 TODO:
-  * Update SVNClient.diff to capture stderr.
   * Fix Java warnings where possible without breaking the JRE ABI
 
 DONE:
@@ -23,3 +22,4 @@ DONE:
   * Use updated JavaHL APIs (in tests):
     - SVNClient.checkout
     - SVNClient.list, .callback.ListCallback
+  * Update SVNClient.diff to capture stderr.

@@ -513,42 +513,87 @@ public class SVNClient implements ISVNClient
                         discoverChangedPaths, depth, revProps, callback);
     }
 
-    public void diff(String target1, Revision revision1, String target2,
-                     Revision revision2, String relativeToDir,
-                     String outFileName, Depth depth,
-                     Collection<String> changelists,
+    // svn_client_diff7
+
+    @Override
+    public void diff(String target1, Revision revision1,
+                     String target2, Revision revision2,
+                     String relativeToDir,
+                     String outFileName,
+                     Depth depth, Collection<String> changelists,
                      boolean ignoreAncestry, boolean noDiffDeleted,
                      boolean force, boolean copiesAsAdds)
             throws ClientException
     {
-        try {
-            OutputStream stream = new FileOutputStream(outFileName);
-            diff(target1, revision1, target2, revision2, relativeToDir,
-                 stream, depth, changelists, ignoreAncestry, noDiffDeleted,
-                 force, copiesAsAdds, false, false, null);
-        } catch (FileNotFoundException ex) {
-            throw ClientException.fromException(ex);
-        }
+        diff(target1, revision1, target2, revision2,
+             relativeToDir, outFileName, /*errFileName*/ null,
+             depth, changelists, ignoreAncestry, noDiffDeleted,
+             force, copiesAsAdds, /*ignoreProps*/ false, /*propsOnly*/ false,
+             /*options*/ null);
     }
 
-    public void diff(String target1, Revision revision1, String target2,
-                     Revision revision2, String relativeToDir,
-                     OutputStream stream, Depth depth,
-                     Collection<String> changelists,
+    @Override
+    public void diff(String target1, Revision revision1,
+                     String target2, Revision revision2,
+                     String relativeToDir,
+                     OutputStream outStream,
+                     Depth depth, Collection<String> changelists,
                      boolean ignoreAncestry, boolean noDiffDeleted,
                      boolean force, boolean copiesAsAdds,
                      boolean ignoreProps, boolean propsOnly)
             throws ClientException
     {
-        diff(target1, revision1, target2, revision2, relativeToDir,
-             stream, depth, changelists, ignoreAncestry, noDiffDeleted,
-             force, copiesAsAdds, ignoreProps, propsOnly, null);
+        diff(target1, revision1, target2, revision2,
+             relativeToDir, outStream, /*errStream*/ null,
+             depth, changelists, ignoreAncestry, noDiffDeleted,
+             force, copiesAsAdds, ignoreProps, propsOnly,
+             /*options*/ null);
     }
 
-    public void diff(String target1, Revision revision1, String target2,
-                     Revision revision2, String relativeToDir,
-                     String outFileName, Depth depth,
-                     Collection<String> changelists,
+    @Override
+    public void diff(String target1, Revision revision1,
+                     String target2, Revision revision2,
+                     String relativeToDir,
+                     String outFileName,
+                     Depth depth, Collection<String> changelists,
+                     boolean ignoreAncestry, boolean noDiffDeleted,
+                     boolean force, boolean copiesAsAdds,
+                     boolean ignoreProps, boolean propsOnly,
+                     DiffOptions options)
+            throws ClientException
+    {
+        diff(target1, revision1, target2, revision2,
+             relativeToDir, outFileName, /*errFileName*/ null,
+             depth, changelists, ignoreAncestry, noDiffDeleted,
+             force, copiesAsAdds, ignoreProps, propsOnly,
+             options);
+    }
+
+    @Override
+    public void diff(String target1, Revision revision1,
+                     String target2, Revision revision2,
+                     String relativeToDir,
+                     OutputStream outStream,
+                     Depth depth, Collection<String> changelists,
+                     boolean ignoreAncestry, boolean noDiffDeleted,
+                     boolean force, boolean copiesAsAdds,
+                     boolean ignoreProps, boolean propsOnly,
+                     DiffOptions options)
+            throws ClientException
+    {
+        diff(target1, revision1, target2, revision2,
+             relativeToDir, outStream, /*errStream*/ null,
+             depth, changelists, ignoreAncestry, noDiffDeleted,
+             force, copiesAsAdds, ignoreProps, propsOnly,
+             options);
+    }
+
+    @Override
+    public void diff(String target1, Revision revision1,
+                     String target2, Revision revision2,
+                     String relativeToDir,
+                     String outFileName, String errFileName,
+                     Depth depth, Collection<String> changelists,
                      boolean ignoreAncestry, boolean noDiffDeleted,
                      boolean force, boolean copiesAsAdds,
                      boolean ignoreProps, boolean propsOnly,
@@ -556,62 +601,112 @@ public class SVNClient implements ISVNClient
             throws ClientException
     {
         try {
-            OutputStream stream = new FileOutputStream(outFileName);
-            diff(target1, revision1, target2, revision2, relativeToDir,
-                 stream, depth, changelists, ignoreAncestry, noDiffDeleted,
-                 force, copiesAsAdds, ignoreProps, propsOnly, options);
+            OutputStream outStream = new FileOutputStream(outFileName);
+            OutputStream errStream = errFileName == null
+                ? null : new FileOutputStream(errFileName);
+
+            diff(target1, revision1, target2, revision2,
+                 relativeToDir, outStream, errStream,
+                 depth, changelists, ignoreAncestry, noDiffDeleted,
+                 force, copiesAsAdds, ignoreProps, propsOnly,
+                 options);
         } catch (FileNotFoundException ex) {
             throw ClientException.fromException(ex);
         }
     }
 
-    public native void diff(String target1, Revision revision1, String target2,
-                            Revision revision2, String relativeToDir,
-                            OutputStream stream, Depth depth,
-                            Collection<String> changelists,
+    @Override
+    public native void diff(String target1, Revision revision1,
+                            String target2, Revision revision2,
+                            String relativeToDir,
+                            OutputStream outStream, OutputStream errStream,
+                            Depth depth, Collection<String> changelists,
                             boolean ignoreAncestry, boolean noDiffDeleted,
                             boolean force, boolean copiesAsAdds,
                             boolean ignoreProps, boolean propsOnly,
                             DiffOptions options)
             throws ClientException;
 
+    // svn_client_diff_peg7
 
-
+    @Override
     public void diff(String target, Revision pegRevision,
                      Revision startRevision, Revision endRevision,
-                     String relativeToDir, String outFileName,
+                     String relativeToDir,
+                     String outFileName,
                      Depth depth, Collection<String> changelists,
                      boolean ignoreAncestry, boolean noDiffDeleted,
                      boolean force, boolean copiesAsAdds)
             throws ClientException
     {
-        try {
-            OutputStream stream = new FileOutputStream(outFileName);
-            diff(target, pegRevision, startRevision, endRevision,
-                 relativeToDir, stream, depth, changelists, ignoreAncestry,
-                 noDiffDeleted, force, copiesAsAdds, false, false, null);
-        } catch (FileNotFoundException ex) {
-            throw ClientException.fromException(ex);
-        }
+        diff(target, pegRevision, startRevision, endRevision,
+             relativeToDir, outFileName, /*errFileName*/ null,
+             depth, changelists, ignoreAncestry, noDiffDeleted,
+             force, copiesAsAdds, /*ignoreProps*/ false, /*propsOnly*/ false,
+             /*options*/ null);
     }
 
+    @Override
     public void diff(String target, Revision pegRevision,
                      Revision startRevision, Revision endRevision,
-                     String relativeToDir, OutputStream stream,
+                     String relativeToDir,
+                     OutputStream outStream,
                      Depth depth, Collection<String> changelists,
                      boolean ignoreAncestry, boolean noDiffDeleted,
                      boolean force, boolean copiesAsAdds,
                      boolean ignoreProps, boolean propsOnly)
             throws ClientException
     {
-        diff(target, pegRevision, startRevision, endRevision, relativeToDir,
-             stream, depth, changelists, ignoreAncestry, noDiffDeleted,
-             force, copiesAsAdds, ignoreProps, propsOnly, null);
+        diff(target, pegRevision, startRevision, endRevision,
+             relativeToDir, outStream, /*errStream*/ null,
+             depth, changelists, ignoreAncestry, noDiffDeleted,
+             force, copiesAsAdds, ignoreProps, propsOnly,
+             /*options*/ null);
     }
 
+    @Override
     public void diff(String target, Revision pegRevision,
                      Revision startRevision, Revision endRevision,
-                     String relativeToDir, String outFileName,
+                     String relativeToDir,
+                     String outFileName,
+                     Depth depth, Collection<String> changelists,
+                     boolean ignoreAncestry, boolean noDiffDeleted,
+                     boolean force, boolean copiesAsAdds,
+                     boolean ignoreProps, boolean propsOnly,
+                     DiffOptions options)
+            throws ClientException
+    {
+        diff(target, pegRevision, startRevision, endRevision,
+             relativeToDir, outFileName, /*errFileName*/ null,
+             depth, changelists, ignoreAncestry, noDiffDeleted,
+             force, copiesAsAdds, ignoreProps, propsOnly,
+             options);
+    }
+
+    @Override
+    public void diff(String target, Revision pegRevision,
+                     Revision startRevision, Revision endRevision,
+                     String relativeToDir,
+                     OutputStream outStream,
+                     Depth depth, Collection<String> changelists,
+                     boolean ignoreAncestry, boolean noDiffDeleted,
+                     boolean force, boolean copiesAsAdds,
+                     boolean ignoreProps, boolean propsOnly,
+                     DiffOptions options)
+            throws ClientException
+    {
+        diff(target, pegRevision, startRevision, endRevision,
+             relativeToDir, outStream, /*errStream*/ null,
+             depth, changelists, ignoreAncestry, noDiffDeleted,
+             force, copiesAsAdds, ignoreProps, propsOnly,
+             options);
+    }
+
+    @Override
+    public void diff(String target, Revision pegRevision,
+                     Revision startRevision, Revision endRevision,
+                     String relativeToDir,
+                     String outFileName, String errFileName,
                      Depth depth, Collection<String> changelists,
                      boolean ignoreAncestry, boolean noDiffDeleted,
                      boolean force, boolean copiesAsAdds,
@@ -620,18 +715,25 @@ public class SVNClient implements ISVNClient
             throws ClientException
     {
         try {
-            OutputStream stream = new FileOutputStream(outFileName);
-            diff(target, pegRevision, startRevision, endRevision, relativeToDir,
-                 stream, depth, changelists, ignoreAncestry, noDiffDeleted,
-                 force, copiesAsAdds, ignoreProps, propsOnly, options);
+            OutputStream outStream = new FileOutputStream(outFileName);
+            OutputStream errStream = errFileName == null
+                ? null : new FileOutputStream(errFileName);
+
+            diff(target, pegRevision, startRevision, endRevision,
+                 relativeToDir, outStream, errStream,
+                 depth, changelists, ignoreAncestry, noDiffDeleted,
+                 force, copiesAsAdds, ignoreProps, propsOnly,
+                 options);
         } catch (FileNotFoundException ex) {
             throw ClientException.fromException(ex);
         }
     }
 
+    @Override
     public native void diff(String target, Revision pegRevision,
                             Revision startRevision, Revision endRevision,
-                            String relativeToDir, OutputStream stream,
+                            String relativeToDir,
+                            OutputStream outStream, OutputStream errStream,
                             Depth depth, Collection<String> changelists,
                             boolean ignoreAncestry, boolean noDiffDeleted,
                             boolean force, boolean copiesAsAdds,
