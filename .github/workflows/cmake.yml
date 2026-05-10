@@ -115,7 +115,7 @@ jobs:
 
       - name: Restore vcpkg archives (Windows, vcpkg)
         if: runner.os == 'Windows'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: vcpkg-archives
           key: vcpkg/${{ runner.os }}/${{ matrix.vcpkg_triplet }}/${{ steps.vcpkg-sha.outputs.sha }}
@@ -136,7 +136,7 @@ jobs:
 
       - name: Save vcpkg archives (Windows, vcpkg)
         if: runner.os == 'Windows'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: vcpkg-archives
           key: vcpkg/${{ runner.os }}/${{ matrix.vcpkg_triplet }}/${{ steps.vcpkg-sha.outputs.sha }}
