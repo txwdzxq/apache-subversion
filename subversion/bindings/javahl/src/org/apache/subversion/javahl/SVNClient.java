@@ -204,7 +204,15 @@ public class SVNClient implements ISVNClient
                                    long limit, LogMessageCallback callback)
             throws ClientException;
 
-    @Deprecated
+    @Override
+    public native long checkout(String moduleName, String destPath,
+                                Revision revision, Revision pegRevision,
+                                Depth depth, boolean ignoreExternals,
+                                boolean allowUnverObstructions,
+                                Version wcFormatVersion,
+                                Tristate storePristines)
+        throws ClientException;
+
     @Override
     public long checkout(String moduleName, String destPath,
                                 Revision revision, Revision pegRevision,
@@ -217,15 +225,6 @@ public class SVNClient implements ISVNClient
                         ignoreExternals, allowUnverObstructions,
                         null, Tristate.Unknown);
     }
-
-    @Override
-    public native long checkout(String moduleName, String destPath,
-                                Revision revision, Revision pegRevision,
-                                Depth depth, boolean ignoreExternals,
-                                boolean allowUnverObstructions,
-                                Version wcFormatVersion,
-                                Tristate storePristines)
-        throws ClientException;
 
     public void notification2(ClientNotifyCallback notify)
     {
@@ -251,8 +250,20 @@ public class SVNClient implements ISVNClient
     public native void revert(Set<String> paths, Depth depth,
                               Collection<String> changelists,
                               boolean clearChangelists,
-                              boolean metadataOnly)
+                              boolean metadataOnly,
+                              boolean addedKeepLocal)
             throws ClientException;
+
+
+    public void revert(Set<String> paths, Depth depth,
+                       Collection<String> changelists,
+                       boolean clearChangelists,
+                       boolean metadataOnly)
+            throws ClientException
+    {
+        revert(paths, depth, changelists, clearChangelists,
+               metadataOnly, true);
+    }
 
     public void revert(Set<String> paths, Depth depth,
                        Collection<String> changelists)
@@ -789,16 +800,15 @@ public class SVNClient implements ISVNClient
                                         boolean lastChanged)
             throws ClientException;
 
-    @Deprecated
+    @Override
+    public native Version upgrade(String path, Version targetWcVersion)
+            throws ClientException;
+
     @Override
     public void upgrade(String path) throws ClientException
     {
         upgrade(path, (Version) null);
     }
-
-    @Override
-    public native Version upgrade(String path, Version targetWcVersion)
-            throws ClientException;
 
     /**
      * Enable logging in the JNI-code

@@ -237,19 +237,6 @@ public interface ISVNClient
 
     /**
      * Executes a revision checkout.
-     * <p>
-     * Behaves like the 1.15 version with <code>wcFormatVersion = null</code>
-     * and <code>storePristines = Tristate.Unknown</code>
-     * @deprecated
-     */
-    @Deprecated
-    long checkout(String moduleName, String destPath, Revision revision,
-                  Revision pegRevision, Depth depth,
-                  boolean ignoreExternals,
-                  boolean allowUnverObstructions) throws ClientException;
-
-    /**
-     * Executes a revision checkout.
      * @param moduleName name of the module to checkout.
      * @param destPath destination directory for checkout.
      * @param revision the revision to checkout.
@@ -260,6 +247,7 @@ public interface ISVNClient
      * @param wcFormatVersion desired WC compatibiliy version or NULL default
      * @param storePristines whether to store pristine files
      * @throws ClientException
+     * @since 1.15
      */
     long checkout(String moduleName, String destPath, Revision revision,
                   Revision pegRevision, Depth depth,
@@ -267,6 +255,17 @@ public interface ISVNClient
                   boolean allowUnverObstructions,
                   Version wcFormatVersion,
                   Tristate storePristines) throws ClientException;
+
+    /**
+     * Executes a revision checkout.
+     * <p>
+     * Behaves like the 1.15 version with <code>wcFormatVersion = null</code>
+     * and <code>storePristines = Tristate.Unknown</code>
+     */
+    long checkout(String moduleName, String destPath, Revision revision,
+                  Revision pegRevision, Depth depth,
+                  boolean ignoreExternals,
+                  boolean allowUnverObstructions) throws ClientException;
 
     /**
      * Sets the notification callback used to send processing information back
@@ -315,7 +314,22 @@ public interface ISVNClient
      *                         from the reverted paths.
      * @param metadataOnly Revert just the metadata (including conflict data)
      *                     and not the working files/dirs
+     * @param addedKeepLocal With metadataOnly, keep locally added files.
      * @throws ClientException
+     * @since 1.15
+     */
+    void revert(Set<String> paths, Depth depth,
+                Collection<String> changelists,
+                boolean clearChangelists,
+                boolean metadataOnly,
+                boolean addedKeepLocal)
+            throws ClientException;
+
+    /**
+     * Reverts set of files or directories to a pristine state.
+     * <p>
+     * Behaves like the 1.15 version with <code>addedKeepLocal</code>
+     * set to <code>true</code>;
      * @since 1.9
      */
     void revert(Set<String> paths, Depth depth,
@@ -1619,16 +1633,6 @@ public interface ISVNClient
 
     /**
      * Recursively upgrade a working copy to a new metadata storage format.
-     * <p>
-     * Behaves like the 1.15 version with <code>targetWcVersion = null</code>.
-     * @deprecated
-     */
-    @Deprecated
-    void upgrade(String path) throws ClientException;
-
-
-    /**
-     * Recursively upgrade a working copy to a new metadata storage format.
      * @param path             the working copy path
      * @param targetWcVersion  the working copy version to upgrade to
      * @throws ClientException
@@ -1636,6 +1640,14 @@ public interface ISVNClient
      */
     Version upgrade(String path, Version targetWcVersion)
             throws ClientException;
+
+    /**
+     * Recursively upgrade a working copy to a new metadata storage format.
+     * <p>
+     * Behaves like the 1.15 version with <code>targetWcVersion = null</code>.
+     */
+    void upgrade(String path) throws ClientException;
+
 
     /**
      * Apply a unidiff patch.

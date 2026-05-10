@@ -463,7 +463,8 @@ Java_org_apache_subversion_javahl_SVNClient_remove
 JNIEXPORT void JNICALL
 Java_org_apache_subversion_javahl_SVNClient_revert
 (JNIEnv *env, jobject jthis, jobject jpaths, jobject jdepth,
- jobject jchangelists, jboolean jclear_changelists, jboolean jmetadata_only)
+ jobject jchangelists, jboolean jclear_changelists,
+ jboolean jmetadata_only, jboolean jadded_keep_local)
 {
   JNIEntry(SVNClient, revert);
   SVNClient *cl = SVNClient::getCppObject(jthis);
@@ -483,7 +484,8 @@ Java_org_apache_subversion_javahl_SVNClient_revert
     return;
 
   cl->revert(paths, EnumMapper::toDepth(jdepth),
-             changelists, bool(jclear_changelists), bool(jmetadata_only));
+             changelists, bool(jclear_changelists),
+             bool(jmetadata_only), bool(jadded_keep_local));
 }
 
 JNIEXPORT void JNICALL
