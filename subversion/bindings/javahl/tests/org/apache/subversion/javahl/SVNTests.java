@@ -694,8 +694,8 @@ class SVNTests extends TestCase
 
             if (createWC)
             {
-              workingCopy = createInitialWorkingCopy(repository,
-                                                     oldestVersion);
+                workingCopy = createInitialWorkingCopy(repository,
+                                                       oldestVersion);
             }
         }
 
