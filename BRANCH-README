@@ -10,14 +10,18 @@ TODO:
     - svn_client_diff_peg6 -> svn_client_diff_peg7
     - svn_client_revert3 -> svn_client_revert4
   * Add Java wrappers for some new functionality
+  * Update use of deprecated JavaHL APIs
   * Fix Java warnings where possible without breaking the JRE ABI
 
 DONE:
   * Update use of deprecated Subversion APIs:
     - svn_client_checkout3 -> svn_client_checkout4
   * Add Java wrappers for some new functionality
-    + .types.VersionNumber extends Version (package scope)
-    + .types.Version::getInstance(int major, int minor, int patch)
-    + SVNClient.defaultWcVersion()
-    + SVNClient.oldestWcVersion()
-    + SVNClient.latestWcVersion()
+    - .types.VersionNumber extends Version (package scope)
+    - .types.Version::getInstance(int major, int minor, int patch)
+    - SVNClient.defaultWcVersion()
+    - SVNClient.oldestWcVersion()
+    - SVNClient.latestWcVersion()
+  * Update use of deprecated JavaHL APIs:
+    - SVNClient.checkout
+    - SVNClient.list, .callback.ListCallback

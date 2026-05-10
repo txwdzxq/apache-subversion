@@ -5080,11 +5080,13 @@ public class BasicTests extends SVNTests
                                          int direntFields, boolean fetchLocks)
         throws ClientException
     {
-        class MyListCallback implements ListCallback
+        class MyListItemCallback implements ListItemCallback
         {
             private List<DirEntry> dirents = new ArrayList<DirEntry>();
 
-            public void doEntry(DirEntry dirent, Lock lock)
+            public void doEntry(DirEntry dirent, Lock lock,
+                                String externalParentURL,
+                                String externalTarget)
             {
                 // All of this is meant to retain backward compatibility with
                 // the old svn_client_ls-style API.  For further information
@@ -5118,9 +5120,9 @@ public class BasicTests extends SVNTests
             }
         }
 
-        MyListCallback callback = new MyListCallback();
-        client.list(url, revision, pegRevision, depth, direntFields,
-                    fetchLocks, callback);
+        MyListItemCallback callback = new MyListItemCallback();
+        client.list(url, revision, pegRevision, null, depth, direntFields,
+                    fetchLocks, false, callback);
         return callback.getDirEntryArray();
     }
 
