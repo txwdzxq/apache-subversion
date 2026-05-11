@@ -298,6 +298,80 @@ if (NOT EXISTS "${CMAKE_SOURCE_DIR}/build/cmake/targets.cmake")
   )
 endif()
 
+### Intl
+
+if(SVN_ENABLE_NLS)
+  # Note: when installing these dependecies with vcpkg, you will need to
+  # install 'gettext' package with 'tools' feature. Use the following command
+  # for this: `./vcpkg install gettext[tools]`. This package contains both,
+  # Gettext and Intl dependecies.
+  find_package(Gettext REQUIRED)
+  find_package(Intl REQUIRED)
+
+  # If using CMake of version < 3.20, FindIntl would not define IMPORTED target.
+  # https://cmake.org/cmake/help/latest/module/FindIntl.html
+  if(NOT TARGET Intl::Intl)
+    add_library(Intl::Intl INTERFACE IMPORTED)
+    include_directories("${Intl_INCLUDE_DIRS}")
+    set_target_properties(Intl::Intl PROPERTIES
+      INTERFACE_LINK_LIBRARIES "${Intl_LIBRARIES}"
+    )
+  endif()
+
+  add_library(external-intl ALIAS Intl::Intl)
+
+  add_private_config_definition(
+    "Define to 1 if translation of program messages to the user's native language is requested."
+    "ENABLE_NLS" "1"
+  )
+
+  if (NOT WIN32)
+    add_private_config_definition(
+      "Defined to be the path to the installed locale dirs"
+      "SVN_LOCALE_DIR" "\"${CMAKE_INSTALL_PREFIX}/share/locale\""
+    )
+  endif()
+
+  add_custom_target(locale ALL)
+
+  file(GLOB SVN_PO_FILES "subversion/po/*.po")
+
+  foreach(po_file ${SVN_PO_FILES})
+    get_filename_component(lang ${po_file} NAME_WLE)
+    set(mo_file "${CMAKE_BINARY_DIR}/${lang}.mo")
+
+    add_custom_command(
+      DEPENDS
+        "${po_file}"
+      OUTPUT
+        "${mo_file}"
+      COMMAND
+        "${GETTEXT_MSGFMT_EXECUTABLE}" -c -o ${mo_file} ${po_file}
+    )
+
+    target_sources(locale PRIVATE ${mo_file})
+
+    install(
+      FILES "${mo_file}"
+      DESTINATION "share/locale/${lang}/LC_MESSAGES"
+      RENAME "subversion.mo"
+    )
+  endforeach()
+else()
+  # Declare empty target for Intl if we don't use it.
+  add_library(external-intl INTERFACE)
+endif()
+
+# Link all targets with Intl library. The 'external-intl' target is always,
+# even if we don't use NLS functionality.
+#
+# Following the CMake documentation [1], the link_libraries affects only on
+# the targets declared later, so it should be here.
+#
+# [1] https://cmake.org/cmake/help/latest/command/link_libraries.html
+#     -- "Link libraries to all targets added later."
+link_libraries(external-intl)
+
 ### Httpd
 
 if(SVN_ENABLE_APACHE_MODULES)
@@ -787,78 +861,6 @@ if (MSVC)
     "_CRT_SECURE_NO_WARNINGS"
   )
 endif()
-
-if(SVN_ENABLE_NLS)
-  # Note: when installing these dependecies with vcpkg, you will need to
-  # install 'gettext' package with 'tools' feature. Use the following command
-  # for this: `./vcpkg install gettext[tools]`. This package contains both,
-  # Gettext and Intl dependecies.
-  find_package(Gettext REQUIRED)
-  find_package(Intl REQUIRED)
-
-  # If using CMake of version < 3.20, FindIntl would not define IMPORTED target.
-  # https://cmake.org/cmake/help/latest/module/FindIntl.html
-  if(NOT TARGET Intl::Intl)
-    add_library(Intl::Intl INTERFACE IMPORTED)
-    set_target_properties(Intl::Intl PROPERTIES
-      INTERFACE_INCLUDE_DIRECTORIES "${Intl_INCLUDE_DIRS}"
-      INTERFACE_LINK_LIBRARIES "${Intl_LIBRARIES}"
-    )
-  endif()
-
-  add_library(external-intl ALIAS Intl::Intl)
-
-  add_private_config_definition(
-    "Define to 1 if translation of program messages to the user's native language is requested."
-    "ENABLE_NLS" "1"
-  )
-
-  if (NOT WIN32)
-    add_private_config_definition(
-      "Defined to be the path to the installed locale dirs"
-      "SVN_LOCALE_DIR" "\"${CMAKE_INSTALL_PREFIX}/share/locale\""
-    )
-  endif()
-
-  add_custom_target(locale ALL)
-
-  file(GLOB SVN_PO_FILES "subversion/po/*.po")
-
-  foreach(po_file ${SVN_PO_FILES})
-    get_filename_component(lang ${po_file} NAME_WLE)
-    set(mo_file "${CMAKE_BINARY_DIR}/${lang}.mo")
-
-    add_custom_command(
-      DEPENDS
-        "${po_file}"
-      OUTPUT
-        "${mo_file}"
-      COMMAND
-        "${GETTEXT_MSGFMT_EXECUTABLE}" -c -o ${mo_file} ${po_file}
-    )
-
-    target_sources(locale PRIVATE ${mo_file})
-
-    install(
-      FILES "${mo_file}"
-      DESTINATION "share/locale/${lang}/LC_MESSAGES"
-      RENAME "subversion.mo"
-    )
-  endforeach()
-else()
-  # Declare empty target for Intl if we don't use it.
-  add_library(external-intl INTERFACE)
-endif()
-
-# Link all targets with Intl library. The 'external-intl' target is always,
-# even if we don't use NLS functionality.
-#
-# Following the CMake documentation [1], the link_libraries affects only on
-# the targets declared later, so it should be here.
-#
-# [1] https://cmake.org/cmake/help/latest/command/link_libraries.html
-#     -- "Link libraries to all targets added later."
-link_libraries(external-intl)
 
 # Build shared libraries and theirs implibs with 'lib' prefix, for example
 # libsvn_subr-1.[lib|a] and libsvn_subr-1.[dll|so]
