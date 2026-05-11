@@ -43,7 +43,7 @@ jobs:
           subversion
           
       - name: Checkout backport branch
-        run: svn co https://svn.apache.org/repos/asf/subversion/branches/1.14.x branch-wc
+        run: svn co https://svn.apache.org/repos/asf/subversion/branches/${{ github.ref_name }} branch-wc
 
       - name: Detect conflicting backports
         run: cd branch-wc && ./tools/dist/detect-conflicting-backports.py
