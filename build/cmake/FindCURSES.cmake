@@ -39,8 +39,8 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
   CURSES
   REQUIRED_VARS
-    CURSES_INCLUDE_DIR
     CURSES_LIBRARY
+    CURSES_INCLUDE_DIR
 )
 
 if (CURSES_FOUND)
