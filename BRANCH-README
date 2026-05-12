@@ -20,3 +20,4 @@ DONE:
     - SVNClient.checkout
     - SVNClient.list, .callback.ListCallback
   * Update SVNClient.diff to capture stderr.
+  * Add working copy metadata to SVNClient.info() results.

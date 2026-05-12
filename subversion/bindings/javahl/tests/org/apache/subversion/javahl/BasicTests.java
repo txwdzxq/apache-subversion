@@ -2607,6 +2607,13 @@ public class BasicTests extends SVNTests
                      Info.ScheduleKind.normal, info.getSchedule());
         assertEquals("wrong node kind from info", NodeKind.file,
                      info.getKind());
+        assertTrue("unexpected store-pristine", info.getStorePristine());
+
+        Version current = info.getWorkingCopyVersion();
+        assertNotNull("WC version not available", current);
+        Version expected = client.defaultWcVersion();
+        assertTrue("unexpected WC version", current.isAtLeast(expected));
+        assertTrue("unexpected WC version", expected.isAtLeast(current));
     }
 
     /**
