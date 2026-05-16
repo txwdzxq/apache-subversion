@@ -37,6 +37,7 @@
 #include <curses.h>
 
 #include "svn_private_config.h"
+#include "svn_time.h"
 #include "svnbrowse.h"
 
 /* Option codes and descriptions for the command line client.
@@ -263,22 +264,9 @@ view_on_event(svn_browse__view_t *view, int ch, apr_pool_t *scratch_pool)
    * 3. The rest of keys remain as their equivalents on the current layout.
    * 4. If shift is held, they just become uppercased.
    */
+
   switch (ch)
     {
-      case KEY_UP:
-      case 'k':
-      case CTRL('p'):
-        SVN_ERR(svn_browse__model_move_selection(view->model, -1));
-        break;
-      case KEY_DOWN:
-      case 'j':
-      case CTRL('n'):
-        SVN_ERR(svn_browse__model_move_selection(view->model, 1));
-        break;
-      case '\n':
-      case '\r':
-        SVN_ERR(svn_browse__model_go_enter(view->model, scratch_pool));
-        break;
       case KEY_BACKSPACE:
       case '-':
       case 'u':
@@ -286,45 +274,72 @@ view_on_event(svn_browse__view_t *view, int ch, apr_pool_t *scratch_pool)
         view->model->current->scroller_offset =
             view->model->current->selection - scrollsize / 2;
         break;
-      case CTRL('e'):
-        view->model->current->scroller_offset += 1;
-        break;
-      case CTRL('y'):
-        view->model->current->scroller_offset -= 1;
-        break;
-      case CTRL('d'):
-        SVN_ERR(svn_browse__model_move_selection(view->model, scrollsize / 2));
-        break;
-      case CTRL('f'):
-      case KEY_NPAGE:
-        SVN_ERR(svn_browse__model_move_selection(view->model, scrollsize));
-        break;
-      case CTRL('u'):
-        SVN_ERR(svn_browse__model_move_selection(view->model, -scrollsize / 2));
-        break;
-      case CTRL('b'):
-      case KEY_PPAGE:
-        SVN_ERR(svn_browse__model_move_selection(view->model, -scrollsize));
-        break;
-      case 'g':
-      case KEY_HOME:
-        view->model->current->selection = 0;
-        break;
-      case 'G':
-      case KEY_END:
-        view->model->current->selection =
-            view->model->current->list->nelts - 1;
-        break;
-      case 'z':
-        view->model->current->scroller_offset =
-            view->model->current->selection - scrollsize / 2;
-        break;
       case 'q':
       case KEY_ESC:
         return svn_error_create(SVN_ERR_CANCELLED, NULL, NULL);
+      default:
+        break;
     }
 
-  SVN_ERR(svn_browse__model_scroll_in_view(view->model, scrollsize));
+  if (view->model->current->type == svn_browse__state_dir)
+    {
+      switch (ch)
+        {
+          case KEY_UP:
+          case 'k':
+          case CTRL('p'):
+            SVN_ERR(svn_browse__model_move_selection(view->model, -1));
+            break;
+          case KEY_DOWN:
+          case 'j':
+          case CTRL('n'):
+            SVN_ERR(svn_browse__model_move_selection(view->model, 1));
+            break;
+          case '\n':
+          case '\r':
+            SVN_ERR(svn_browse__model_go_enter(view->model, scratch_pool));
+            break;
+          case CTRL('e'):
+            view->model->current->scroller_offset += 1;
+            break;
+          case CTRL('y'):
+            view->model->current->scroller_offset -= 1;
+            break;
+          case CTRL('d'):
+            SVN_ERR(svn_browse__model_move_selection(view->model,
+                                                     scrollsize / 2));
+            break;
+          case CTRL('f'):
+          case KEY_NPAGE:
+            SVN_ERR(svn_browse__model_move_selection(view->model,
+                                                     scrollsize));
+            break;
+          case CTRL('u'):
+            SVN_ERR(svn_browse__model_move_selection(view->model,
+                                                     -scrollsize / 2));
+            break;
+          case CTRL('b'):
+          case KEY_PPAGE:
+            SVN_ERR(svn_browse__model_move_selection(view->model,
+                                                     -scrollsize));
+            break;
+          case 'g':
+          case KEY_HOME:
+            view->model->current->selection = 0;
+            break;
+          case 'G':
+          case KEY_END:
+            view->model->current->selection =
+                view->model->current->list->nelts - 1;
+            break;
+          case 'z':
+            view->model->current->scroller_offset =
+                view->model->current->selection - scrollsize / 2;
+            break;
+        }
+
+      SVN_ERR(svn_browse__model_scroll_in_view(view->model, scrollsize));
+    }
 
   return SVN_NO_ERROR;
 }
@@ -494,6 +509,15 @@ format_percentage_scroll(int scroll, int size, int height, apr_pool_t *pool)
     }
 }
 
+static int
+view_get_list_height(const svn_browse__state_t *state)
+{
+  if (state->type == svn_browse__state_dir)
+    return state->list->nelts;
+  else
+    return 0;
+}
+
 static void
 view_draw_footer(svn_browse__view_t *view, WINDOW *win,
                  apr_pool_t *scratch_pool)
@@ -508,25 +532,23 @@ view_draw_footer(svn_browse__view_t *view, WINDOW *win,
                         getmaxx(win) - 4 - strlen(brand) - 16,
                         scratch_pool));
   waddstr(win, brand);
+
   waddstr(win, leftpad(apr_psprintf(scratch_pool, "%d/%d",
-                                    state->selection + 1, state->list->nelts),
+                                    state->selection + 1,
+                                    view_get_list_height(state)),
                        8, scratch_pool));
   waddstr(win, leftpad(format_percentage_scroll(state->scroller_offset,
-                                                state->list->nelts,
+                                                view_get_list_height(state),
                                                 getmaxy(view->list),
                                                 scratch_pool),
                        8, scratch_pool));
   waddstr(win, "  ");
 }
 
-
 static void
-view_draw(svn_browse__view_t *view, apr_pool_t *pool)
+dir_draw(svn_browse__view_t *view, apr_pool_t *pool)
 {
   int i;
-
-  view_draw_header(view, view->header, pool);
-  view_draw_footer(view, view->footer, pool);
 
   for (i = 0; i < view->model->current->list->nelts; i++)
     {
@@ -537,6 +559,39 @@ view_draw(svn_browse__view_t *view, apr_pool_t *pool)
 
       if (0 <= y && y < LINES)
         view_draw_item(view->style, item, view->list, y + 1, selected, pool);
+    }
+}
+
+static void
+file_draw(svn_browse__view_t *view, apr_pool_t *pool)
+{
+  const svn_browse__state_t *state = view->model->current;
+
+  mvwprintw(view->list, 0, 0, " File: %s",
+            svn_relpath_basename(state->relpath, pool));
+
+  mvwprintw(view->list, 1, 0, " Last Changed Rev: %ld",
+            state->this_dirent->created_rev);
+  mvwprintw(view->list, 2, 0, " Last Changed Author: %s",
+            state->this_dirent->last_author);
+  mvwprintw(view->list, 3, 0, " Last Changed Date: %s",
+            svn_time_to_human_cstring(state->this_dirent->time, pool));
+}
+
+static void
+view_draw(svn_browse__view_t *view, apr_pool_t *pool)
+{
+  view_draw_header(view, view->header, pool);
+  view_draw_footer(view, view->footer, pool);
+
+  switch (view->model->current->type)
+    {
+      case svn_browse__state_dir:
+        dir_draw(view, pool);
+        break;
+      case svn_browse__state_file:
+        file_draw(view, pool);
+        break;
     }
 }
 

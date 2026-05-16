@@ -85,12 +85,12 @@ sort_item_comparison_func(const void *left, const void *right)
 }
 
 svn_error_t *
-svn_browse__state_create(svn_browse__state_t **state_p,
-                         svn_ra_session_t *session,
-                         const char *relpath,
-                         svn_revnum_t revision,
-                         apr_pool_t *result_pool,
-                         apr_pool_t *scratch_pool)
+state_from_dir(svn_browse__state_t **state_p,
+               svn_ra_session_t *session,
+               const char *relpath,
+               svn_revnum_t revision,
+               apr_pool_t *result_pool,
+               apr_pool_t *scratch_pool)
 {
   svn_browse__state_t *state = apr_pcalloc(result_pool, sizeof(*state));
   svn_revnum_t fetched_revnum;
@@ -100,6 +100,7 @@ svn_browse__state_create(svn_browse__state_t **state_p,
   SVN_ERR(svn_ra_get_dir2(session, &dirents, &fetched_revnum, NULL, relpath,
                           revision, SVN_DIRENT_ALL, scratch_pool));
 
+  state->type = svn_browse__state_dir;
   state->relpath = apr_pstrdup(result_pool, relpath);
   state->revision = fetched_revnum;
   state->selection = 0;
@@ -126,6 +127,51 @@ svn_browse__state_create(svn_browse__state_t **state_p,
 
   *state_p = state;
   return SVN_NO_ERROR;
+}
+
+svn_error_t *
+state_from_file(svn_browse__state_t **state_p,
+                svn_ra_session_t *session,
+                const char *relpath,
+                svn_revnum_t revision,
+                apr_pool_t *result_pool,
+                apr_pool_t *scratch_pool)
+{
+  svn_browse__state_t *state = apr_pcalloc(result_pool, sizeof(*state));
+  svn_revnum_t fetched_revnum;
+  apr_hash_index_t *hi;
+  svn_dirent_t *dirent;
+
+  SVN_ERR(svn_ra_stat(session, relpath, revision, &dirent, scratch_pool));
+
+  state->type = svn_browse__state_file;
+  state->relpath = apr_pstrdup(result_pool, relpath);
+  state->revision = fetched_revnum;
+  state->this_dirent = svn_dirent_dup(dirent, result_pool);
+  state->pool = result_pool;
+
+  *state_p = state;
+  return SVN_NO_ERROR;
+}
+
+svn_error_t *
+svn_browse__state_create(svn_browse__state_t **state_p,
+                         svn_ra_session_t *session,
+                         const char *relpath,
+                         svn_revnum_t revision,
+                         apr_pool_t *result_pool,
+                         apr_pool_t *scratch_pool)
+{
+  svn_error_t *err;
+
+  err = state_from_dir(state_p, session, relpath, revision, result_pool,
+                       scratch_pool);
+
+  if (err && err->apr_err == SVN_ERR_FS_NOT_DIRECTORY)
+    return svn_error_trace(state_from_file(state_p, session, relpath, revision,
+                                           result_pool, scratch_pool));
+  else
+    return svn_error_trace(err);
 }
 
 svn_error_t *

@@ -68,14 +68,25 @@ typedef struct svn_browse__item_t {
   const svn_dirent_t *dirent;
 } svn_browse__item_t;
 
+typedef enum svn_browse__state_type_e {
+  svn_browse__state_dir,
+  svn_browse__state_file,
+} svn_browse__state_type_e;
+
 /* a state of a single directory */
 typedef struct svn_browse__state_t {
+  svn_browse__state_type_e type;
+
   /* information about this node */
   const char *relpath;
   svn_revnum_t revision;
 
-  /* stores the list of nodes in this state; an array of svn_browse__item_t */
+  /* stores the list of nodes in this state; an array of svn_browse__item_t or
+   * NULL if 'type' is set to svn_browse__state_file */
   apr_array_header_t *list;
+
+  /* only available for files */
+  const svn_dirent_t *this_dirent;
 
   /* the index of hovered item */
   int selection;
