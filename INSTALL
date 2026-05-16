@@ -1208,7 +1208,7 @@ II.   INSTALLATION
           $ cmake -B out [build options]
           $ cmake --build out
 
-      Note: If you're using the tar-ball distribution, the first gen-make step
+      Note: If you're using the tarball distribution, the first gen-make step
       can be skipped.
 
       "out" in the commands above is the build directory used by CMake.
