@@ -1194,15 +1194,17 @@ II.   INSTALLATION
   F.  Building using CMake
       --------------------
 
-      Get the sources, either a release tarball or by checking out the
-      official repository. The CMake build system currently only exists in
-      /trunk and it will be included in the 1.15 release.
+      Get the sources, either from a release tarball or by checking out the
+      official repository.
 
       The process for building on Unix and Windows is the same.
 
           $ python gen-make.py -t cmake
           $ cmake -B out [build options]
           $ cmake --build out
+
+      Note: If you're using the tar-ball distribution, the first gen-make step
+      can be skipped.
 
       "out" in the commands above is the build directory used by CMake.
 
