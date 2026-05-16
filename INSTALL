@@ -1210,7 +1210,7 @@ II.   INSTALLATION
 
       Build options can be added, for example:
 
-          $ cmake -B out -DCMAKE_INSTALL_PREFIX=/usr/local/subversion -DSVN_ENABLE_RA_SERF=ON
+          $ cmake -B out -DCMAKE_INSTALL_PREFIX=/usr/local/subversion -DSVN_ENABLE_TESTS=ON
 
       Build options can be listed using:
 
