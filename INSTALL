@@ -848,6 +848,11 @@ II.   INSTALLATION
   E.  Building the Latest Source under Windows
       ----------------------------------------
 
+      Windows users may find it easier to build Subversion using CMake and
+      vcpkg (see section F below).
+
+      The following procedure does not use CMake or vcpkg.
+
   E.1 Prerequisites
 
       * Microsoft Visual Studio. Any recent (2005+) version containing the
