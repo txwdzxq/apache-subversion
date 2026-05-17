@@ -1048,7 +1048,8 @@ membuf_insert_ucs4(svn_membuf_t *buf, apr_size_t offset, apr_int32_t value)
   ((apr_int32_t*)buf->data)[offset] = value;
 }
 
-/* TODO: Use compiler intrinsics for byte swaps. */
+/* Modern compilers with -O2 optimise it out and replace these with special
+ * instructions (bswap or rev). */
 #define SWAP_SHORT(x)  ((((x) & 0xff) << 8) | (((x) >> 8) & 0xff))
 #define SWAP_LONG(x)   ((((x) & 0xff) << 24) | (((x) & 0xff00) << 8)    \
                         | (((x) >> 8) & 0xff00) | (((x) >> 24) & 0xff))
