@@ -42,27 +42,27 @@ jobs:
       matrix:
         include:
           - name: Windows, shared, x64, with tests
-            os: windows-latest
+            os: windows-2022
             build_shared: ON
             cmake_generator: Ninja
             vcpkg_triplet: x64-windows
             arch: x64
             run_tests: true
           - name: Windows, shared, x64, vs2022, with tests
-            os: windows-latest
+            os: windows-2022
             build_shared: ON
             cmake_generator: 'Visual Studio 17 2022'
             vcpkg_triplet: x64-windows
             arch: x64
             run_tests: true
           - name: Windows, shared, x86
-            os: windows-latest
+            os: windows-2022
             build_shared: ON
             cmake_generator: Ninja
             vcpkg_triplet: x86-windows
             arch: x86
           - name: Windows, static, x64, with tests
-            os: windows-latest
+            os: windows-2022
             build_shared: OFF
             cmake_generator: Ninja
             vcpkg_triplet: x64-windows-static-md
@@ -115,7 +115,7 @@ jobs:
 
       - name: Restore vcpkg archives (Windows, vcpkg)
         if: runner.os == 'Windows'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: vcpkg-archives
           key: vcpkg/${{ runner.os }}/${{ matrix.vcpkg_triplet }}/${{ steps.vcpkg-sha.outputs.sha }}
@@ -130,13 +130,13 @@ jobs:
             New-Item $env:VCPKG_DEFAULT_BINARY_CACHE -ItemType Directory | Out-Null
           }
           C:\vcpkg\vcpkg.exe install --triplet ${{ matrix.vcpkg_triplet }} `
-            apr apr-util serf expat zlib sqlite3
+            apr apr-util serf expat zlib sqlite3 gettext[tools] pdcurses
 
           "CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $env:GITHUB_ENV
 
       - name: Save vcpkg archives (Windows, vcpkg)
         if: runner.os == 'Windows'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: vcpkg-archives
           key: vcpkg/${{ runner.os }}/${{ matrix.vcpkg_triplet }}/${{ steps.vcpkg-sha.outputs.sha }}
@@ -154,14 +154,18 @@ jobs:
           libexpat1-dev
           zlib1g-dev
           libsqlite3-dev
+          apache2-dev
+          gettext
+          libncurses-dev
           ninja-build
           ${{ matrix.extra_packages }}
 
       - name: Install dependencies (Mac OS, homebrew)
         if: runner.os == 'macOS'
         run: |
-          $packages = @('apr', 'apr-util', 'expat', 'sqlite', 'apache-serf')
-          brew install ninja $packages
+          $packages = @('apr', 'apr-util', 'expat', 'sqlite', 'apache-serf',
+                        'gettext', 'ncurses')
+          brew install ninja apache2 $packages
           $PKG_CONFIG_PATH = `
             $packages | `
             % { "$(& brew --prefix $_)/lib/pkgconfig" } | `
@@ -180,10 +184,16 @@ jobs:
 
       - name: Configure CMake
         run: >
+          if ($env:RUNNER_OS -eq 'Windows') {
+            $env:PATH += ";${env:VCPKG_ROOT}\installed\${{ matrix.vcpkg_triplet }}\bin";
+          };
           cmake -B out
           -DBUILD_SHARED_LIBS=${{ matrix.build_shared }}
           -DSVN_ENABLE_TESTS=ON
           -DSVN_ENABLE_RA_SERF=ON
+          -DSVN_ENABLE_NLS=ON
+          -DSVN_ENABLE_APACHE_MODULES=${{ runner.os != 'Windows' && 'ON' || 'OFF' }}
+          -DSVN_ENABLE_TUI=ON
           -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/installdir
           -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_triplet }}
           -DSVN_TEST_CONFIGURE_FOR_PARALLEL=ON
