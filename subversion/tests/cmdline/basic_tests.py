@@ -3357,20 +3357,22 @@ def argv_with_best_fit_chars(sbox):
       yield chr(c), mbcs
 
   count = 0
-  # E721113: Conversion from UTF-16 failed: No mapping for the Unicode
-  # character exists in the target multi-byte code page.
-  expected_stderr = 'svn: E721113: '
+  # The argument is accepted as utf-8, but the output to the pipe is applied
+  # best-fit encoding conversion.
   for wc, mbcs in iter_bestfit_chars():
     count += 1
     logger.info('Code page %r - U+%04x -> 0x%s', codepage, ord(wc), mbcs.hex())
     if mbcs == b'"':
-      svntest.actions.run_and_verify_svn2(None, expected_stderr, 1, 'help',
+      expected_stderr = r'^"foo" "bar": unknown command'
+      svntest.actions.run_and_verify_svn2(None, expected_stderr, 0, 'help',
                                           'foo{0} {0}bar'.format(wc))
     elif mbcs == b'\\':
-      svntest.actions.run_and_verify_svn2(None, expected_stderr, 1, 'help',
+      expected_stderr = r'^"foo\\" \\"bar": unknown command'
+      svntest.actions.run_and_verify_svn2(None, expected_stderr, 0, 'help',
                                           'foo{0}" {0}"bar'.format(wc))
     elif mbcs == b' ':
-      svntest.actions.run_and_verify_svn2(None, expected_stderr, 1, 'help',
+      expected_stderr = r'^"foo bar": unknown command'
+      svntest.actions.run_and_verify_svn2(None, expected_stderr, 0, 'help',
                                           'foo{0}bar'.format(wc))
   if count == 0:
     raise svntest.Skip('No best fit characters in code page %r' % codepage)
