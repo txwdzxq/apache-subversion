@@ -68,6 +68,13 @@ jobs:
             vcpkg_triplet: x64-windows-static-md
             arch: x64
             run_tests: true
+          - name: Windows, shared, arm64, with tests
+            os: windows-11-arm
+            build_shared: ON
+            cmake_generator: Ninja
+            vcpkg_triplet: arm64-windows
+            arch: arm64
+            run_tests: true
           - name: Linux, shared, with tests
             os: ubuntu-latest
             cmake_generator: Ninja
