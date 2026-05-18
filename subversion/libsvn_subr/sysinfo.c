@@ -962,22 +962,24 @@ win32_canonical_host(apr_pool_t *pool)
 }
 
 /* Convert a Unicode string to UTF-8. */
-static char *
+static const char *
 wcs_to_utf8(const wchar_t *wcs, apr_pool_t *pool)
 {
-  const int bufsize = WideCharToMultiByte(CP_UTF8, 0, wcs, -1,
-                                          NULL, 0, NULL, NULL);
-  if (bufsize > 0)
+  svn_error_t *err;
+  const char *utf8;
+
+  err = svn_utf__win32_utf16_to_utf8(&utf8, wcs, NULL, pool);
+  if (err)
     {
-      char *const utf8 = apr_palloc(pool, bufsize + 1);
-      WideCharToMultiByte(CP_UTF8, 0, wcs, -1, utf8, bufsize, NULL, NULL);
-      return utf8;
+      svn_error_clear(err);
+      return NULL;
     }
-  return NULL;
+
+  return utf8;
 }
 
 /* Query the value called NAME of the registry key HKEY. */
-static char *
+static const char *
 registry_value(HKEY hkey, wchar_t *name, apr_pool_t *pool)
 {
   DWORD size;

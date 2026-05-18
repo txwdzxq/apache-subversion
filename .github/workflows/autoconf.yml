@@ -82,7 +82,7 @@ jobs:
           ./configure --prefix=$HOME/root/httpd --enable-mpms-shared=event --enable-mods-shared=most --enable-dav
           make -j
           make install
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: autogen
         run: ./autogen.sh
@@ -100,7 +100,7 @@ jobs:
 
       - name: Archive test logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tests-${{matrix.os}}-${{matrix.check-target}}-${{matrix.httpd}}
           path: |

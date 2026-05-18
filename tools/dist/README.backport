@@ -60,13 +60,11 @@ backport_tests_py.py:
 
 backport_tests.py:
     Common part of backport_tests_pl.py and backport_tests_py.py.  Uses the
-    svntest framework (../../subversion/tests/cmdline/svntest/), which is
-    written in Python 2.
+    svntest framework (../../subversion/tests/cmdline/svntest/).
 
-    Note that backport_tests.py and backport/*.py are written in different
-    languages, so they never 'import' each other.  backport_tests.py invokes
-    detect-conflicting-backports.py, merge-approved-backports.py, and
-    backport.pl in the same manner: through subprocess.check_call().
+    For commonality backport_tests.py invokes detect-conflicting-backports.py,
+    merge-approved-backports.py, and backport.pl in the same manner:
+    through subprocess.check_call().
 
 backport_tests_data/backport*.dump:
     Expected output files for backport_tests.py; see the BackportTest

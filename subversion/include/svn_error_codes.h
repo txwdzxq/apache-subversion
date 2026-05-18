@@ -1523,6 +1523,11 @@ SVN_ERROR_START
              SVN_ERR_MISC_CATEGORY_START + 48,
              "BCrypt method failed.")
 
+  /** @since New in 1.16. */
+  SVN_ERRDEF(SVN_ERR_OPT_REVISION_PARSE_ERROR,
+             SVN_ERR_MISC_CATEGORY_START + 49,
+             "Error parsing revision argument")
+
   /* command-line client errors */
 
   SVN_ERRDEF(SVN_ERR_CL_ARG_PARSING_ERROR,

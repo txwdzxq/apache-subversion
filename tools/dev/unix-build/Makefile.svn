@@ -1830,7 +1830,7 @@ $(SVN_OBJDIR)/.retrieved:
 	if [ "$(TAG)" != "none" ]; then \
 		branchdir="tags/$(TAG)"; \
 		co="export"; \
-	elif [ $(BRANCH) != trunk ]; then \
+	elif [ "$(BRANCH)" != "trunk" ]; then \
 		branchdir="branches/$(BRANCH)"; \
 		co="co"; \
 	else \

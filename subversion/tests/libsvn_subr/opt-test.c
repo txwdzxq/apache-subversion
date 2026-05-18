@@ -265,6 +265,31 @@ test_svn_opt_parse_change_to_range(apr_pool_t *pool)
 }
 
 static svn_error_t *
+test_parse_one_rev(apr_pool_t *pool)
+{
+  {
+    svn_opt_revision_t rev = { 0 };
+    SVN_ERR(svn_opt_parse_one_revision(&rev, "r123", pool));
+    SVN_TEST_INT_ASSERT(rev.kind, svn_opt_revision_number);
+    SVN_TEST_INT_ASSERT(rev.value.number, 123);
+  }
+
+  {
+    svn_opt_revision_t rev = { 0 };
+    SVN_TEST_ASSERT_ERROR(svn_opt_parse_one_revision(&rev, "bad", pool),
+                          SVN_ERR_OPT_REVISION_PARSE_ERROR);
+  }
+
+  {
+    svn_opt_revision_t rev = { 0 };
+    SVN_TEST_ASSERT_ERROR(svn_opt_parse_one_revision(&rev, "r123bad", pool),
+                          SVN_ERR_OPT_REVISION_PARSE_ERROR);
+  }
+
+  return SVN_NO_ERROR;
+}
+
+static svn_error_t *
 test_svn_opt_parse_revprop(apr_pool_t *pool)
 {
 #define UNICODE_TEST_STRING "\xf0\x9f\x91\x89\xf0\x9f\x91\x88"
@@ -304,6 +329,8 @@ static struct svn_test_descriptor_t test_funcs[] =
                    "test svn_opt_args_to_target_array2"),
     SVN_TEST_PASS2(test_svn_opt_parse_change_to_range,
                    "test svn_opt_parse_change_to_range"),
+    SVN_TEST_PASS2(test_parse_one_rev,
+                   "test svn_opt_parse_one_revision"),
     SVN_TEST_PASS2(test_svn_opt_parse_revprop,
                    "test test_svn_opt_parse_revprop"),
     SVN_TEST_NULL

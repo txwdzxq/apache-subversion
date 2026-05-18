@@ -228,7 +228,8 @@ test_utf_cstring_to_utf8_ex2(apr_pool_t *pool)
       const char *from_page;
   } tests[] = {
       {"ascii text\n", "ascii text\n", "unexistent-page"},
-      {"Edelwei\xdf", "Edelwei\xc3\x9f", "ISO-8859-1"}
+      {"Edelwei\xdf", "Edelwei\xc3\x9f", "ISO-8859-1"},
+      {"abc\xF0\x9F\x98\x80", "abc\xF0\x9F\x98\x80", "UTF-8"}
   };
 
   for (i = 0; i < sizeof(tests) / sizeof(tests[0]); i++)
@@ -268,7 +269,8 @@ test_utf_cstring_from_utf8_ex2(apr_pool_t *pool)
       const char *to_page;
   } tests[] = {
       {"ascii text\n", "ascii text\n", "unexistent-page"},
-      {"Edelwei\xc3\x9f", "Edelwei\xdf", "ISO-8859-1"}
+      {"Edelwei\xc3\x9f", "Edelwei\xdf", "ISO-8859-1"},
+      {"abc\xF0\x9F\x98\x80", "abc\xF0\x9F\x98\x80", "UTF-8"}
   };
 
   for (i = 0; i < sizeof(tests) / sizeof(tests[0]); i++)

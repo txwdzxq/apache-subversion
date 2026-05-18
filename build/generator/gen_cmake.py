@@ -88,6 +88,9 @@ def get_target_conditions(target):
     else:
       enable_condition.append("SVN_ENABLE_PROGRAMS")
 
+    if target.name == "svnbrowse":
+      enable_condition.append("SVN_ENABLE_TUI")
+
   if isinstance(target, gen_base.TargetSWIG) or \
      isinstance(target, gen_base.TargetSWIGLib):
     enable_condition.append("SVN_ENABLE_SWIG_" + target.lang.upper())
@@ -205,7 +208,9 @@ class Generator(gen_base.GeneratorBase):
           else:
             msvc_libs.append(lib)
 
-        if isinstance(target, gen_base.TargetLib) or target.install == "bin":
+        if isinstance(target, gen_base.TargetLib) and target.install != 'test':
+          install_target = True
+        elif target.install in ("bin", "tui"):
           install_target = True
         else:
           install_target = False

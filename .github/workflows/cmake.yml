@@ -42,27 +42,27 @@ jobs:
       matrix:
         include:
           - name: Windows, shared, x64, with tests
-            os: windows-latest
+            os: windows-2022
             build_shared: ON
             cmake_generator: Ninja
             vcpkg_triplet: x64-windows
             arch: x64
             run_tests: true
           - name: Windows, shared, x64, vs2022, with tests
-            os: windows-latest
+            os: windows-2022
             build_shared: ON
             cmake_generator: 'Visual Studio 17 2022'
             vcpkg_triplet: x64-windows
             arch: x64
             run_tests: true
           - name: Windows, shared, x86
-            os: windows-latest
+            os: windows-2022
             build_shared: ON
             cmake_generator: Ninja
             vcpkg_triplet: x86-windows
             arch: x86
           - name: Windows, static, x64, with tests
-            os: windows-latest
+            os: windows-2022
             build_shared: OFF
             cmake_generator: Ninja
             vcpkg_triplet: x64-windows-static-md
@@ -99,8 +99,8 @@ jobs:
       - name: Prepare Environment (Windows)
         if: runner.os == 'Windows'
         run: |
-          $root = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-          Import-Module "$root\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
+          $root = &(Join-Path ${env:ProgramFiles(x86)} "\Microsoft Visual Studio\Installer\vswhere.exe") -property installationpath -latest
+          Import-Module (Join-Path $root "Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
           Enter-VsDevShell -VsInstallPath $root -DevCmdArguments "-arch=${{ matrix.arch }}"
 
           ls env: | foreach { "$($_.Name)=$($_.Value)" >> $env:GITHUB_ENV }
@@ -115,7 +115,7 @@ jobs:
 
       - name: Restore vcpkg archives (Windows, vcpkg)
         if: runner.os == 'Windows'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: vcpkg-archives
           key: vcpkg/${{ runner.os }}/${{ matrix.vcpkg_triplet }}/${{ steps.vcpkg-sha.outputs.sha }}
@@ -130,13 +130,13 @@ jobs:
             New-Item $env:VCPKG_DEFAULT_BINARY_CACHE -ItemType Directory | Out-Null
           }
           C:\vcpkg\vcpkg.exe install --triplet ${{ matrix.vcpkg_triplet }} `
-            apr apr-util serf expat zlib sqlite3
+            apr apr-util serf expat zlib sqlite3 gettext[tools] pdcurses
 
           "CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $env:GITHUB_ENV
 
       - name: Save vcpkg archives (Windows, vcpkg)
         if: runner.os == 'Windows'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: vcpkg-archives
           key: vcpkg/${{ runner.os }}/${{ matrix.vcpkg_triplet }}/${{ steps.vcpkg-sha.outputs.sha }}
@@ -154,24 +154,22 @@ jobs:
           libexpat1-dev
           zlib1g-dev
           libsqlite3-dev
+          apache2-dev
+          gettext
+          libncurses-dev
           ninja-build
           ${{ matrix.extra_packages }}
 
       - name: Install dependencies (Mac OS, homebrew)
         if: runner.os == 'macOS'
-        # Subversion is being installed here only to get the Serf library,
-        # since there is no separate package.
         run: |
-          brew install apr apr-util expat sqlite ninja subversion
-          $brew_prefix = "$(& brew --prefix)"
-          ls -r "$brew_prefix/opt/subversion/libexec/serf"
-          $PKG_CONFIG_PATH = @(
-            "$brew_prefix/opt/apr/lib/pkgconfig",
-            "$brew_prefix/opt/apr-util/lib/pkgconfig",
-            "$brew_prefix/opt/expat/lib/pkgconfig",
-            "$brew_prefix/opt/sqlite/lib/pkgconfig",
-            "$brew_prefix/opt/subversion/libexec/serf/lib/pkgconfig") `
-            -Join ":"
+          $packages = @('apr', 'apr-util', 'expat', 'sqlite', 'apache-serf',
+                        'gettext', 'ncurses')
+          brew install ninja apache2 $packages
+          $PKG_CONFIG_PATH = `
+            $packages | `
+            % { "$(& brew --prefix $_)/lib/pkgconfig" } | `
+            Join-String -Separator ':'
           "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"  >> $env:GITHUB_ENV
 
       - name: Use LF for Git checkout
@@ -179,17 +177,23 @@ jobs:
           git config --global core.autocrlf false
           git config --global core.eol lf
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: gen-make
         run: python ./gen-make.py -t cmake
 
       - name: Configure CMake
         run: >
+          if ($env:RUNNER_OS -eq 'Windows') {
+            $env:PATH += ";${env:VCPKG_ROOT}\installed\${{ matrix.vcpkg_triplet }}\bin";
+          };
           cmake -B out
           -DBUILD_SHARED_LIBS=${{ matrix.build_shared }}
           -DSVN_ENABLE_TESTS=ON
           -DSVN_ENABLE_RA_SERF=ON
+          -DSVN_ENABLE_NLS=ON
+          -DSVN_ENABLE_APACHE_MODULES=${{ runner.os != 'Windows' && 'ON' || 'OFF' }}
+          -DSVN_ENABLE_TUI=ON
           -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/installdir
           -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_triplet }}
           -DSVN_TEST_CONFIGURE_FOR_PARALLEL=ON
