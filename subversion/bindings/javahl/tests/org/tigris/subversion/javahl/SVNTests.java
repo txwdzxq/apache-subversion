@@ -408,7 +408,7 @@ class SVNTests extends TestCase
             DosFileAttributeView view = Files.getFileAttributeView(
                     nioPath, DosFileAttributeView.class);
             if (view != null) {
-                view.setReadOnly(false);;
+                view.setReadOnly(false);
             }
         }
 
