@@ -1017,11 +1017,13 @@ test_utf8_width(apr_pool_t *pool)
     "o\xcc\x80\xcc\x9b"         /* o with grave and hook */
     "\xe1\xb9\x8b";             /* n with circumflex below */
   const char *invalid = "a" "\xe6" "bc";
+  const char *bom = "\xEF\xBB\xBF" "abc";
 
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width("abc123"), 6);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(fat_emojis), 3);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(mixup), 10);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(invalid), -1);
+  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(bom), 3);
 
   return SVN_NO_ERROR;
 }
