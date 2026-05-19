@@ -614,10 +614,6 @@ svn_utf_cstring_utf8_width(const char *cstr)
   if (*cstr == '\0')
     return 0;
 
-  /* Ensure the conversion below doesn't fail because of encoding errors. */
-  if (!svn_utf__cstring_is_valid(cstr))
-    return -1;
-
   /* Convert the UTF-8 string to UTF-32 (UCS4) which is the format
    * utf8proc_charwidth() expects, and get the width of each character.
    * We don't need much error checking since the input is valid UTF-8. */
