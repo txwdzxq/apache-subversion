@@ -1000,6 +1000,32 @@ test_utf_xfrm(apr_pool_t *pool)
   return SVN_NO_ERROR;
 }
 
+static svn_error_t *
+test_utf8_width(apr_pool_t *pool)
+{
+  /* there are three emojis that each have wcwidth of two */
+  const char *fat_emojis = "\xf0\x9f\xa5\xba\xf0\x9f\x91\x89\xf0\x9f\x91\x88";
+  const char *mixup =
+    "S\xcc\x87\xcc\xa3"         /* S with dot above and below */
+    "\xc5\xaf"                  /* u with ring */
+    "b\xcc\xb1"                 /* b with macron below */
+    "\xe1\xb9\xbd"              /* v with tilde */
+    "e\xcc\xa7\xcc\x86"         /* e with breve and cedilla */
+    "\xc8\x91"                  /* r with double grave */
+    "s\xcc\x8c"                 /* s with caron */
+    "\xe1\xb8\xaf"              /* i with diaeresis and acute */
+    "o\xcc\x80\xcc\x9b"         /* o with grave and hook */
+    "\xe1\xb9\x8b";             /* n with circumflex below */
+  const char *invalid = "a" "\xe6" "bc";
+
+  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width("abc123"), 6);
+  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(fat_emojis), 3);
+  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(mixup), 10);
+  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(invalid), -1);
+
+  return SVN_NO_ERROR;
+}
+
 
 /* The test table.  */
 
@@ -1030,6 +1056,8 @@ static struct svn_test_descriptor_t test_funcs[] =
                    "test svn_utf__normalize"),
     SVN_TEST_PASS2(test_utf_xfrm,
                    "test svn_utf__xfrm"),
+    SVN_TEST_PASS2(test_utf8_width,
+                   "test svn_utf_cstring_utf8_width"),
     SVN_TEST_NULL
   };
 
