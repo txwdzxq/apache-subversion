@@ -1020,7 +1020,7 @@ test_utf8_width(apr_pool_t *pool)
   const char *bom = "\xEF\xBB\xBF" "abc";
 
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width("abc123"), 6);
-  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(fat_emojis), 3);
+  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(fat_emojis), 6);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(mixup), 10);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(invalid), -1);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(bom), 3);

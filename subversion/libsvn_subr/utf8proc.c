@@ -59,7 +59,6 @@ svn_utf__utf8proc_runtime_version(void)
 #ifdef UTF8PROC_STATIC
   /* Unused static function warning removal hack. */
   SVN_UNUSED(utf8proc_category_string);
-  SVN_UNUSED(utf8proc_charwidth);
   SVN_UNUSED(utf8proc_charwidth_ambiguous);
   SVN_UNUSED(utf8proc_grapheme_break);
   SVN_UNUSED(utf8proc_islower);
@@ -605,4 +604,41 @@ svn_utf__fuzzy_escape(const char *src, apr_size_t length, apr_pool_t *pool)
     }
 
   return result->data;
+}
+
+int
+svn_utf_cstring_utf8_width(const char *cstr)
+{
+  int width = 0;
+
+  if (*cstr == '\0')
+    return 0;
+
+  /* Ensure the conversion below doesn't fail because of encoding errors. */
+  if (!svn_utf__cstring_is_valid(cstr))
+    return -1;
+
+  /* Convert the UTF-8 string to UTF-32 (UCS4) which is the format
+   * utf8proc_charwidth() expects, and get the width of each character.
+   * We don't need much error checking since the input is valid UTF-8. */
+  while (*cstr)
+    {
+      apr_int32_t ucs;
+      int w;
+
+      int nbytes = utf8proc_iterate((apr_byte_t*)cstr, -1, &ucs);
+
+      if (nbytes < 0)
+        return -1;
+
+      cstr += nbytes;
+
+      /* Determine the width of this character and add it to the total. */
+      w = utf8proc_charwidth(ucs);
+      if (w == -1)
+        return -1;
+      width += w;
+    }
+
+  return width;
 }
