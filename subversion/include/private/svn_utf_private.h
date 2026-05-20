@@ -288,6 +288,35 @@ svn_utf__utf32_to_utf8(const svn_string_t **result,
                        apr_pool_t *scratch_pool);
 
 
+/* Return a new string with a copy of @a cstr allocated in @a pool aligned to
+ * the right side with spaces. This function takes UTF-8 multibyte encoding and
+ * wcwidth into an account. The new string will be have exacly as much
+ * printable characters as @a padding describes.
+ *
+ * Please note, there might be a little artifact when there is a wider
+ * character, then the string won't be perfectly aligned.
+ */
+char *
+svn_utf__cstring_utf8_align_right(const char *cstr,
+                                  int padding,
+                                  apr_pool_t *pool);
+
+/* Return a new string with a copy of @a cstr allocated in @a pool aligned to
+ * the left side with spaces. This function takes UTF-8 multibyte encoding and
+ * wcwidth into an account. The new string will be have exacly as much
+ * printable characters as @a padding describes.
+ *
+ * Please note, there might be a little artifact when there is a wider
+ * character, then the string won't be perfectly aligned.
+ *
+ * Similar to svn_utf__cstring_utf8_align_right() but doing alignment to the
+ * left side.
+ */
+char *
+svn_utf__cstring_utf8_align_left(const char *cstr,
+                                 int padding,
+                                 apr_pool_t *pool);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

@@ -638,3 +638,71 @@ svn_utf_cstring_utf8_width(const char *cstr)
 
   return width;
 }
+
+/* Advances CSTR by N printable UTF-8 characters */
+static const char *
+utf8_skipn(const char *cstr, apr_size_t n)
+{
+  apr_size_t i = 0;
+
+  while (*cstr && i < n)
+    {
+      apr_int32_t ucs;
+
+      int nbytes = utf8proc_iterate((apr_byte_t*)cstr, -1, &ucs);
+
+      if (nbytes < 0)
+        return NULL;
+
+      cstr += nbytes;
+      i += utf8proc_charwidth(ucs);
+    }
+
+  return cstr;
+}
+
+char *
+svn_utf__cstring_utf8_align_right(const char *cstr, int padding,
+                                  apr_pool_t *pool)
+{
+  int width = svn_utf_cstring_utf8_width(cstr);
+  int size = strlen(cstr);
+
+  if (width > padding)
+    {
+      int len = utf8_skipn(cstr, padding) - cstr;
+      return apr_pstrmemdup(pool, cstr + size - len, len);
+    }
+  else
+    {
+      int spaces = padding - width;
+      char *result = apr_palloc(pool, size + spaces);
+      memset(result, ' ', spaces);
+      memcpy(result + spaces, cstr, size);
+      result[size + spaces] = '\0';
+      return result;
+    }
+}
+
+char *
+svn_utf__cstring_utf8_align_left(const char *cstr, int padding,
+                                 apr_pool_t *pool)
+{
+  int width = svn_utf_cstring_utf8_width(cstr);
+
+  if (width > padding)
+    {
+      int len = utf8_skipn(cstr, padding) - cstr;
+      return apr_pstrmemdup(pool, cstr, len);
+    }
+  else
+    {
+      int size = strlen(cstr);
+      int spaces = padding - width;
+      char *result = apr_palloc(pool, size + spaces + 1);
+      memcpy(result, cstr, size);
+      memset(result + size, ' ', spaces);
+      result[size + spaces] = '\0';
+      return result;
+    }
+}

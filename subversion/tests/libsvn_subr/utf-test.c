@@ -1028,6 +1028,49 @@ test_utf8_width(apr_pool_t *pool)
   return SVN_NO_ERROR;
 }
 
+static svn_error_t *
+test_utf8_align(apr_pool_t *pool)
+{
+  /* ASCII */
+  SVN_TEST_STRING_ASSERT(svn_utf__cstring_utf8_align_left("abc", 5, pool),
+                         "abc  ");
+  SVN_TEST_STRING_ASSERT(svn_utf__cstring_utf8_align_left("abc", 2, pool),
+                         "ab");
+  SVN_TEST_STRING_ASSERT(svn_utf__cstring_utf8_align_right("abc", 5, pool),
+                         "  abc");
+  SVN_TEST_STRING_ASSERT(svn_utf__cstring_utf8_align_right("abc", 2, pool),
+                         "bc");
+
+  /* two byte symbols */
+  SVN_TEST_STRING_ASSERT(
+      svn_utf__cstring_utf8_align_left("\xc5\xaf\xc5\xa1", 4, pool),
+      "\xc5\xaf\xc5\xa1  ");
+  SVN_TEST_STRING_ASSERT(
+      svn_utf__cstring_utf8_align_left("\xc5\xaf\xc5\xa1", 1, pool),
+      "\xc5\xaf");
+  SVN_TEST_STRING_ASSERT(
+      svn_utf__cstring_utf8_align_right("\xc5\xaf\xc5\xa1", 4, pool),
+      "  \xc5\xaf\xc5\xa1");
+  SVN_TEST_STRING_ASSERT(
+      svn_utf__cstring_utf8_align_right("\xc5\xaf\xc5\xa1", 1, pool),
+      "\xc5\xa1");
+
+  /* an emoji */
+  SVN_TEST_STRING_ASSERT(
+      svn_utf__cstring_utf8_align_right("\xf0\x9f\xa5\xba", 2, pool),
+      "\xf0\x9f\xa5\xba");
+  SVN_TEST_STRING_ASSERT(
+      svn_utf__cstring_utf8_align_right("\xf0\x9f\xa5\xba", 3, pool),
+      " \xf0\x9f\xa5\xba");
+
+  /* this is technically wrong (?) */
+  SVN_TEST_STRING_ASSERT(
+      svn_utf__cstring_utf8_align_right("\xf0\x9f\xa5\xba", 1, pool),
+      "\xf0\x9f\xa5\xba");
+
+  return SVN_NO_ERROR;
+}
+
 
 /* The test table.  */
 
@@ -1060,6 +1103,8 @@ static struct svn_test_descriptor_t test_funcs[] =
                    "test svn_utf__xfrm"),
     SVN_TEST_PASS2(test_utf8_width,
                    "test svn_utf_cstring_utf8_width"),
+    SVN_TEST_PASS2(test_utf8_align,
+                   "test utf8 alignment"),
     SVN_TEST_NULL
   };
 
