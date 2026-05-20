@@ -488,7 +488,8 @@ svn_utf__fuzzy_escape(const char *src, apr_size_t length, apr_pool_t *pool)
 
           while (done < length)
             {
-              len = utf8proc_iterate((apr_byte_t*)src + done, length - done, &uc);
+              len = utf8proc_iterate((const utf8proc_uint8_t *)src + done,
+                                     length - done, &uc);
               if (len < 0)
                 break;
               done += len;
@@ -622,7 +623,7 @@ svn_utf_cstring_utf8_width(const char *cstr)
       utf8proc_int32_t ucs;
       int w;
 
-      int nbytes = utf8proc_iterate((apr_byte_t*)cstr, -1, &ucs);
+      int nbytes = utf8proc_iterate((const utf8proc_uint8_t *)cstr, -1, &ucs);
 
       if (nbytes < 0)
         return -1;
@@ -649,7 +650,7 @@ utf8_skipn(const char *cstr, apr_size_t n)
     {
       utf8proc_int32_t ucs;
 
-      int nbytes = utf8proc_iterate((apr_byte_t*)cstr, -1, &ucs);
+      int nbytes = utf8proc_iterate((const utf8proc_uint8_t *)cstr, -1, &ucs);
 
       if (nbytes < 0)
         return NULL;
