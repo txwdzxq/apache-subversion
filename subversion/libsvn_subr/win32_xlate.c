@@ -266,7 +266,15 @@ svn_subr__win32_xlate_locale_encoding(apr_pool_t *pool)
 
   if (GetCPInfoExW(CP_THREAD_ACP, 0, &cpinfo))
     {
-      return apr_psprintf(pool, "CP%u", (unsigned int)cpinfo.CodePage);
+      DWORD codepage = cpinfo.CodePage;
+      if (codepage == CP_UTF8)
+        {
+          return "UTF-8";
+        }
+      else
+        {
+          return apr_psprintf(pool, "CP%u", (unsigned int)cpinfo.CodePage);
+        }
     }
   else
     {
