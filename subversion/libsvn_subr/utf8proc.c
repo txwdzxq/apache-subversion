@@ -616,7 +616,7 @@ svn_utf_cstring_utf8_width(const char *cstr)
 
   /* Convert the UTF-8 string to UTF-32 (UCS4) which is the format
    * utf8proc_charwidth() expects, and get the width of each character.
-   * We don't need much error checking since the input is valid UTF-8. */
+   * utf8proc_iterate() does all the error checking we might ever need. */
   while (*cstr)
     {
       apr_int32_t ucs;
