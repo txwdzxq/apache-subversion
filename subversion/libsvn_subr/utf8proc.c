@@ -619,7 +619,7 @@ svn_utf_cstring_utf8_width(const char *cstr)
    * utf8proc_iterate() does all the error checking we might ever need. */
   while (*cstr)
     {
-      apr_int32_t ucs;
+      utf8proc_int32_t ucs;
       int w;
 
       int nbytes = utf8proc_iterate((apr_byte_t*)cstr, -1, &ucs);
@@ -647,7 +647,7 @@ utf8_skipn(const char *cstr, apr_size_t n)
 
   while (*cstr && i < n)
     {
-      apr_int32_t ucs;
+      utf8proc_int32_t ucs;
 
       int nbytes = utf8proc_iterate((apr_byte_t*)cstr, -1, &ucs);
 
