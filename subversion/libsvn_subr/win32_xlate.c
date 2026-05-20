@@ -279,7 +279,7 @@ svn_subr__win32_xlate_locale_encoding(apr_pool_t *pool)
   else
     {
       /* Fallback to apr_os_default_encoding() like
-        * apr_os_locale_encoding(). */
+       * apr_os_locale_encoding(). */
       return apr_os_default_encoding(pool);
     }
 }
