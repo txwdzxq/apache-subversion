@@ -35,7 +35,6 @@
 #include <apr_thread_proc.h>
 #include <apr_version.h>
 #include <apu_version.h>
-#include <apr_portable.h>       /* for apr_os_locale_encoding() */
 
 #include "svn_pools.h"
 #include "svn_ctype.h"
@@ -141,7 +140,7 @@ svn_sysinfo__release_name(apr_pool_t *pool)
 const char *
 svn_sysinfo__character_encoding(apr_pool_t *pool)
 {
-  return apr_os_locale_encoding(pool);
+  return svn_utf__locale_encoding(pool);
 }
 
 const apr_array_header_t *
