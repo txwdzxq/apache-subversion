@@ -31,6 +31,7 @@
 #include "svn_path.h"
 #include "svn_utf.h"
 #include "svn_opt.h"
+#include "private/svn_utf_private.h"
 
 #include "cl.h"
 
@@ -169,7 +170,7 @@ print_dirent(void *baton,
       /* We may have to adjust the width of th 'author' field. */
       if (dirent->last_author)
         {
-          const int author_width = (int)strlen(dirent->last_author);
+          int author_width = svn_utf_cstring_utf8_width(dirent->last_author);
           if (author_width > pb->author_width)
             {
               if (author_width < pb->max_author_width)
@@ -187,10 +188,12 @@ print_dirent(void *baton,
         }
 
       return svn_cmdline_printf
-              (scratch_pool, "%7ld %-*.*s %c %*s %12s %s%s\n",
+              (scratch_pool, "%7ld %s %c %*s %12s %s%s\n",
                dirent->created_rev,
-               pb->author_width, pb->author_width,
-               dirent->last_author ? dirent->last_author : " ? ",
+               svn_utf__cstring_utf8_align_left(
+                   dirent->last_author ? dirent->last_author : " ? ",
+                   pb->author_width,
+                   scratch_pool),
                lock ? 'O' : ' ',
                sizewidth, sizestr,
                utf8_timestr,
