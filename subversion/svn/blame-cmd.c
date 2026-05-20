@@ -24,6 +24,7 @@
 
 /*** Includes. ***/
 
+#include "private/svn_utf_private.h"
 #include "svn_client.h"
 #include "svn_error.h"
 #include "svn_dirent_uri.h"
@@ -150,8 +151,9 @@ print_line_info(svn_stream_t *out,
           time_stdout = "                                           -";
         }
 
-      SVN_ERR(svn_stream_printf(out, pool, "%s %10s %s ", rev_str,
-                                author ? author : "         -",
+      SVN_ERR(svn_stream_printf(out, pool, "%s %s %s ", rev_str,
+                                svn_utf__cstring_utf8_align_right(
+                                    author ? author : "-", 10, pool),
                                 time_stdout));
 
       if (path)
@@ -159,8 +161,9 @@ print_line_info(svn_stream_t *out,
     }
   else
     {
-      return svn_stream_printf(out, pool, "%s %10.10s ", rev_str,
-                               author ? author : "         -");
+      return svn_stream_printf(out, pool, "%s %s ", rev_str,
+                               svn_utf__cstring_utf8_align_right(
+                                   author ? author : "-", 10, pool));
     }
 
   return SVN_NO_ERROR;
