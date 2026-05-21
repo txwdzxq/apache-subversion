@@ -1008,6 +1008,7 @@ configure_file(
 
 message(STATUS "Configuration summary:")
 message(STATUS "  Version ......................... : ${SVN_VERSION}")
+message(STATUS "  C compiler ...................... : ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 message(STATUS "  Build type ...................... : ${CMAKE_BUILD_TYPE}")
 message(STATUS "    Build shared libraries ........ : ${BUILD_SHARED_LIBS}")
 message(STATUS "    Build shared FS Modues ........ : ${SVN_BUILD_SHARED_FS}")
