@@ -679,7 +679,7 @@ svn_utf__cstring_utf8_align_right(const char *cstr, int padding,
   else
     {
       int spaces = padding - width;
-      char *result = apr_palloc(pool, size + spaces);
+      char *result = apr_palloc(pool, size + spaces + 1);
       memset(result, ' ', spaces);
       memcpy(result + spaces, cstr, size);
       result[size + spaces] = '\0';
