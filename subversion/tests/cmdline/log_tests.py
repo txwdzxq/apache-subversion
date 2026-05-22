@@ -2804,7 +2804,11 @@ def log_with_merge_history_and_search(sbox):
                                       sbox.ospath('A2'))
   svntest.verify.validate_xml_schema('log', output)
 
-@XFail(svntest.main.is_bad_xml_fatal)
+
+def is_ra_local_and_is_bad_xml_fatal():
+  return svntest.main.is_ra_type_file() and svntest.main.is_bad_xml_fatal()
+
+@XFail(is_ra_local_and_is_bad_xml_fatal)
 @Issue(4856)
 def log_xml_with_merge_history(sbox):
   "log --use-merge-history --xml"
