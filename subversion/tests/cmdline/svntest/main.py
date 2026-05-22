@@ -40,7 +40,13 @@ import importlib
 import zipfile
 import codecs
 import queue
-import venv
+
+# Even though 'venv' is part of the Python3 standard library,
+# some environment don't provide it. The tests do not require it.
+try:
+  import venv
+except ImportError:
+  venv = None
 
 from urllib.parse import quote as urllib_parse_quote
 from urllib.parse import unquote as urllib_parse_unquote
@@ -223,13 +229,15 @@ work_dir = "svn-test-work"
 
 # Directory for the Python virtual environment where we install
 # external dependencies of the test environment
+venv_create = venv is not None
 venv_base = work_dir
-venv_path = lambda: os.path.join(venv_base, "__venv__")
-venv_create = True
+def venv_path():
+  return os.path.join(venv_base, "__venv__")
 
 # List of dependencies
 found_dependencies = set()
-SVN_TESTS_REQUIRE = ["lxml", "rnc2rng"]
+SVN_TESTS_REQUIRE = ["lxml==6.1.0", "rnc2rng==2.7.0"]  # for pip
+SVN_TESTS_DEPEND = ["lxml", "rnc2rng"]  # for install_module
 
 # Constant for the merge info property.
 SVN_PROP_MERGEINFO = "svn:mergeinfo"
@@ -1760,7 +1768,8 @@ def is_remote_http_connection_allowed():
 def is_bad_xml_fatal():
   """Are we treating invalid XML output as a fatal error?"""
   # Only if we have all the necessary dependencies.
-  return {'lxml', 'rnc2rnd'} & found_dependencies
+  depends = {'lxml', 'rnc2rng'}
+  return depends == (depends & found_dependencies)
 
 
 def wc_format(ver=None):
@@ -2462,7 +2471,7 @@ def ensure_dependencies():
   saved_sys_path = sys.path[:]
   try:
     sys.path.insert(0, package_path)
-    for package in SVN_TESTS_REQUIRE:
+    for package in SVN_TESTS_DEPEND:
       importlib.import_module(package)
       found_dependencies.add(package)
     have_required = True
@@ -2482,11 +2491,14 @@ def ensure_dependencies():
       assert python_path == package_path
       if package_path not in sys.path:
         sys.path.append(package_path)
-      found_dependencies.update(set(SVN_TESTS_REQUIRE))
+      found_dependencies.update(set(SVN_TESTS_DEPEND))
       return package_path
   return None
 
 def create_python_venv(venv_dir, quiet=False):
+  # We should never get this far if the 'venv' module isn't available.
+  assert venv is not None
+
   try:
     # Create the virtual environment
     if not os.path.isdir(venv_dir):

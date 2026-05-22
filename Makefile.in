@@ -634,6 +634,9 @@ check: bin @TRANSFORM_LIBTOOL_SCRIPTS@ $(TEST_DEPS) @BDB_TEST_DEPS@
 	  if test "$(SVN_BIN_DIR)" != ""; then                               \
 	    flags="--bin $(SVN_BIN_DIR) $$flags";                            \
 	  fi;                                                                \
+	  if test "$(PYTHON_VENV)" != ""; then                               \
+	    flags="--python-venv $(PYTHON_VENV) $$flags";                    \
+	  fi;                                                                \
 	  if test "$(STORE_PRISTINE)" != ""; then                            \
 	    flags="--store-pristine $(STORE_PRISTINE) $$flags";              \
 	  fi;                                                                \
