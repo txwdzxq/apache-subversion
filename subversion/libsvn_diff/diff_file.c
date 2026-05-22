@@ -130,10 +130,23 @@ datasource_to_index(svn_diff_datasource_e datasource)
 #define CHUNK_SHIFT 17
 #define CHUNK_SIZE (1 << CHUNK_SHIFT)
 
-#define chunk_to_offset(chunk) ((chunk) << CHUNK_SHIFT)
-#define offset_to_chunk(offset) ((offset) >> CHUNK_SHIFT)
-#define offset_in_chunk(offset) ((offset) & (CHUNK_SIZE - 1))
+static APR_INLINE apr_off_t
+chunk_to_offset(apr_off_t chunk)
+{
+  return chunk << CHUNK_SHIFT;
+}
 
+static APR_INLINE apr_off_t
+offset_to_chunk(apr_off_t offset)
+{
+  return offset >> CHUNK_SHIFT;
+}
+
+static APR_INLINE apr_off_t
+offset_in_chunk(apr_off_t offset)
+{
+  return offset & (CHUNK_SIZE - 1);
+}
 
 /* Read a chunk from a FILE into BUFFER, starting from OFFSET, going for
  * *LENGTH.  The actual bytes read are stored in *LENGTH on return.
