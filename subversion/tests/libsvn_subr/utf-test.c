@@ -1003,6 +1003,8 @@ test_utf_xfrm(apr_pool_t *pool)
 static svn_error_t *
 test_utf8_width(apr_pool_t *pool)
 {
+  apr_array_header_t *graphemes;
+
   /* there are three emojis that each have wcwidth of two */
   const char *fat_emojis = "\xf0\x9f\xa5\xba\xf0\x9f\x91\x89\xf0\x9f\x91\x88";
   const char *mixup =
@@ -1019,11 +1021,37 @@ test_utf8_width(apr_pool_t *pool)
   const char *invalid = "a" "\xe6" "bc";
   const char *bom = "\xEF\xBB\xBF" "abc";
 
+  /* Test the public API */
+  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(""), 0);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width("abc123"), 6);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(fat_emojis), 6);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(mixup), 10);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(invalid), -1);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(bom), 3);
+
+  /* Test grapheme breakdown */
+  svn_utf__cstring_utf8_grapheme_breaks(&graphemes, "", pool);
+  SVN_TEST_ASSERT(graphemes == NULL);
+
+  svn_utf__cstring_utf8_grapheme_breaks(&graphemes, "abc123", pool);
+  SVN_TEST_INT_ASSERT(graphemes->nelts, 6);
+
+  svn_utf__cstring_utf8_grapheme_breaks(&graphemes, fat_emojis, pool);
+  SVN_TEST_INT_ASSERT(graphemes->nelts, 3);
+  SVN_TEST_INT_ASSERT(
+      APR_ARRAY_IDX(graphemes, 0, svn_utf__utf8_grapheme_t).width, 2);
+  SVN_TEST_INT_ASSERT(
+      APR_ARRAY_IDX(graphemes, 1, svn_utf__utf8_grapheme_t).width, 2);
+  SVN_TEST_INT_ASSERT(
+      APR_ARRAY_IDX(graphemes, 2, svn_utf__utf8_grapheme_t).width, 2);
+
+  svn_utf__cstring_utf8_grapheme_breaks(&graphemes, mixup, pool);
+  SVN_TEST_INT_ASSERT(graphemes->nelts, 10);
+
+  svn_utf__cstring_utf8_grapheme_breaks(&graphemes, bom, pool);
+  SVN_TEST_INT_ASSERT(graphemes->nelts, 4);
+  SVN_TEST_INT_ASSERT(
+      APR_ARRAY_IDX(graphemes, 0, svn_utf__utf8_grapheme_t).width, 0);
 
   return SVN_NO_ERROR;
 }

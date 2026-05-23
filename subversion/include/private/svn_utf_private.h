@@ -291,6 +291,37 @@ svn_utf__utf32_to_utf8(const svn_string_t **result,
                        apr_pool_t *result_pool,
                        apr_pool_t *scratch_pool);
 
+/*
+ * Describes one Unicode grapheme within a UTF-8 string.
+ */
+typedef struct svn_utf__utf8_grapheme_t
+{
+  /* The index of the beginning of the grapheme. */
+  apr_size_t start;
+  /* The index of the byte after the end of the grapheme. */
+  apr_size_t end;
+  /* The estimated visual width of the grapheme. */
+  int width;
+} svn_utf__utf8_grapheme_t;
+
+/*
+ * Find grapheme boundaries within a UTF-8 string CSTR. Return the total
+ * estimated width of all the graphemes in the string. Set *GRAPHEMES to
+ * an array of svn_utf__utf8_grapheme_t allocated from POOL. The final
+ * grapheme in the returned array may not be complete; we don't check if
+ * a grapheme break is allowed at the end bcause it's, well, the end.
+ *
+ * *GRAPHEMES will be NULL if CSTR is empty.
+ *
+ * If GRAPHEMES is NULL, the list of graphemes will not be allocated
+ * and POOL may also be NULL.
+ *
+ * If CSTR is not a valid UTF-8 string, the returned value will be negative.
+ */
+apr_ssize_t
+svn_utf__cstring_utf8_grapheme_breaks(apr_array_header_t **graphemes,
+                                      const char *cstr,
+                                      apr_pool_t *pool);
 
 /* Return a new string with a copy of @a cstr allocated in @a pool aligned to
  * the right side with spaces. This function takes UTF-8 multibyte encoding and

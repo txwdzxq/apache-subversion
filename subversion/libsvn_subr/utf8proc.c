@@ -23,6 +23,7 @@
 
 
 
+#include <limits.h>
 #include <apr_fnmatch.h>
 
 #include "svn_utf.h"
@@ -608,6 +609,104 @@ svn_utf__fuzzy_escape(const char *src, apr_size_t length, apr_pool_t *pool)
   return result->data;
 }
 
+apr_ssize_t
+svn_utf__cstring_utf8_grapheme_breaks(apr_array_header_t **graphemes,
+                                      const char *cstr,
+                                      apr_pool_t *pool)
+{
+  apr_array_header_t *breaks = NULL;
+  apr_ssize_t total_width = 0;
+
+  utf8proc_int32_t state = 0;
+  utf8proc_int32_t codepoint1;
+  utf8proc_int32_t codepoint2;
+
+  int grapheme_width = 0;
+  apr_size_t grapheme_start = 0;
+  apr_size_t grapheme_end = 0;
+
+  utf8proc_ssize_t nbytes;
+  const utf8proc_uint8_t *utf8 = (const utf8proc_uint8_t *)cstr;
+  if (!*utf8)
+    {
+      if (graphemes)
+        *graphemes = NULL;
+      return 0;
+    }
+
+  nbytes = utf8proc_iterate(utf8, -1, &codepoint1);
+  if (nbytes < 0)
+    return -1;
+
+  if (graphemes)
+    breaks = apr_array_make(pool, 16, sizeof(svn_utf__utf8_grapheme_t));
+  grapheme_width += utf8proc_charwidth(codepoint1);
+  grapheme_end += nbytes;
+  utf8 += nbytes;
+
+  while(*utf8)
+    {
+      nbytes = utf8proc_iterate(utf8, -1, &codepoint2);
+      if (nbytes < 0)
+        return -1;
+
+      if (utf8proc_grapheme_break_stateful(codepoint1, codepoint2, &state))
+        {
+          if (breaks)
+            {
+              svn_utf__utf8_grapheme_t grapheme;
+              grapheme.start = grapheme_start;
+              grapheme.end = grapheme_end;
+              grapheme.width = grapheme_width;
+              APR_ARRAY_PUSH(breaks, svn_utf__utf8_grapheme_t) = grapheme;
+            }
+
+          total_width += grapheme_width;
+          grapheme_width = 0;
+          grapheme_start = grapheme_end;
+        }
+
+      codepoint1 = codepoint2;
+      grapheme_width += utf8proc_charwidth(codepoint1);
+      grapheme_end += nbytes;
+      utf8 += nbytes;
+    }
+
+  /* Record the final grapheme. */
+  if (grapheme_end > grapheme_start)
+    {
+      if (breaks)
+        {
+          svn_utf__utf8_grapheme_t grapheme;
+          grapheme.start = grapheme_start;
+          grapheme.end = grapheme_end;
+          grapheme.width = grapheme_width;
+          APR_ARRAY_PUSH(breaks, svn_utf__utf8_grapheme_t) = grapheme;
+        }
+
+      total_width += grapheme_width;
+    }
+
+  if (breaks && graphemes)
+    *graphemes = breaks;
+  return total_width;
+}
+
+#if 1
+int
+svn_utf_cstring_utf8_width(const char *cstr)
+{
+  const apr_ssize_t width =
+    svn_utf__cstring_utf8_grapheme_breaks(NULL, cstr, NULL);
+
+  /* Check for return value overflow. It's unfortunate that we chose to use
+     'int' for what is essentially a string length value. */
+  if (width > INT_MAX)
+    return -1;
+
+  return (int)width;
+}
+#else
 int
 svn_utf_cstring_utf8_width(const char *cstr)
 {
@@ -641,6 +740,7 @@ svn_utf_cstring_utf8_width(const char *cstr)
 
   return width;
 }
+#endif
 
 /* Advances CSTR by N printable UTF-8 characters */
 static const char *
