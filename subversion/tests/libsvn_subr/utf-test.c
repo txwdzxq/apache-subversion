@@ -1000,28 +1000,28 @@ test_utf_xfrm(apr_pool_t *pool)
   return SVN_NO_ERROR;
 }
 
+/* Test data for test_utf8_width and test_utf8_grapheme_breaks */
+static const char *fat_emojis =
+  "\xf0\x9f\xa5\xba"         /* three emojis, each two columns wide */
+  "\xf0\x9f\x91\x89"
+  "\xf0\x9f\x91\x88";
+static const char *mixup =
+  "S\xcc\x87\xcc\xa3"         /* S with dot above and below */
+  "\xc5\xaf"                  /* u with ring */
+  "b\xcc\xb1"                 /* b with macron below */
+  "\xe1\xb9\xbd"              /* v with tilde */
+  "e\xcc\xa7\xcc\x86"         /* e with breve and cedilla */
+  "\xc8\x91"                  /* r with double grave */
+  "s\xcc\x8c"                 /* s with caron */
+  "\xe1\xb8\xaf"              /* i with diaeresis and acute */
+  "o\xcc\x80\xcc\x9b"         /* o with grave and hook */
+  "\xe1\xb9\x8b";             /* n with circumflex below */
+static const char *invalid = "a" "\xe6" "bc";
+static const char *bom = "\xEF\xBB\xBF" "abc";
+
 static svn_error_t *
 test_utf8_width(apr_pool_t *pool)
 {
-  apr_array_header_t *graphemes;
-
-  /* there are three emojis that each have wcwidth of two */
-  const char *fat_emojis = "\xf0\x9f\xa5\xba\xf0\x9f\x91\x89\xf0\x9f\x91\x88";
-  const char *mixup =
-    "S\xcc\x87\xcc\xa3"         /* S with dot above and below */
-    "\xc5\xaf"                  /* u with ring */
-    "b\xcc\xb1"                 /* b with macron below */
-    "\xe1\xb9\xbd"              /* v with tilde */
-    "e\xcc\xa7\xcc\x86"         /* e with breve and cedilla */
-    "\xc8\x91"                  /* r with double grave */
-    "s\xcc\x8c"                 /* s with caron */
-    "\xe1\xb8\xaf"              /* i with diaeresis and acute */
-    "o\xcc\x80\xcc\x9b"         /* o with grave and hook */
-    "\xe1\xb9\x8b";             /* n with circumflex below */
-  const char *invalid = "a" "\xe6" "bc";
-  const char *bom = "\xEF\xBB\xBF" "abc";
-
-  /* Test the public API */
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(""), 0);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width("abc123"), 6);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(fat_emojis), 6);
@@ -1029,15 +1029,31 @@ test_utf8_width(apr_pool_t *pool)
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(invalid), -1);
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(bom), 3);
 
-  /* Test grapheme breakdown */
-  svn_utf__cstring_utf8_grapheme_breaks(&graphemes, "", pool);
+  return SVN_NO_ERROR;
+}
+
+static svn_error_t *
+test_utf8_grapheme_breaks(apr_pool_t *pool)
+{
+  apr_array_header_t *graphemes = (void*)~0;
+
+  SVN_TEST_INT_ASSERT(
+      svn_utf__cstring_utf8_grapheme_breaks(&graphemes, "", pool), 0);
   SVN_TEST_ASSERT(graphemes == NULL);
+
+  SVN_TEST_INT_ASSERT(
+      svn_utf__cstring_utf8_grapheme_breaks(NULL, invalid, NULL), -1);
+
+#define STRING_LENGTH_FROM_GRAPHEMES \
+  APR_ARRAY_IDX(graphemes, graphemes->nelts - 1, svn_utf__utf8_grapheme_t).end
 
   svn_utf__cstring_utf8_grapheme_breaks(&graphemes, "abc123", pool);
   SVN_TEST_INT_ASSERT(graphemes->nelts, 6);
+  SVN_TEST_INT_ASSERT(STRING_LENGTH_FROM_GRAPHEMES, strlen("abc123"));
 
   svn_utf__cstring_utf8_grapheme_breaks(&graphemes, fat_emojis, pool);
   SVN_TEST_INT_ASSERT(graphemes->nelts, 3);
+  SVN_TEST_INT_ASSERT(STRING_LENGTH_FROM_GRAPHEMES, strlen(fat_emojis));
   SVN_TEST_INT_ASSERT(
       APR_ARRAY_IDX(graphemes, 0, svn_utf__utf8_grapheme_t).width, 2);
   SVN_TEST_INT_ASSERT(
@@ -1046,12 +1062,16 @@ test_utf8_width(apr_pool_t *pool)
       APR_ARRAY_IDX(graphemes, 2, svn_utf__utf8_grapheme_t).width, 2);
 
   svn_utf__cstring_utf8_grapheme_breaks(&graphemes, mixup, pool);
+  SVN_TEST_INT_ASSERT(STRING_LENGTH_FROM_GRAPHEMES, strlen(mixup));
   SVN_TEST_INT_ASSERT(graphemes->nelts, 10);
 
   svn_utf__cstring_utf8_grapheme_breaks(&graphemes, bom, pool);
+  SVN_TEST_INT_ASSERT(STRING_LENGTH_FROM_GRAPHEMES, strlen(bom));
   SVN_TEST_INT_ASSERT(graphemes->nelts, 4);
   SVN_TEST_INT_ASSERT(
       APR_ARRAY_IDX(graphemes, 0, svn_utf__utf8_grapheme_t).width, 0);
+
+#undef STRING_LENGTH_FROM_GRAPHEMES
 
   return SVN_NO_ERROR;
 }
@@ -1131,6 +1151,8 @@ static struct svn_test_descriptor_t test_funcs[] =
                    "test svn_utf__xfrm"),
     SVN_TEST_PASS2(test_utf8_width,
                    "test svn_utf_cstring_utf8_width"),
+    SVN_TEST_PASS2(test_utf8_grapheme_breaks,
+                   "test utf8 grapheme breaks"),
     SVN_TEST_PASS2(test_utf8_align,
                    "test utf8 alignment"),
     SVN_TEST_NULL

@@ -692,25 +692,10 @@ svn_utf__cstring_utf8_grapheme_breaks(apr_array_header_t **graphemes,
   return total_width;
 }
 
-#if 1
 int
 svn_utf_cstring_utf8_width(const char *cstr)
 {
-  const apr_ssize_t width =
-    svn_utf__cstring_utf8_grapheme_breaks(NULL, cstr, NULL);
-
-  /* Check for return value overflow. It's unfortunate that we chose to use
-     'int' for what is essentially a string length value. */
-  if (width > INT_MAX)
-    return -1;
-
-  return (int)width;
-}
-#else
-int
-svn_utf_cstring_utf8_width(const char *cstr)
-{
-  int width = 0;
+  apr_ssize_t width = 0;
 
   if (*cstr == '\0')
     return 0;
@@ -721,10 +706,8 @@ svn_utf_cstring_utf8_width(const char *cstr)
   while (*cstr)
     {
       utf8proc_int32_t ucs;
-      int w;
-
-      utf8proc_ssize_t nbytes = utf8proc_iterate(
-          (const utf8proc_uint8_t *)cstr, -1, &ucs);
+      const utf8proc_ssize_t nbytes =
+        utf8proc_iterate((const utf8proc_uint8_t *)cstr, -1, &ucs);
 
       if (nbytes < 0)
         return -1;
@@ -732,15 +715,16 @@ svn_utf_cstring_utf8_width(const char *cstr)
       cstr += nbytes;
 
       /* Determine the width of this character and add it to the total. */
-      w = utf8proc_charwidth(ucs);
-      if (w == -1)
-        return -1;
-      width += w;
+      width += utf8proc_charwidth(ucs);
     }
 
-  return width;
+  /* Check for return value overflow. It's unfortunate that we chose
+     to use 'int' for what is essentially a string length value. */
+  if (width > INT_MAX)
+    return -1;
+
+  return (int)width;
 }
-#endif
 
 /* Advances CSTR by N printable UTF-8 characters */
 static const char *

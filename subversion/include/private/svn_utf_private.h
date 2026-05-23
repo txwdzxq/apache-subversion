@@ -316,7 +316,7 @@ typedef struct svn_utf__utf8_grapheme_t
  * If GRAPHEMES is NULL, the list of graphemes will not be allocated
  * and POOL may also be NULL.
  *
- * If CSTR is not a valid UTF-8 string, the returned value will be negative.
+ * If CSTR is not a valid UTF-8 string, the returned value will be -1.
  */
 apr_ssize_t
 svn_utf__cstring_utf8_grapheme_breaks(apr_array_header_t **graphemes,
