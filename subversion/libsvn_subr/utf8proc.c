@@ -25,6 +25,7 @@
 
 #include <apr_fnmatch.h>
 
+#include "svn_utf.h"
 #include "private/svn_string_private.h"
 #include "private/svn_utf_private.h"
 #include "svn_private_config.h"
@@ -669,11 +670,11 @@ svn_utf__cstring_utf8_align_right(const char *cstr, int padding,
                                   apr_pool_t *pool)
 {
   int width = svn_utf_cstring_utf8_width(cstr);
-  int size = strlen(cstr);
+  apr_size_t size = strlen(cstr);
 
   if (width > padding)
     {
-      int len = utf8_skipn(cstr, padding) - cstr;
+      apr_ssize_t len = utf8_skipn(cstr, padding) - cstr;
       return apr_pstrmemdup(pool, cstr + size - len, len);
     }
   else
@@ -695,12 +696,12 @@ svn_utf__cstring_utf8_align_left(const char *cstr, int padding,
 
   if (width > padding)
     {
-      int len = utf8_skipn(cstr, padding) - cstr;
+      apr_ssize_t len = utf8_skipn(cstr, padding) - cstr;
       return apr_pstrmemdup(pool, cstr, len);
     }
   else
     {
-      int size = strlen(cstr);
+      apr_size_t size = strlen(cstr);
       int spaces = padding - width;
       char *result = apr_palloc(pool, size + spaces + 1);
       memcpy(result, cstr, size);
