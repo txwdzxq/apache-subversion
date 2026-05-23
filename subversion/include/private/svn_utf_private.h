@@ -311,10 +311,7 @@ typedef struct svn_utf__utf8_grapheme_t
  * grapheme in the returned array may not be complete; we don't check if
  * a grapheme break is allowed at the end bcause it's, well, the end.
  *
- * *GRAPHEMES will be NULL if CSTR is empty.
- *
- * If GRAPHEMES is NULL, the list of graphemes will not be allocated
- * and POOL may also be NULL.
+ * *GRAPHEMES will be set to NULL on return if CSTR is empty.
  *
  * If CSTR is not a valid UTF-8 string, the returned value will be -1.
  */

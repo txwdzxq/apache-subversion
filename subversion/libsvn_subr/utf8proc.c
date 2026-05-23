@@ -614,7 +614,7 @@ svn_utf__cstring_utf8_grapheme_breaks(apr_array_header_t **graphemes,
                                       const char *cstr,
                                       apr_pool_t *pool)
 {
-  apr_array_header_t *breaks = NULL;
+  apr_array_header_t *breaks;
   apr_ssize_t total_width = 0;
 
   utf8proc_int32_t state = 0;
@@ -629,8 +629,7 @@ svn_utf__cstring_utf8_grapheme_breaks(apr_array_header_t **graphemes,
   const utf8proc_uint8_t *utf8 = (const utf8proc_uint8_t *)cstr;
   if (!*utf8)
     {
-      if (graphemes)
-        *graphemes = NULL;
+      *graphemes = NULL;
       return 0;
     }
 
@@ -638,8 +637,7 @@ svn_utf__cstring_utf8_grapheme_breaks(apr_array_header_t **graphemes,
   if (nbytes < 0)
     return -1;
 
-  if (graphemes)
-    breaks = apr_array_make(pool, 16, sizeof(svn_utf__utf8_grapheme_t));
+  breaks = apr_array_make(pool, 16, sizeof(svn_utf__utf8_grapheme_t));
   grapheme_width += utf8proc_charwidth(codepoint1);
   grapheme_end += nbytes;
   utf8 += nbytes;
@@ -652,14 +650,11 @@ svn_utf__cstring_utf8_grapheme_breaks(apr_array_header_t **graphemes,
 
       if (utf8proc_grapheme_break_stateful(codepoint1, codepoint2, &state))
         {
-          if (breaks)
-            {
-              svn_utf__utf8_grapheme_t grapheme;
-              grapheme.start = grapheme_start;
-              grapheme.end = grapheme_end;
-              grapheme.width = grapheme_width;
-              APR_ARRAY_PUSH(breaks, svn_utf__utf8_grapheme_t) = grapheme;
-            }
+          svn_utf__utf8_grapheme_t grapheme;
+          grapheme.start = grapheme_start;
+          grapheme.end = grapheme_end;
+          grapheme.width = grapheme_width;
+          APR_ARRAY_PUSH(breaks, svn_utf__utf8_grapheme_t) = grapheme;
 
           total_width += grapheme_width;
           grapheme_width = 0;
@@ -675,20 +670,16 @@ svn_utf__cstring_utf8_grapheme_breaks(apr_array_header_t **graphemes,
   /* Record the final grapheme. */
   if (grapheme_end > grapheme_start)
     {
-      if (breaks)
-        {
-          svn_utf__utf8_grapheme_t grapheme;
-          grapheme.start = grapheme_start;
-          grapheme.end = grapheme_end;
-          grapheme.width = grapheme_width;
-          APR_ARRAY_PUSH(breaks, svn_utf__utf8_grapheme_t) = grapheme;
-        }
+      svn_utf__utf8_grapheme_t grapheme;
+      grapheme.start = grapheme_start;
+      grapheme.end = grapheme_end;
+      grapheme.width = grapheme_width;
+      APR_ARRAY_PUSH(breaks, svn_utf__utf8_grapheme_t) = grapheme;
 
       total_width += grapheme_width;
     }
 
-  if (breaks && graphemes)
-    *graphemes = breaks;
+  *graphemes = breaks;
   return total_width;
 }
 

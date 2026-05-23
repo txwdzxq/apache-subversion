@@ -1042,7 +1042,7 @@ test_utf8_grapheme_breaks(apr_pool_t *pool)
   SVN_TEST_ASSERT(graphemes == NULL);
 
   SVN_TEST_INT_ASSERT(
-      svn_utf__cstring_utf8_grapheme_breaks(NULL, invalid, NULL), -1);
+      svn_utf__cstring_utf8_grapheme_breaks(&graphemes, invalid, pool), -1);
 
 #define STRING_LENGTH_FROM_GRAPHEMES \
   APR_ARRAY_IDX(graphemes, graphemes->nelts - 1, svn_utf__utf8_grapheme_t).end
