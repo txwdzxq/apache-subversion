@@ -1000,7 +1000,7 @@ test_utf_xfrm(apr_pool_t *pool)
   return SVN_NO_ERROR;
 }
 
-/* Test data for test_utf8_width and test_utf8_grapheme_breaks */
+/* Test data for width and trimming tests. */
 static const char *fat_emojis =
   "\xf0\x9f\xa5\xba"         /* three emojis, each two columns wide */
   "\xf0\x9f\x91\x89"
@@ -1022,12 +1022,237 @@ static const char *bom = "\xEF\xBB\xBF" "abc";
 static svn_error_t *
 test_utf8_width(apr_pool_t *pool)
 {
-  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(""), 0);
-  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width("abc123"), 6);
-  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(fat_emojis), 6);
-  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(mixup), 10);
+  apr_size_t length = -147;     /* Magic number used to check... */
+
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(invalid), -1);
+  SVN_TEST_INT_ASSERT(svn_utf__cstring_width(&length, invalid), -1);
+  SVN_TEST_INT_ASSERT(length, -147); /* ...that 'length' was not changed. */
+
+  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(""), 0);
+  SVN_TEST_INT_ASSERT(svn_utf__cstring_width(&length, ""), 0);
+  SVN_TEST_INT_ASSERT(length, 0);
+
+  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width("abc123"), 6);
+  SVN_TEST_INT_ASSERT(svn_utf__cstring_width(&length, "abc123"), 6);
+  SVN_TEST_INT_ASSERT(length, 6);
+
+  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(fat_emojis), 6);
+  SVN_TEST_INT_ASSERT(svn_utf__cstring_width(&length, fat_emojis), 6);
+  SVN_TEST_INT_ASSERT(length, strlen(fat_emojis));
+
+  SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(mixup), 10);
+  SVN_TEST_INT_ASSERT(svn_utf__cstring_width(&length, mixup), 10);
+  SVN_TEST_INT_ASSERT(length, strlen(mixup));
+
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(bom), 3);
+  SVN_TEST_INT_ASSERT(svn_utf__cstring_width(&length, bom), 3);
+  SVN_TEST_INT_ASSERT(length, strlen(bom));
+
+  return SVN_NO_ERROR;
+}
+
+static svn_error_t *
+test_utf8_trim_right(apr_pool_t *pool)
+{
+  apr_ssize_t width;
+  const char *start, *end;
+
+  /* Invalid and empty */
+  width = svn_utf__cstring_trim_right(&start, &end, invalid, 1);
+  SVN_TEST_INT_ASSERT(width, -1);
+
+  width = svn_utf__cstring_trim_right(&start, &end, invalid, 0);
+  SVN_TEST_INT_ASSERT(width, 0);
+  SVN_TEST_ASSERT(start == end);
+
+  width = svn_utf__cstring_trim_right(&start, &end, "", 1);
+  SVN_TEST_INT_ASSERT(width, 0);
+  SVN_TEST_ASSERT(start == end);
+
+  /* ASCII */
+  width = svn_utf__cstring_trim_right(&start, &end, "abc123", 10);
+  SVN_TEST_INT_ASSERT(width, 6);
+  SVN_TEST_INT_ASSERT(*start, 'a');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, 6);
+
+  width = svn_utf__cstring_trim_right(&start, &end, "abc123", 6);
+  SVN_TEST_INT_ASSERT(width, 6);
+  SVN_TEST_INT_ASSERT(*start, 'a');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, 6);
+
+  width = svn_utf__cstring_trim_right(&start, &end, "abc123", 3);
+  SVN_TEST_INT_ASSERT(width, 3);
+  SVN_TEST_INT_ASSERT(*start, 'a');
+  SVN_TEST_INT_ASSERT(*end, '1');
+  SVN_TEST_INT_ASSERT(end - start, 3);
+
+  /* Accented Latin */
+  width = svn_utf__cstring_trim_right(&start, &end, mixup, 15);
+  SVN_TEST_INT_ASSERT(width, 10);
+  SVN_TEST_INT_ASSERT(*start, 'S');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, strlen(mixup));
+
+  width = svn_utf__cstring_trim_right(&start, &end, mixup, 10);
+  SVN_TEST_INT_ASSERT(width, 10);
+  SVN_TEST_INT_ASSERT(*start, 'S');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, strlen(mixup));
+
+  width = svn_utf__cstring_trim_right(&start, &end, mixup, 7);
+  SVN_TEST_INT_ASSERT(width, 7);
+  SVN_TEST_INT_ASSERT(*start, 'S');
+  SVN_TEST_INT_ASSERT(*end, '\xe1');
+  SVN_TEST_INT_ASSERT(end - start, 23);
+
+  /* Emoji (two colmns wide glyphs) */
+  width = svn_utf__cstring_trim_right(&start, &end, fat_emojis, 10);
+  SVN_TEST_INT_ASSERT(width, 6);
+  SVN_TEST_INT_ASSERT(*start, '\xf0');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, strlen(fat_emojis));
+
+  width = svn_utf__cstring_trim_right(&start, &end, fat_emojis, 6);
+  SVN_TEST_INT_ASSERT(width, 6);
+  SVN_TEST_INT_ASSERT(*start, '\xf0');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, strlen(fat_emojis));
+
+  width = svn_utf__cstring_trim_right(&start, &end, fat_emojis, 4);
+  SVN_TEST_INT_ASSERT(width, 4);
+  SVN_TEST_INT_ASSERT(*start, '\xf0');
+  SVN_TEST_INT_ASSERT(*end, '\xf0');
+  SVN_TEST_INT_ASSERT(end - start, 8);
+
+  width = svn_utf__cstring_trim_right(&start, &end, fat_emojis, 3);
+  SVN_TEST_INT_ASSERT(width, 2);
+  SVN_TEST_INT_ASSERT(*start, '\xf0');
+  SVN_TEST_INT_ASSERT(*end, '\xf0');
+  SVN_TEST_INT_ASSERT(end - start, 4);
+
+  /* Byte order mark */
+  width = svn_utf__cstring_trim_right(&start, &end, bom, 5);
+  SVN_TEST_INT_ASSERT(width, 3);
+  SVN_TEST_INT_ASSERT(*start, '\xef');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, strlen(bom));
+
+  width = svn_utf__cstring_trim_right(&start, &end, bom, 3);
+  SVN_TEST_INT_ASSERT(width, 3);
+  SVN_TEST_INT_ASSERT(*start, '\xef');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, strlen(bom));
+
+  width = svn_utf__cstring_trim_right(&start, &end, bom, 2);
+  SVN_TEST_INT_ASSERT(width, 2);
+  SVN_TEST_INT_ASSERT(*start, '\xef');
+  SVN_TEST_INT_ASSERT(*end, 'c');
+  SVN_TEST_INT_ASSERT(end - start, 5);
+
+  return SVN_NO_ERROR;
+}
+
+static svn_error_t *
+test_utf8_trim_left(apr_pool_t *pool)
+{
+  apr_ssize_t width;
+  const char *start, *end;
+
+  /* Invalid and empty */
+  width = svn_utf__cstring_trim_left(&start, &end, invalid, 1);
+  SVN_TEST_INT_ASSERT(width, -1);
+
+  width = svn_utf__cstring_trim_left(&start, &end, invalid, 0);
+  SVN_TEST_INT_ASSERT(width, 0);
+  SVN_TEST_ASSERT(start == end);
+
+  width = svn_utf__cstring_trim_left(&start, &end, "", 1);
+  SVN_TEST_INT_ASSERT(width, 0);
+  SVN_TEST_ASSERT(start == end);
+
+  /* ASCII */
+  width = svn_utf__cstring_trim_left(&start, &end, "abc123", 10);
+  SVN_TEST_INT_ASSERT(width, 6);
+  SVN_TEST_INT_ASSERT(*start, 'a');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, 6);
+
+  width = svn_utf__cstring_trim_left(&start, &end, "abc123", 6);
+  SVN_TEST_INT_ASSERT(width, 6);
+  SVN_TEST_INT_ASSERT(*start, 'a');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, 6);
+
+  width = svn_utf__cstring_trim_left(&start, &end, "abc123", 3);
+  SVN_TEST_INT_ASSERT(width, 3);
+  SVN_TEST_INT_ASSERT(*start, '1');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, 3);
+
+  /* Accented Latin */
+  width = svn_utf__cstring_trim_left(&start, &end, mixup, 15);
+  SVN_TEST_INT_ASSERT(width, 10);
+  SVN_TEST_INT_ASSERT(*start, 'S');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, strlen(mixup));
+
+  width = svn_utf__cstring_trim_left(&start, &end, mixup, 10);
+  SVN_TEST_INT_ASSERT(width, 10);
+  SVN_TEST_INT_ASSERT(*start, 'S');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, strlen(mixup));
+
+  width = svn_utf__cstring_trim_left(&start, &end, mixup, 6);
+  SVN_TEST_INT_ASSERT(width, 6);
+  SVN_TEST_INT_ASSERT(*start, 'e');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, 21);
+
+  /* Emoji (two colmns wide glyphs) */
+  width = svn_utf__cstring_trim_left(&start, &end, fat_emojis, 10);
+  SVN_TEST_INT_ASSERT(width, 6);
+  SVN_TEST_INT_ASSERT(*start, '\xf0');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, strlen(fat_emojis));
+
+  width = svn_utf__cstring_trim_left(&start, &end, fat_emojis, 6);
+  SVN_TEST_INT_ASSERT(width, 6);
+  SVN_TEST_INT_ASSERT(*start, '\xf0');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, strlen(fat_emojis));
+
+  width = svn_utf__cstring_trim_left(&start, &end, fat_emojis, 4);
+  SVN_TEST_INT_ASSERT(width, 4);
+  SVN_TEST_INT_ASSERT(*start, '\xf0');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, 8);
+
+  width = svn_utf__cstring_trim_left(&start, &end, fat_emojis, 3);
+  SVN_TEST_INT_ASSERT(width, 2);
+  SVN_TEST_INT_ASSERT(*start, '\xf0');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, 4);
+
+  /* Byte order mark */
+  width = svn_utf__cstring_trim_left(&start, &end, bom, 5);
+  SVN_TEST_INT_ASSERT(width, 3);
+  SVN_TEST_INT_ASSERT(*start, '\xef');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, strlen(bom));
+
+  width = svn_utf__cstring_trim_left(&start, &end, bom, 3);
+  SVN_TEST_INT_ASSERT(width, 3);
+  SVN_TEST_INT_ASSERT(*start, '\xef');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, strlen(bom));
+
+  width = svn_utf__cstring_trim_left(&start, &end, bom, 2);
+  SVN_TEST_INT_ASSERT(width, 2);
+  SVN_TEST_INT_ASSERT(*start, 'b');
+  SVN_TEST_INT_ASSERT(*end, '\0');
+  SVN_TEST_INT_ASSERT(end - start, 2);
 
   return SVN_NO_ERROR;
 }
@@ -1151,6 +1376,10 @@ static struct svn_test_descriptor_t test_funcs[] =
                    "test svn_utf__xfrm"),
     SVN_TEST_PASS2(test_utf8_width,
                    "test svn_utf_cstring_utf8_width"),
+    SVN_TEST_PASS2(test_utf8_trim_right,
+                   "test grapheme-aware right trim"),
+    SVN_TEST_PASS2(test_utf8_trim_left,
+                   "test grapheme-aware left trim"),
     SVN_TEST_PASS2(test_utf8_grapheme_breaks,
                    "test utf8 grapheme breaks"),
     SVN_TEST_PASS2(test_utf8_align,

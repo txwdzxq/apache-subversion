@@ -320,6 +320,41 @@ svn_utf__cstring_utf8_grapheme_breaks(apr_array_header_t **graphemes,
                                       const char *cstr,
                                       apr_pool_t *pool);
 
+/* Return the display width of the UTF-8 string CSTR, or -1 if the string is
+ * not valid. If LENGTH is not NULL, set *LENGTH to the byte-wise length
+ * of CSTR; this the same as the value returned by strlen(CSTR).
+ */
+apr_ssize_t
+svn_utf__cstring_width(apr_size_t *length, const char *cstr);
+
+/* Trims the UTF-8 string CSTR to at most MAX_WIDTH visible Unicode glyphs,
+ * removing excess graphemes from the trailing (right) end of the string.
+ * Returns the display width of the trimmed substring, which can be less than
+ * MAX_WIDTH, and sets *STARTP and *ENDP to the start and one-past-the-end
+ * of the trimmed substring of CSTR.
+ *
+ * If CSTR is not a valid UTF-8 string, the returned value will be -1.
+ */
+apr_ssize_t
+svn_utf__cstring_trim_right(const char **startp,
+                            const char **endp,
+                            const char *cstr,
+                            apr_size_t max_width);
+
+/* Trims the UTF-8 string CSTR to at most MAX_WIDTH visible Unicode glyphs,
+ * removing excess graphemes from the leading (left) end of the string.
+ * Returns the display width of the trimmed substring, which can be less than
+ * MAX_WIDTH, and sets *STARTP and *ENDP to the start and one-past-the-end
+ * of the trimmed substring of CSTR.
+ *
+ * If CSTR is not a valid UTF-8 string, the returned value will be -1.
+ */
+apr_ssize_t
+svn_utf__cstring_trim_left(const char **startp,
+                           const char **endp,
+                           const char *cstr,
+                           apr_size_t max_width);
+
 /* Return a new string with a copy of @a cstr allocated in @a pool aligned to
  * the right side with spaces. This function takes UTF-8 multibyte encoding and
  * wcwidth into an account. The new string will be have exacly as much

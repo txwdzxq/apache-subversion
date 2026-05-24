@@ -23,7 +23,6 @@
 
 
 
-#include <limits.h>
 #include <apr_fnmatch.h>
 
 #include "svn_utf.h"
@@ -683,13 +682,18 @@ svn_utf__cstring_utf8_grapheme_breaks(apr_array_header_t **graphemes,
   return total_width;
 }
 
-int
-svn_utf_cstring_utf8_width(const char *cstr)
+apr_ssize_t
+svn_utf__cstring_width(apr_size_t *length, const char *cstr)
 {
+  const char *const start = cstr;
   apr_ssize_t width = 0;
 
   if (*cstr == '\0')
-    return 0;
+    {
+      if (length)
+        *length = 0;
+      return 0;
+    }
 
   /* Convert the UTF-8 string to UTF-32 (UCS4) which is the format
    * utf8proc_charwidth() expects, and get the width of each character.
@@ -709,12 +713,144 @@ svn_utf_cstring_utf8_width(const char *cstr)
       width += utf8proc_charwidth(ucs);
     }
 
-  /* Check for return value overflow. It's unfortunate that we chose
-     to use 'int' for what is essentially a string length value. */
-  if (width > INT_MAX)
+  if (length)
+    *length = cstr - start;
+  return width;
+}
+
+/*
+ * Skip graphemes from the beginning of CSTR until their total width
+ * is MAX_WIDTH or less if CSTR ends earlier. If the sum of the skipped
+ * grapheme width is not exactly MAX_WIDTH, then:
+ *   if TRIM_RIGHT is TRUE, stop just _before_ MAX_WIDTH;
+ *   otherwise, stop just _after_ MAX_WIDTH.
+ * Return the total width of the skipped graphemes and set *ENDP to the
+ * start of the first grapheme in CSTR that was not skipped.
+ *
+ * CSTR may not be empty and MAX_WIDTH may not be 0.
+ * Return -1 if the examined part of CSTR is not valid UTF-8.
+ */
+static apr_ssize_t
+skip_graphemes(const char **endp,
+               const char *cstr,
+               apr_size_t max_width,
+               svn_boolean_t trim_right)
+{
+  apr_ssize_t current_width = 0;
+  apr_ssize_t next_width = 0;
+  utf8proc_int32_t state = 0;
+  utf8proc_int32_t codepoint1;
+  utf8proc_int32_t codepoint2;
+
+  const char *grapheme_end = cstr;
+  int grapheme_width = 0;
+
+  const utf8proc_uint8_t *utf8 = (const utf8proc_uint8_t *)grapheme_end;
+  utf8proc_ssize_t nbytes = utf8proc_iterate(utf8, -1, &codepoint1);
+
+  if (nbytes < 0)
     return -1;
 
-  return (int)width;
+  grapheme_width += utf8proc_charwidth(codepoint1);
+  utf8 += nbytes;
+
+  while(*utf8 && current_width < max_width)
+    {
+      nbytes = utf8proc_iterate(utf8, -1, &codepoint2);
+      if (nbytes < 0)
+        return -1;
+
+      if (utf8proc_grapheme_break_stateful(codepoint1, codepoint2, &state))
+        {
+          next_width = current_width + grapheme_width;
+          if (next_width > max_width)
+            /* Note: current_width < next_width */
+            break;
+
+          current_width = next_width;
+          grapheme_end = (const char *)utf8;
+          grapheme_width = 0;
+        }
+
+      codepoint1 = codepoint2;
+      grapheme_width += utf8proc_charwidth(codepoint1);
+      utf8 += nbytes;
+    }
+
+  /* Account for the width of the trailing part of the string. */
+  if (next_width == current_width)
+      next_width = current_width + grapheme_width;
+
+  if (current_width == max_width)
+    {
+      *endp = grapheme_end;
+      return current_width;
+    }
+  else
+    {
+      if (next_width <= max_width)
+        {
+          *endp = (const char *)utf8;
+          return next_width;
+        }
+      else
+        {
+          if (trim_right)
+            {
+              *endp = grapheme_end;
+              return current_width;
+            }
+          else
+            {
+              *endp = (const char *)utf8;
+              return next_width;
+            }
+        }
+    }
+}
+
+apr_ssize_t
+svn_utf__cstring_trim_right(const char **startp,
+                            const char **endp,
+                            const char *cstr,
+                            apr_size_t max_width)
+{
+  *startp = cstr;
+  if (!*cstr || max_width == 0)
+    {
+      *endp = cstr;
+      return 0;
+    }
+  return skip_graphemes(endp, cstr, max_width, TRUE);
+}
+
+apr_ssize_t
+svn_utf__cstring_trim_left(const char **startp,
+                           const char **endp,
+                           const char *cstr,
+                           apr_size_t max_width)
+{
+  apr_ssize_t width;
+  apr_size_t length;
+  apr_ssize_t skipped;
+
+  if (!*cstr || max_width == 0)
+    {
+      *startp = *endp = cstr;
+      return 0;
+    }
+
+  width = svn_utf__cstring_width(&length, cstr);
+  *endp = cstr + length;
+  if (width <= max_width)
+    {
+      *startp = cstr;
+      return width;
+    }
+  skipped = skip_graphemes(startp, cstr, width - max_width, FALSE);
+  if (skipped < 0)
+    return -1;
+  return width - skipped;
 }
 
 /* Advances CSTR by N printable UTF-8 characters */

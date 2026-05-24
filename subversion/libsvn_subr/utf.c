@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <limits.h>
 
 #include <apr_strings.h>
 #include <apr_lib.h>
@@ -1040,6 +1041,18 @@ svn_utf_cstring_from_utf8_string(const char **dest,
   return err;
 }
 
+int
+svn_utf_cstring_utf8_width(const char *cstr)
+{
+  const apr_ssize_t width = svn_utf__cstring_width(NULL, cstr);
+
+  /* Check for return value overflow. It's unfortunate that we chose
+     to use 'int' for what is essentially a string length value. */
+  if (width > INT_MAX)
+    return -1;
+
+  return (int)width;
+}
 
 /* Insert the given UCS-4 VALUE into BUF at the given OFFSET. */
 static void
