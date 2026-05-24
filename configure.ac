@@ -995,10 +995,10 @@ AS_HELP_STRING([--disable-plaintext-password-storage],
 
 dnl Build and install rules -------------------
 
-INSTALL_STATIC_RULES="install-bin install-docs"
+INSTALL_STATIC_RULES="install-bin install-tui install-docs"
 INSTALL_RULES="install-fsmod-lib install-ramod-lib install-lib install-include install-static"
 INSTALL_RULES="$INSTALL_RULES $INSTALL_APACHE_RULE"
-BUILD_RULES="fsmod-lib ramod-lib lib bin test sub-test $BUILD_APACHE_RULE tools"
+BUILD_RULES="fsmod-lib ramod-lib lib bin tui test sub-test $BUILD_APACHE_RULE tools"
 
 if test "$svn_lib_berkeley_db" = "yes"; then
   BUILD_RULES="$BUILD_RULES bdb-lib bdb-test"
@@ -1332,6 +1332,8 @@ AS_HELP_STRING([--with-editor=PATH],
     fi
 
 ])
+
+SVN_SVNBROWSE
 
 SVN_LIB_Z
 

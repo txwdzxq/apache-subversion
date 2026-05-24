@@ -22,6 +22,8 @@
  * ====================================================================
  */
 
+#include <curses.h>
+
 #include <apr.h>
 
 #include "private/svn_utf_private.h"
@@ -34,8 +36,6 @@
 #include "svn_error.h"
 
 #include "private/svn_cmdline_private.h"
-
-#include <curses.h>
 
 #include "svn_private_config.h"
 #include "svn_time.h"
@@ -251,10 +251,11 @@ view_make(svn_browse__model_t *model, svn_browse__style_t *style, WINDOW *win,
 static svn_error_t *
 view_on_event(svn_browse__view_t *view, int ch, apr_pool_t *scratch_pool)
 {
+  int scrollsize;
   view_layout(view);
 
   /* scrollable height is one row less than the whole view */
-  int scrollsize = getmaxy(view->list);
+  scrollsize = getmaxy(view->list);
 
   /* ch is received from getch() which would read the next character/key with
    * the following additional rules:

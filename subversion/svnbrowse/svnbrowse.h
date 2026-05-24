@@ -21,6 +21,9 @@
  * ====================================================================
  */
 
+#ifndef SVN_SVNBROWSE_SVNBROWSE_H
+#define SVN_SVNBROWSE_SVNBROWSE_H
+
 #include <apr.h>
 
 #include "svn_client.h"
@@ -147,3 +150,5 @@ svn_browse__model_create(svn_browse__model_t **model_p,
                          const svn_opt_revision_t *revision,
                          apr_pool_t *result_pool,
                          apr_pool_t *scratch_pool);
+
+#endif /* SVN_SVNBROWSE_SVNBROWSE_H */
