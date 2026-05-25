@@ -1258,88 +1258,62 @@ test_utf8_trim_left(apr_pool_t *pool)
 }
 
 static svn_error_t *
-test_utf8_grapheme_breaks(apr_pool_t *pool)
-{
-  apr_array_header_t *graphemes = (void*)~0;
-
-  SVN_TEST_INT_ASSERT(
-      svn_utf__cstring_utf8_grapheme_breaks(&graphemes, "", pool), 0);
-  SVN_TEST_ASSERT(graphemes == NULL);
-
-  SVN_TEST_INT_ASSERT(
-      svn_utf__cstring_utf8_grapheme_breaks(&graphemes, invalid, pool), -1);
-
-#define STRING_LENGTH_FROM_GRAPHEMES \
-  APR_ARRAY_IDX(graphemes, graphemes->nelts - 1, svn_utf__utf8_grapheme_t).end
-
-  svn_utf__cstring_utf8_grapheme_breaks(&graphemes, "abc123", pool);
-  SVN_TEST_INT_ASSERT(graphemes->nelts, 6);
-  SVN_TEST_INT_ASSERT(STRING_LENGTH_FROM_GRAPHEMES, strlen("abc123"));
-
-  svn_utf__cstring_utf8_grapheme_breaks(&graphemes, fat_emojis, pool);
-  SVN_TEST_INT_ASSERT(graphemes->nelts, 3);
-  SVN_TEST_INT_ASSERT(STRING_LENGTH_FROM_GRAPHEMES, strlen(fat_emojis));
-  SVN_TEST_INT_ASSERT(
-      APR_ARRAY_IDX(graphemes, 0, svn_utf__utf8_grapheme_t).width, 2);
-  SVN_TEST_INT_ASSERT(
-      APR_ARRAY_IDX(graphemes, 1, svn_utf__utf8_grapheme_t).width, 2);
-  SVN_TEST_INT_ASSERT(
-      APR_ARRAY_IDX(graphemes, 2, svn_utf__utf8_grapheme_t).width, 2);
-
-  svn_utf__cstring_utf8_grapheme_breaks(&graphemes, mixup, pool);
-  SVN_TEST_INT_ASSERT(STRING_LENGTH_FROM_GRAPHEMES, strlen(mixup));
-  SVN_TEST_INT_ASSERT(graphemes->nelts, 10);
-
-  svn_utf__cstring_utf8_grapheme_breaks(&graphemes, bom, pool);
-  SVN_TEST_INT_ASSERT(STRING_LENGTH_FROM_GRAPHEMES, strlen(bom));
-  SVN_TEST_INT_ASSERT(graphemes->nelts, 4);
-  SVN_TEST_INT_ASSERT(
-      APR_ARRAY_IDX(graphemes, 0, svn_utf__utf8_grapheme_t).width, 0);
-
-#undef STRING_LENGTH_FROM_GRAPHEMES
-
-  return SVN_NO_ERROR;
-}
-
-static svn_error_t *
 test_utf8_align(apr_pool_t *pool)
 {
+  /* Invalid */
+  SVN_TEST_STRING_ASSERT(svn_utf__cstring_align_left(invalid, 5, pool),
+                         "\xef\xbf\xbd" "\xef\xbf\xbd"
+                         "\xef\xbf\xbd" "\xef\xbf\xbd"
+                         " ");
+  SVN_TEST_STRING_ASSERT(svn_utf__cstring_align_left(invalid, 3, pool),
+                         "\xef\xbf\xbd" "\xef\xbf\xbd" "\xef\xbf\xbd");
+  SVN_TEST_STRING_ASSERT(
+      svn_utf__cstring_align_right_trim_left(invalid, 5, pool),
+      " "
+      "\xef\xbf\xbd" "\xef\xbf\xbd"
+      "\xef\xbf\xbd" "\xef\xbf\xbd");
+  SVN_TEST_STRING_ASSERT(
+      svn_utf__cstring_align_right_trim_left(invalid, 3, pool),
+      "\xef\xbf\xbd" "\xef\xbf\xbd" "\xef\xbf\xbd");
+
   /* ASCII */
-  SVN_TEST_STRING_ASSERT(svn_utf__cstring_utf8_align_left("abc", 5, pool),
+  SVN_TEST_STRING_ASSERT(svn_utf__cstring_align_left("abc", 5, pool),
                          "abc  ");
-  SVN_TEST_STRING_ASSERT(svn_utf__cstring_utf8_align_left("abc", 2, pool),
+  SVN_TEST_STRING_ASSERT(svn_utf__cstring_align_left("abc", 2, pool),
                          "ab");
-  SVN_TEST_STRING_ASSERT(svn_utf__cstring_utf8_align_right("abc", 5, pool),
+  SVN_TEST_STRING_ASSERT(svn_utf__cstring_align_right_trim_left("abc", 5, pool),
                          "  abc");
-  SVN_TEST_STRING_ASSERT(svn_utf__cstring_utf8_align_right("abc", 2, pool),
+  SVN_TEST_STRING_ASSERT(svn_utf__cstring_align_right_trim_left("abc", 2, pool),
                          "bc");
 
   /* two byte symbols */
   SVN_TEST_STRING_ASSERT(
-      svn_utf__cstring_utf8_align_left("\xc5\xaf\xc5\xa1", 4, pool),
+      svn_utf__cstring_align_left("\xc5\xaf\xc5\xa1", 4, pool),
       "\xc5\xaf\xc5\xa1  ");
   SVN_TEST_STRING_ASSERT(
-      svn_utf__cstring_utf8_align_left("\xc5\xaf\xc5\xa1", 1, pool),
+      svn_utf__cstring_align_left("\xc5\xaf\xc5\xa1", 1, pool),
       "\xc5\xaf");
   SVN_TEST_STRING_ASSERT(
-      svn_utf__cstring_utf8_align_right("\xc5\xaf\xc5\xa1", 4, pool),
+      svn_utf__cstring_align_right_trim_left("\xc5\xaf\xc5\xa1", 4, pool),
       "  \xc5\xaf\xc5\xa1");
   SVN_TEST_STRING_ASSERT(
-      svn_utf__cstring_utf8_align_right("\xc5\xaf\xc5\xa1", 1, pool),
+      svn_utf__cstring_align_right_trim_left("\xc5\xaf\xc5\xa1", 1, pool),
       "\xc5\xa1");
 
   /* an emoji */
   SVN_TEST_STRING_ASSERT(
-      svn_utf__cstring_utf8_align_right("\xf0\x9f\xa5\xba", 2, pool),
+      svn_utf__cstring_align_right_trim_left("\xf0\x9f\xa5\xba", 2, pool),
       "\xf0\x9f\xa5\xba");
   SVN_TEST_STRING_ASSERT(
-      svn_utf__cstring_utf8_align_right("\xf0\x9f\xa5\xba", 3, pool),
+      svn_utf__cstring_align_right_trim_left("\xf0\x9f\xa5\xba", 3, pool),
       " \xf0\x9f\xa5\xba");
 
-  /* this is technically wrong (?) */
+  /* The emoji FACE WITH PLEADING EYES is two columns wide but we only
+     have space for one column. Since we can't split the emoji in half,
+     we can't display it, either. */
   SVN_TEST_STRING_ASSERT(
-      svn_utf__cstring_utf8_align_right("\xf0\x9f\xa5\xba", 1, pool),
-      "\xf0\x9f\xa5\xba");
+      svn_utf__cstring_align_right_trim_left("\xf0\x9f\xa5\xba", 1, pool),
+      " ");
 
   return SVN_NO_ERROR;
 }
@@ -1380,8 +1354,6 @@ static struct svn_test_descriptor_t test_funcs[] =
                    "test grapheme-aware right trim"),
     SVN_TEST_PASS2(test_utf8_trim_left,
                    "test grapheme-aware left trim"),
-    SVN_TEST_PASS2(test_utf8_grapheme_breaks,
-                   "test utf8 grapheme breaks"),
     SVN_TEST_PASS2(test_utf8_align,
                    "test utf8 alignment"),
     SVN_TEST_NULL

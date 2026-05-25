@@ -291,35 +291,6 @@ svn_utf__utf32_to_utf8(const svn_string_t **result,
                        apr_pool_t *result_pool,
                        apr_pool_t *scratch_pool);
 
-/*
- * Describes one Unicode grapheme within a UTF-8 string.
- */
-typedef struct svn_utf__utf8_grapheme_t
-{
-  /* The index of the beginning of the grapheme. */
-  apr_size_t start;
-  /* The index of the byte after the end of the grapheme. */
-  apr_size_t end;
-  /* The estimated visual width of the grapheme. */
-  int width;
-} svn_utf__utf8_grapheme_t;
-
-/*
- * Find grapheme boundaries within a UTF-8 string CSTR. Return the total
- * estimated width of all the graphemes in the string. Set *GRAPHEMES to
- * an array of svn_utf__utf8_grapheme_t allocated from POOL. The final
- * grapheme in the returned array may not be complete; we don't check if
- * a grapheme break is allowed at the end bcause it's, well, the end.
- *
- * *GRAPHEMES will be set to NULL on return if CSTR is empty.
- *
- * If CSTR is not a valid UTF-8 string, the returned value will be -1.
- */
-apr_ssize_t
-svn_utf__cstring_utf8_grapheme_breaks(apr_array_header_t **graphemes,
-                                      const char *cstr,
-                                      apr_pool_t *pool);
-
 /* Return the display width of the UTF-8 string CSTR, or -1 if the string is
  * not valid. If LENGTH is not NULL, set *LENGTH to the byte-wise length
  * of CSTR; this the same as the value returned by strlen(CSTR).
@@ -355,34 +326,39 @@ svn_utf__cstring_trim_left(const char **startp,
                            const char *cstr,
                            apr_size_t max_width);
 
-/* Return a new string with a copy of @a cstr allocated in @a pool aligned to
- * the right side with spaces. This function takes UTF-8 multibyte encoding and
- * wcwidth into an account. The new string will be have exacly as much
- * printable characters as @a padding describes.
+/* Return a new string with a copy of CSTR allocated in POOL aligned to
+ * the right side with spaces. This function takes UTF-8 multibyte encoding
+ * and wcwidth into account. The new string will have exactly as many
+ * printable characters as fit into MAX_WIDTH. Glyphs from CSTR will be
+ * trimmed from the LEFT.
  *
- * Please note, there might be a little artifact when there is a wider
- * character, then the string won't be perfectly aligned.
+ * If MAX_WIDTH is too narrow for even a single glyph, only spaces will be
+ * returned (for example, a two-column emoji doesn't fit into one column).
+ *
+ * If CSTR is not valid UTF-8, return up to four replacement characters
+ * (U+FFFD) aligned to the right
  */
 char *
-svn_utf__cstring_utf8_align_right(const char *cstr,
-                                  int padding,
-                                  apr_pool_t *pool);
+svn_utf__cstring_align_right_trim_left(const char *cstr,
+                                       apr_size_t max_width,
+                                       apr_pool_t *pool);
 
-/* Return a new string with a copy of @a cstr allocated in @a pool aligned to
+/* Return a new string with a copy of CSTR allocated in POOL aligned to
  * the left side with spaces. This function takes UTF-8 multibyte encoding and
- * wcwidth into an account. The new string will be have exacly as much
- * printable characters as @a padding describes.
+ * wcwidth into an account. The new string will have exactly as many
+ * printable characters as fit into MAX_WIDTH. Glyphs from CSTR will be
+ * trimmed from the RIGHT.
+x *
+ * If MAX_WIDTH is too narrow for even a single glyph, only spaces will be
+ * returned (for example, a two-column emoji doesn't fit into one column).
  *
- * Please note, there might be a little artifact when there is a wider
- * character, then the string won't be perfectly aligned.
- *
- * Similar to svn_utf__cstring_utf8_align_right() but doing alignment to the
- * left side.
+ * If CSTR is not valid UTF-8, return up to four replacement characters
+ * (U+FFFD) aligned to the left
  */
 char *
-svn_utf__cstring_utf8_align_left(const char *cstr,
-                                 int padding,
-                                 apr_pool_t *pool);
+svn_utf__cstring_align_left(const char *cstr,
+                            apr_size_t max_width,
+                            apr_pool_t *pool);
 
 #ifdef __cplusplus
 }

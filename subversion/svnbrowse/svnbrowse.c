@@ -393,20 +393,20 @@ view_draw_item(const svn_browse__style_t *style,
   /* 12 + 12 + (20 + 1) + 2 = 47 */
 
   waddch(win, ' ');
-  waddstr(win, svn_utf__cstring_utf8_align_left(
+  waddstr(win, svn_utf__cstring_align_left(
                    format_node_name(item, scratch_pool), getmaxx(win) - 47,
                    scratch_pool));
 
   wattrset(win, get_item_style(style, svn_node_file, selected));
-  waddstr(win, svn_utf__cstring_utf8_align_right(
+  waddstr(win, svn_utf__cstring_align_right_trim_left(
                    format_node_size(item, scratch_pool),
                    12, scratch_pool));
-  waddstr(win, svn_utf__cstring_utf8_align_right(
+  waddstr(win, svn_utf__cstring_align_right_trim_left(
                    apr_psprintf(scratch_pool, "r%ld",
                                 item->dirent->created_rev),
                    12, scratch_pool));
   waddch(win, ' ');
-  waddstr(win, svn_utf__cstring_utf8_align_left(
+  waddstr(win, svn_utf__cstring_align_left(
                    item->dirent->last_author, 20, scratch_pool));
   waddch(win, ' ');
 }
@@ -438,7 +438,7 @@ view_draw_header(svn_browse__view_t *view, WINDOW *win,
   wmove(win, 0, 0);
   wattrset(win, view->style->header);
   waddstr(win, prefix);
-  waddstr(win, svn_utf__cstring_utf8_align_left(
+  waddstr(win, svn_utf__cstring_align_left(
                    apr_psprintf(scratch_pool, "URL: %s", abspath),
                    getmaxx(win) - strlen(prefix) - strlen(suffix),
                    scratch_pool));
@@ -484,18 +484,18 @@ view_draw_footer(svn_browse__view_t *view, WINDOW *win,
   wmove(win, 0, 0);
   wattrset(win, view->style->footer);
   waddstr(win, "  ");
-  waddstr(win, svn_utf__cstring_utf8_align_left(
+  waddstr(win, svn_utf__cstring_align_left(
                   apr_psprintf(scratch_pool, "Ready"),
                   getmaxx(win) - 4 - strlen(brand) - 16,
                   scratch_pool));
   waddstr(win, brand);
 
-  waddstr(win, svn_utf__cstring_utf8_align_right(
+  waddstr(win, svn_utf__cstring_align_right_trim_left(
                   apr_psprintf(scratch_pool, "%d/%d",
                                state->selection + 1,
                                view_get_list_height(state)),
                   8, scratch_pool));
-  waddstr(win, svn_utf__cstring_utf8_align_right(
+  waddstr(win, svn_utf__cstring_align_right_trim_left(
                   format_percentage_scroll(state->scroller_offset,
                                            view_get_list_height(state),
                                            getmaxy(view->list),

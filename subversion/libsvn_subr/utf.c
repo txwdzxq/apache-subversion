@@ -1220,8 +1220,97 @@ svn_utf__locale_encoding(apr_pool_t *pool)
 #endif
 }
 
-#ifdef WIN32
+/* Return a UTF-8 string allocated in POOL of exactly MAX_WIDTH printable
+ * characters, containing up to four U+FFFD replacement characters aligned
+ * left or right according to ALIGN_LEFT. The rest of the string is padded
+ * with spaces.
+ */
+static char *
+replacement_chars(apr_size_t max_width,
+                  svn_boolean_t align_left,
+                  apr_pool_t *pool)
+{
+  /* String of four Unicode replacement characters, U+FFFD. */
+  static const char fffds[13] =
+    "\xef\xbf\xbd" "\xef\xbf\xbd" "\xef\xbf\xbd" "\xef\xbf\xbd";
 
+  const apr_ssize_t length = max_width >= 4 ? 12 : 3 * max_width;
+  const apr_ssize_t spaces = max_width <= 4 ? 0 : max_width - 4;
+  char *const result = apr_palloc(pool, length + spaces + 1);
+
+  if (align_left)
+    {
+      memcpy(result, fffds, length);
+      memset(result + length, ' ', spaces);
+    }
+  else
+    {
+      memset(result, ' ', spaces);
+      memcpy(result + spaces, fffds, length);
+    }
+  result[length + spaces] = '\0';
+  return result;
+}
+
+/* Return a UTF-8 string allocated in POOL of exactly MAX_WIDTH printable
+ * characters, containing the substring from START to END with display width
+ * WIDTH aligned left or right according to ALIGN_LEFT. The rest of the
+ * string is padded with spaces.
+ */
+static char *
+align_substring(const char *start, const char *end,
+                apr_ssize_t width, apr_ssize_t max_width,
+                svn_boolean_t align_left, apr_pool_t *pool)
+{
+  const apr_ssize_t length = end - start;
+  const apr_ssize_t spaces = max_width - width;
+  char *const result = apr_palloc(pool, length + spaces + 1);
+
+  if (align_left)
+    {
+      memcpy(result, start, length);
+      memset(result + length, ' ', spaces);
+    }
+  else
+    {
+      memset(result, ' ', spaces);
+      memcpy(result + spaces, start, length);
+    }
+  result[length + spaces] = '\0';
+  return result;
+}
+
+char *
+svn_utf__cstring_align_right_trim_left(const char *cstr,
+                                       apr_size_t max_width,
+                                       apr_pool_t *pool)
+{
+  const char *start, *end;
+  const apr_ssize_t width =
+    svn_utf__cstring_trim_left(&start, &end, cstr, max_width);
+
+  if (width < 0)
+    return replacement_chars(max_width, FALSE, pool);
+
+  return align_substring(start, end, width, max_width, FALSE, pool);
+}
+
+char *
+svn_utf__cstring_align_left(const char *cstr,
+                            apr_size_t max_width,
+                            apr_pool_t *pool)
+{
+  const char *start, *end;
+  const apr_ssize_t width =
+    svn_utf__cstring_trim_right(&start, &end, cstr, max_width);
+
+  if (width < 0)
+    return replacement_chars(max_width, TRUE, pool);
+
+  return align_substring(start, end, width, max_width, TRUE, pool);
+}
+
+#ifdef WIN32
 
 svn_error_t *
 svn_utf__win32_utf8_to_utf16(const WCHAR **result,
