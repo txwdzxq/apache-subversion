@@ -218,6 +218,10 @@ LT_COMPILE_CXX_NOWARN = $(LIBTOOL) $(LTCXXFLAGS) --mode=compile $(COMPILE_CXX_NO
 # Execute a command that loads libraries from the build dir
 LT_EXECUTE = $(LIBTOOL) $(LTFLAGS) --mode=execute `for f in $(abs_builddir)/subversion/*/*.la; do echo -dlopen $$f; done`
 
+# special compilation for files in optional binary targets
+COMPILE_OPTIONAL = $(LT_COMPILE) -o $@ -c
+COMPILE_OPTIONAL_CXX = $(LT_COMPILE_CXX) -o $@ -c
+
 # special compilation for files destined for mod_dav_svn
 COMPILE_APACHE_MOD = $(LIBTOOL) $(LTFLAGS) --mode=compile $(CC) $(CMODEFLAGS) $(CPPFLAGS) $(CFLAGS) $(CMAINTAINERFLAGS) $(LT_CFLAGS) $(APACHE_INCLUDES) $(INCLUDES) -o $@ -c -shared
 COMPILE_SHARED_ONLY_LIB = $(LT_COMPILE) -o $@ -c -shared
