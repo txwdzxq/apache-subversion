@@ -40,15 +40,13 @@ jobs:
         os: [ubuntu-latest, ubuntu-22.04-arm, macos-latest]
         httpd: [system, trunk, 2.4.x]
         # Only run davautocheck for httpd trunk/2.4.x
-        # Disable httpd and davautocheck on macOS, for now
+        # Disable non-system httpd and davautocheck on macOS, for now
         exclude:
           - check-target: check
             httpd: trunk
           - check-target: check
             httpd: 2.4.x
           - check-target: davautocheck
-            os: macos-latest
-          - httpd: system
             os: macos-latest
           - httpd: trunk
             os: macos-latest
