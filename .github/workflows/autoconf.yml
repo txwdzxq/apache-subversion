@@ -133,7 +133,6 @@ jobs:
               PYTHON="${{ steps.python.outputs.venv }}/bin/python3" \
           ./configure --enable-maintainer-mode \
               --disable-nls \
-              --disable-apxs \
               --enable-keychain \
               --enable-svnbrowse \
               --with-apr="$(brew --prefix apr)" \
@@ -142,12 +141,13 @@ jobs:
               --with-sqlite="$(brew --prefix sqlite)" \
               --with-lz4="$(brew --prefix lz4)" \
               --with-utf8proc="$(brew --prefix utf8proc)" \
+              --without-apxs \
               --without-berkeley-db \
               --without-swig \
               --without-libmagic
 
       - name: Build (make)
-        run: make -j
+        run: make -j4
 
       - name: Run tests
         run: make ${{matrix.check-target}} PARALLEL=16 APACHE_MPM=event
