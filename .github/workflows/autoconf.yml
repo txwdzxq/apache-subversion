@@ -93,8 +93,8 @@ jobs:
       - name: Install dependencies (macOS, python)
         if: runner.os == 'macOS'
         run: |
-          python3 -m venv ./.venv
-          ./.venv/bin/python3 -m pip \
+          python3 -m venv "$HOME/test-python-venv"
+          "$HOME/test-python-venv/bin/python3" -m pip \
               --disable-pip-version-check \
               install lxml==6.1.0 rnc2rng==2.7.0
 
@@ -117,10 +117,11 @@ jobs:
 
       - id: python
         run: |
+          echo "os = $(uname -o)"
           if test "$(uname -o)" = "Darwin"; then
-              echo "python=$(cd ./.venv && pwd)/bin/python3" >> "$GITHUB_OUTPUT"
+              echo "python=$HOME/test-python-venv/bin/python3" >> "$GITHUB_OUTPUT"
           else
-              which python3 >> "$GITHUB_OUTPUT"
+              echo "python=$(which python3)" >> "$GITHUB_OUTPUT"
           fi
 
       - name: autogen
