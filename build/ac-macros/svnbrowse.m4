@@ -21,6 +21,8 @@ dnl  Configure svnbrowse
 
 AC_DEFUN(SVN_SVNBROWSE,
 [
+    dnl disabled by default
+    do_svnbrowse_build=no
     AC_ARG_ENABLE(svnbrowse,
     AS_HELP_STRING([--enable-svnbrowse],
                    [Enable building svnbrowse]),
@@ -29,7 +31,7 @@ AC_DEFUN(SVN_SVNBROWSE,
             AC_MSG_NOTICE([Enabling svnbrowse])
             do_svnbrowse_build=yes
         else
-            AC_MSG_NOTICE([Disabling svnbrowse])
+            dnl this is the default AC_MSG_NOTICE([Disabling svnbrowse])
             do_svnbrowse_build=no
         fi
     ])
@@ -69,6 +71,23 @@ AC_DEFUN(SVN_SVNBROWSE,
                 ])
             ])
         fi
+
+        if test "$ncurses_found" != "no" && test "$cross_compiling" != "yes"; then
+            AC_MSG_CHECKING([ncurses version])
+            save_cppflags="$CPPFLAGS"
+            save_ldflags="$LDFLAGS"
+            CPPFLAGS="$CPPFLAGS $SVN_NCURSES_INCLUDES"
+            LDFLAGS="$LDFLAGS $SVN_NCURSES_LIBS"
+            AC_TRY_RUN([
+            #include <stdio.h>
+            #include <curses.h>
+            int main(void) {
+              printf("%s\n", NCURSES_VERSION);
+              return 0;
+            }],[],[echo "not available"])
+            CPPFLAGS="$save_cppflags"
+            LDFLAGS="$save_ldflags"
+        fi
     fi
 
     if test "$do_svnbrowse_build" = "yes"; then
@@ -82,7 +101,7 @@ AC_DEFUN(SVN_SVNBROWSE,
         SVN_BUILD_SVNBROWSE=false
     fi
 
-    SVN_DOT_CLANGD([$SVN_ZLIB_INCLUDES])
+    SVN_DOT_CLANGD([$SVN_NCURSES_INCLUDES])
     AC_SUBST(SVN_BUILD_SVNBROWSE)
     AC_SUBST(SVN_NCURSES_INCLUDES)
     AC_SUBST(SVN_NCURSES_LIBS)

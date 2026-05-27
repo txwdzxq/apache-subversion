@@ -131,6 +131,8 @@ SVN_DOT_CLANGD_CXX([-I$abs_srcdir/subversion/bindings/javahl/native])
 # Look for a C compiler (before anything can set CFLAGS)
 CUSERFLAGS="$CFLAGS"
 AC_PROG_CC
+AC_MSG_CHECKING([if cross-compiling])
+AC_MSG_RESULT([$cross_compiling])
 SVN_CC_MODE_SETUP
 
 # Look for a C++ compiler (before anything can set CXXFLAGS)
