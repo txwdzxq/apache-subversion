@@ -93,7 +93,13 @@ jobs:
 
       - name: Install dependencies (macOS, python)
         if: runner.os == 'macOS'
-        run: python3 -m pip -q --disable-pip-version-check install lxml==6.1.0 rnc2rng==2.7.0
+        id: python
+        run: |
+          python3 -m venv ./.venv
+          echo "venv=$(cd ./.venv && pwd)" >> "$GITHUB_OUTPUT"
+          ./.venv/bin/python3 -m pip -q \
+              --disable-pip-version-check \
+              install lxml==6.1.0 rnc2rng==2.7.0
 
       - name: Use LF for Git checkout
         run: |
@@ -125,6 +131,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           env CC=clang CXX=clang++ \
+              PYTHON="${{ steps.python.outputs.venv }}/bin/python3" \
           ./configure --enable-maintainer-mode \
               --enable-keychain \
               --enable-svnbrowse \
