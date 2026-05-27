@@ -37,14 +37,23 @@ jobs:
       fail-fast: false
       matrix:
         check-target: [check, davautocheck]
-        os: [ubuntu-latest, ubuntu-22.04-arm]
+        os: [ubuntu-latest, ubuntu-22.04-arm, macos-latest]
         httpd: [system, trunk, 2.4.x]
         # Only run davautocheck for httpd trunk/2.4.x
+        # Disable httpd and davautocheck on macOS, for now
         exclude:
           - check-target: check
             httpd: trunk
           - check-target: check
             httpd: 2.4.x
+          - check-target: davautocheck
+            os: macos-latest
+          - httpd: system
+            os: macos-latest
+          - httpd: trunk
+            os: macos-latest
+          - httpd: 2.4.x
+            os: macos-latest
 
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.os }}, target ${{ matrix.check-target }}, ${{ matrix.httpd }} httpd
@@ -70,12 +79,31 @@ jobs:
           python3-lxml
           python3-rnc2rng
 
+      - name: Install dependencies (macOS, homebrew)
+        if: runner.os == 'macOS'
+        run: >
+          brew upgrade && brew install
+          autoconf
+          libtool
+          apr
+          apr-util
+          apache-serf
+          sqlite3
+          lz4
+          utf8proc
+          gettext
+
+      - name: Install dependencies (macOS, python)
+        if: runner.os == 'macOS'
+        run: python3 -m pip -q --disable-pip-version-check install lxml==6.1.0 rnc2rng==2.7.0
+
       - name: Use LF for Git checkout
         run: |
           git config --global core.autocrlf false
           git config --global core.eol lf
 
       - name: Install Apache httpd
+        if: runner.os == 'Linux'
         run: |
           test "${{ matrix.httpd }}" != 'system' || exit 0
           git clone -q --depth=1 -b ${{ matrix.httpd }} https://github.com/apache/httpd
@@ -89,10 +117,28 @@ jobs:
       - name: autogen
         run: ./autogen.sh
 
-      - name: Configure
+      - name: Configure (Linux)
+        if: runner.os == 'Linux'
         run: |
           ./configure --enable-maintainer-mode \
               --with-apxs=${{ matrix.httpd == 'system' && '/usr/bin/apxs' || '${HOME}/root/httpd/bin/apxs' }}
+
+      - name: Configure (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          env CC=clang CXX=clang++ \
+          ./configure --enable-maintainer-mode \
+              --enable-keychain \
+              --enable-svnbrowse \
+              --with-apr="$(brew --prefix apr)" \
+              --with-apr-util="$(brew --prefix apr-util)" \
+              --with-serf="$(brew --prefix apache-serf)" \
+              --with-sqlite="$(brew --prefix sqlite)" \
+              --with-lz4="$(brew --prefix lz4)" \
+              --with-utf8proc="$(brew --prefix utf8proc)" \
+              --without-berkeley-db \
+              --without-swig \
+              --without-libmagic
 
       - name: Build (make)
         run: make -j
