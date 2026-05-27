@@ -1198,7 +1198,7 @@ find_interesting_revisions(apr_array_header_t *path_revisions,
       svn_hash_sets(duplicate_path_revs,
                     apr_psprintf(result_pool, "%s:%ld", path_rev->path,
                                  path_rev->revnum),
-                    "1");
+                    (void *)0xdeadbeef);
 
       if (path_rev->revnum <= start)
         break;
