@@ -117,8 +117,7 @@ jobs:
 
       - id: python
         run: |
-          echo "os = $(uname -o)"
-          if test "$(uname -o)" = "Darwin"; then
+          if test "$RUNNER_OS" = 'macOS'; then
               echo "python=$HOME/test-python-venv/bin/python3" >> "$GITHUB_OUTPUT"
           else
               echo "python=$(which python3)" >> "$GITHUB_OUTPUT"
