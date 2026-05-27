@@ -115,7 +115,7 @@ jobs:
           make install
       - uses: actions/checkout@v6
 
-        id: python
+      - id: python
         run: |
           if test "$(uname -o)" = "Darwin"; then
               echo "python=$(cd ./.venv && pwd)/bin/python3" >> "$GITHUB_OUTPUT"
