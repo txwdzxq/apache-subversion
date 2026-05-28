@@ -102,7 +102,7 @@ jobs:
           git config --global core.autocrlf false
           git config --global core.eol lf
 
-      - name: Install Apache httpd
+      - name: Install Apache httpd (Linux)
         if: runner.os == 'Linux'
         run: |
           test "${{ matrix.httpd }}" != 'system' || exit 0
@@ -119,13 +119,13 @@ jobs:
         run: |
           if test "$RUNNER_OS" = 'macOS'; then
               echo "python=$HOME/test-python-venv/bin/python3" >> "$GITHUB_OUTPUT"
-              echo "apache_mpm=prefork >> "$GITHUB_OUTPUT""
+              echo "apache_mpm=prefork >> "$GITHUB_OUTPUT"
           else
               echo "python=$(which python3)" >> "$GITHUB_OUTPUT"
-              echo "apache_mpm=event >> "$GITHUB_OUTPUT""
+              echo "apache_mpm=event >> "$GITHUB_OUTPUT"
           fi
 
-      - name: autogen
+      - name: Autogen
         env:
           PYTHON: ${{ steps.platform.outputs.python }}
         run: ./autogen.sh
