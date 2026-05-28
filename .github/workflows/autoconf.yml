@@ -40,14 +40,12 @@ jobs:
         os: [ubuntu-latest, ubuntu-22.04-arm, macos-latest]
         httpd: [system, trunk, 2.4.x]
         # Only run davautocheck for httpd trunk/2.4.x
-        # Disable non-system httpd and davautocheck on macOS, for now
+        # Disable non-system (i.e., Homebrew) httpd on macOS
         exclude:
           - check-target: check
             httpd: trunk
           - check-target: check
             httpd: 2.4.x
-          - check-target: davautocheck
-            os: macos-latest
           - httpd: trunk
             os: macos-latest
           - httpd: 2.4.x
@@ -80,12 +78,13 @@ jobs:
       - name: Install dependencies (macOS, homebrew)
         if: runner.os == 'macOS'
         run: >
-          brew upgrade && brew install
+          brew install
           autoconf
           libtool
           apr
           apr-util
           apache-serf
+          httpd
           sqlite3
           lz4
           utf8proc
@@ -115,23 +114,26 @@ jobs:
           make install
       - uses: actions/checkout@v6
 
-      - id: python
+      - name: Set platform-specific values
+        id: platform
         run: |
           if test "$RUNNER_OS" = 'macOS'; then
               echo "python=$HOME/test-python-venv/bin/python3" >> "$GITHUB_OUTPUT"
+              echo "apache-mpm=prefork >> "$GITHUB_OUTPUT""
           else
               echo "python=$(which python3)" >> "$GITHUB_OUTPUT"
+              echo "apache-mpm=event >> "$GITHUB_OUTPUT""
           fi
 
       - name: autogen
         env:
-          PYTHON: ${{ steps.python.outputs.python }}
+          PYTHON: ${{ steps.platform.outputs.python }}
         run: ./autogen.sh
 
       - name: Configure (Linux)
         if: runner.os == 'Linux'
         env:
-          PYTHON: ${{ steps.python.outputs.python }}
+          PYTHON: ${{ steps.platform.outputs.python }}
         run: |
           ./configure --enable-maintainer-mode \
               --with-apxs=${{ matrix.httpd == 'system' && '/usr/bin/apxs' || '${HOME}/root/httpd/bin/apxs' }}
@@ -141,7 +143,7 @@ jobs:
         env:
           CC: clang
           CXX: clang++
-          PYTHON: ${{ steps.python.outputs.python }}
+          PYTHON: ${{ steps.platform.outputs.python }}
         run: |
           export PATH="$(dirname "$PYTHON"):$PATH"
           ./configure --enable-maintainer-mode \
@@ -154,8 +156,9 @@ jobs:
               --with-sqlite="$(brew --prefix sqlite)" \
               --with-lz4="$(brew --prefix lz4)" \
               --with-utf8proc="$(brew --prefix utf8proc)" \
+              --with-apxs="$(brew --prefix httpd)/bin/apxs" \
+              --disable-mod-activation \
               --without-libmagic \
-              --without-apxs \
               --without-berkeley-db \
               --without-swig
 
@@ -163,7 +166,10 @@ jobs:
         run: make -j4
 
       - name: Run tests
-        run: make ${{matrix.check-target}} PARALLEL=16 APACHE_MPM=event PYTHON_VENV=./venv
+        run: |
+          make ${{matrix.check-target}} PARALLEL=6 \
+              APACHE_MPM="${{ steps.platform.outputs.apache-mpm }}" \
+              PYTHON_VENV="$HOME/test-python-venv"
 
       - name: Archive test logs
         if: always()
