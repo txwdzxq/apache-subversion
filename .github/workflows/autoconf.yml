@@ -119,10 +119,10 @@ jobs:
         run: |
           if test "$RUNNER_OS" = 'macOS'; then
               echo "python=$HOME/test-python-venv/bin/python3" >> "$GITHUB_OUTPUT"
-              echo "apache_mpm=prefork >> "$GITHUB_OUTPUT"
+              echo "apache-mpm=prefork" >> "$GITHUB_OUTPUT"
           else
               echo "python=$(which python3)" >> "$GITHUB_OUTPUT"
-              echo "apache_mpm=event >> "$GITHUB_OUTPUT"
+              echo "apache-mpm=event" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Autogen
@@ -168,7 +168,7 @@ jobs:
       - name: Run tests
         run: |
           make ${{matrix.check-target}} PARALLEL=6 \
-              APACHE_MPM="${{ steps.platform.outputs.apache_mpm }}" \
+              APACHE_MPM="${{ steps.platform.outputs.apache-mpm }}" \
               PYTHON_VENV="$HOME/test-python-venv"
 
       - name: Archive test logs
