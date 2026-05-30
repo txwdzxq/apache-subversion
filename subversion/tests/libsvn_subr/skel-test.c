@@ -307,6 +307,16 @@ put_explicit_length(svn_stringbuf_t *str,
                     apr_size_t len,
                     char sep)
 {
+  /* Apple in its infinite wisdom has seen fit to deprecate sprintf() which
+     has been part of the C standard library since the K&R days and is not
+     deprecated in any version of the C standard. */
+#ifdef __APPLE__
+#  if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#  endif
+#endif /* __APPLE__ */
+
   char *buf = malloc(len + 100);
   apr_size_t length_len;
 
@@ -322,6 +332,12 @@ put_explicit_length(svn_stringbuf_t *str,
 
   svn_stringbuf_appendbytes(str, buf, length_len + len);
   free(buf);
+
+#ifdef __APPLE__
+#  if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2)
+#    pragma GCC diagnostic pop
+#  endif
+#endif /* __APPLE__ */
 }
 
 

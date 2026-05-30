@@ -72,6 +72,16 @@ format_size(double human_readable_size,
             apr_size_t index,
             apr_pool_t *result_pool)
 {
+  /* Apple in its infinite wisdom has seen fit to deprecate sprintf() which
+     has been part of the C standard library since the K&R days and is not
+     deprecated in any version of the C standard. */
+#ifdef __APPLE__
+#  if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#  endif
+#endif /* __APPLE__ */
+
   /* NOTE: We want to display a locale-specific decimal sepratator, but
            APR's formatter completely ignores the locale. So we use the
            good, old, standard, *dangerous* sprintf() to format the size.
@@ -107,6 +117,12 @@ format_size(double human_readable_size,
       }
 
     return apr_pstrcat(result_pool, buffer, suffix, SVN_VA_NULL);
+
+#ifdef __APPLE__
+#  if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2)
+#    pragma GCC diagnostic pop
+#  endif
+#endif /* __APPLE__ */
 }
 
 
