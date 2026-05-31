@@ -4887,7 +4887,9 @@ conflict_tree_get_description_incoming_delete(
     }
   else
     {
+#ifdef SVN_DEBUG
       SVN_DBG(("unknown conflict operation: %d", (int)conflict_operation));
+#endif
       SVN_ERR_MALFUNCTION();
     }
 
@@ -5846,7 +5848,9 @@ conflict_tree_get_description_incoming_add(
     }
   else
     {
+#ifdef SVN_DEBUG
       SVN_DBG(("unknown conflict operation: %d", (int)conflict_operation));
+#endif
       SVN_ERR_MALFUNCTION();
     }
 
@@ -6040,7 +6044,9 @@ conflict_tree_get_details_incoming_edit(svn_client_conflict_t *conflict,
     }
   else
     {
+#ifdef SVN_DEBUG
       SVN_DBG(("unknown conflict operation: %d", (int)conflict_operation));
+#endif
       SVN_ERR_MALFUNCTION();
     }
 
@@ -6381,7 +6387,9 @@ conflict_tree_get_description_incoming_edit(
     }
   else
     {
+#ifdef SVN_DEBUG
       SVN_DBG(("unknown conflict operation: %d", (int)conflict_operation));
+#endif
       SVN_ERR_MALFUNCTION();
     }
 
