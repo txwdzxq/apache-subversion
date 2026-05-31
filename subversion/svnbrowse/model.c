@@ -39,13 +39,12 @@
 static int
 compare_cstrings_lexically(const char *a, const char *b)
 {
-  int alen = strlen(a);
-  int blen = strlen(b);
-  int len, val;
+  const apr_size_t alen = strlen(a);
+  const apr_size_t blen = strlen(b);
+  const apr_size_t len = (alen < blen) ? alen : blen;
 
   /* Compare bytes of a's key and b's key up to the common length. */
-  len = (alen < blen) ? alen : blen;
-  val = memcmp(a, b, len);
+  const int val = memcmp(a, b, len);
 
   if (val != 0)
     return val;
@@ -84,7 +83,7 @@ sort_item_comparison_func(const void *left, const void *right)
   return compare_cstrings_lexically(a->name, b->name);
 }
 
-svn_error_t *
+static svn_error_t *
 state_from_dir(svn_browse__state_t **state_p,
                svn_ra_session_t *session,
                const char *relpath,
@@ -129,7 +128,7 @@ state_from_dir(svn_browse__state_t **state_p,
   return SVN_NO_ERROR;
 }
 
-svn_error_t *
+static svn_error_t *
 state_from_file(svn_browse__state_t **state_p,
                 svn_ra_session_t *session,
                 const char *relpath,
@@ -138,15 +137,13 @@ state_from_file(svn_browse__state_t **state_p,
                 apr_pool_t *scratch_pool)
 {
   svn_browse__state_t *state = apr_pcalloc(result_pool, sizeof(*state));
-  svn_revnum_t fetched_revnum;
-  apr_hash_index_t *hi;
   svn_dirent_t *dirent;
 
   SVN_ERR(svn_ra_stat(session, relpath, revision, &dirent, scratch_pool));
 
   state->type = svn_browse__state_file;
   state->relpath = apr_pstrdup(result_pool, relpath);
-  state->revision = fetched_revnum;
+  state->revision = revision;
   state->this_dirent = svn_dirent_dup(dirent, result_pool);
   state->pool = result_pool;
 
@@ -281,7 +278,7 @@ svn_browse__model_create(svn_browse__model_t **model_p,
   svn_browse__model_t *model = apr_pcalloc(result_pool, sizeof(*model));
   svn_ra_session_t *session;
   apr_pool_t *state_pool;
-  const char *root, *relpath;
+  const char *relpath;
 
   svn_opt_revision_t peg_rev = *peg_revision;
   svn_opt_revision_t start_rev = *revision;

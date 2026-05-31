@@ -43,7 +43,7 @@
 
 /* Option codes and descriptions for the command line client.
  * The entire list must be terminated with an entry of nulls. */
-const apr_getopt_option_t svn_browse__options[] =
+static const apr_getopt_option_t svn_browse__options[] =
 {
   {"username",      opt_auth_username, 1, N_("specify a username ARG")},
   {"password",      opt_auth_password, 1,
@@ -244,7 +244,8 @@ view_make(svn_browse__model_t *model, svn_browse__style_t *style, WINDOW *win,
   view->style = style;
   view->screen = win;
   view_layout(view);
-  apr_pool_cleanup_register(result_pool, view, view_cleanup, NULL);
+  apr_pool_cleanup_register(result_pool, view, view_cleanup,
+                            apr_pool_cleanup_null);
   return view;
 }
 
@@ -384,9 +385,6 @@ view_draw_item(const svn_browse__style_t *style,
                const svn_browse__item_t *item, WINDOW *win, int y,
                svn_boolean_t selected, apr_pool_t *scratch_pool)
 {
-  int attrs = 0;
-  const char *prefix;
-
   move(y, 0);
   wattrset(win, get_item_style(style, item->dirent->kind, selected));
 
@@ -427,7 +425,6 @@ view_draw_header(svn_browse__view_t *view, WINDOW *win,
 {
   const char *abspath = svn_path_url_add_component2(
       view->model->root, view->model->current->relpath, scratch_pool);
-  svn_stringbuf_t *buf = svn_stringbuf_create_empty(scratch_pool);
 
   const char *prefix = "  ";
   const char *suffix = format_revision_header(view->model->revision,
@@ -445,7 +442,7 @@ view_draw_header(svn_browse__view_t *view, WINDOW *win,
   waddstr(win, suffix);
 }
 
-static char *
+static const char *
 format_percentage_scroll(int scroll, int size, int height, apr_pool_t *pool)
 {
   if (size <= height)
@@ -614,7 +611,7 @@ show_version(apr_pool_t *scratch_pool,
 }
 
 static svn_browse__color_mode_e
-detect_color_mode()
+detect_color_mode(void)
 {
   if (has_colors())
     {
@@ -636,7 +633,7 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
   svn_browse__view_t *view;
   svn_browse__style_t *style;
   svn_browse__opt_state_t opt_state = { 0 };
-  svn_boolean_t read_pass_from_stdin = FALSE;
+  /* NOT USED: svn_boolean_t read_pass_from_stdin = FALSE; */
   apr_pool_t *iterpool;
   apr_getopt_t *os;
   apr_array_header_t *targets = NULL;
@@ -685,9 +682,11 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
           case opt_auth_password:
             opt_state.auth_password = apr_pstrdup(pool, opt_arg);
             break;
+        /* NOT USED:
           case opt_auth_password_from_stdin:
             read_pass_from_stdin = TRUE;
             break;
+         */
           case opt_no_auth_cache:
             opt_state.no_auth_cache = TRUE;
             break;
@@ -806,8 +805,6 @@ sub_main(int *code, int argc, const char *argv[], apr_pool_t *pool)
   /* Loop forever, unless we're not in an error state. */
   while (! err)
     {
-      svn_browse__item_t *item;
-      const char *new_url;
       int ch;
 
       svn_pool_clear(iterpool);
