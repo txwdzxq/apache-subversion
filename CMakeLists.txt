@@ -243,6 +243,88 @@ if (SVN_ENABLE_SWIG_PERL OR SVN_ENABLE_SWIG_PYTHON OR SVN_ENABLE_SWIG_RUBY)
   )
 endif()
 
+if (MSVC)
+  # Setup warning level
+  add_compile_options(/W4)
+
+  # Disable warning
+  add_compile_options(/wd4100)
+  add_compile_options(/wd4127)
+  add_compile_options(/wd4206)
+  add_compile_options(/wd4512)
+  add_compile_options(/wd4701)
+  add_compile_options(/wd4706)
+  add_compile_options(/wd4800)
+
+  # Treat some criticial warnings as error
+  add_compile_options(/we4002)
+  add_compile_options(/we4003)
+  add_compile_options(/we4013)
+  add_compile_options(/we4020)
+  add_compile_options(/we4022)
+  add_compile_options(/we4024)
+  add_compile_options(/we4028)
+  add_compile_options(/we4029)
+  add_compile_options(/we4030)
+  add_compile_options(/we4031)
+  add_compile_options(/we4033)
+  add_compile_options(/we4047)
+  add_compile_options(/we4089)
+  add_compile_options(/we4113)
+  add_compile_options(/we4133)
+  add_compile_options(/we4204)
+  add_compile_options(/we4700)
+  add_compile_options(/we4715)
+  add_compile_options(/we4789)
+
+  add_compile_definitions(
+    "_CRT_SECURE_NO_DEPRECATE"
+    "_CRT_NONSTDC_NO_DEPRECATE"
+    "_CRT_SECURE_NO_WARNINGS"
+  )
+else()
+  # Assume that all compilers except MSVC are GCC-compatible and support
+  # the -W syntax
+
+  include(CheckCompilerFlag)
+  # Adds flags if one is supported by the compiler
+  function(SVN_CFLAGS_ADD_IFELSE flag)
+    set(variable "HAVE_FLAG_${flag}")
+    check_compiler_flag(C ${flag} ${variable})
+    if (${${variable}})
+      add_compile_options("${flag}")
+    endif()
+  endfunction()
+
+  # Add flags that all versions of GCC (should) support
+  add_compile_options(-Wpointer-arith)
+  add_compile_options(-Wwrite-strings)
+  add_compile_options(-Wshadow)
+  add_compile_options(-Wformat=2)
+  add_compile_options(-Wunused)
+  add_compile_options(-Wstrict-prototypes)
+  add_compile_options(-Wmissing-prototypes)
+  add_compile_options(-Wmissing-declarations)
+  add_compile_options(-Wno-multichar)
+  add_compile_options(-Wredundant-decls)
+  add_compile_options(-Wnested-externs)
+  add_compile_options(-Winline)
+  add_compile_options(-Wno-long-long)
+  add_compile_options(-Wbad-function-cast)
+
+  # Add each of the following flags only if the C compiler accepts it.
+  SVN_CFLAGS_ADD_IFELSE(-Werror=implicit-function-declaration)
+  SVN_CFLAGS_ADD_IFELSE(-Werror=declaration-after-statement)
+  SVN_CFLAGS_ADD_IFELSE(-Wextra-tokens)
+  SVN_CFLAGS_ADD_IFELSE(-Wnewline-eof)
+  SVN_CFLAGS_ADD_IFELSE(-Wshorten-64-to-32)
+  SVN_CFLAGS_ADD_IFELSE(-Wold-style-definition)
+  SVN_CFLAGS_ADD_IFELSE(-Wno-system-headers)
+  SVN_CFLAGS_ADD_IFELSE(-Wno-format-nonliteral)
+  SVN_CFLAGS_ADD_IFELSE(-Wmissing-variable-declarations)
+  SVN_CFLAGS_ADD_IFELSE(-Wno-unused-const-variable)
+endif()
+
 # Setup modules path
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake")
@@ -820,47 +902,6 @@ endif()
 
 if(APPLE)
   add_compile_definitions("DARWIN")
-endif()
-
-if (MSVC)
-  # Setup warning level
-  add_compile_options(/W4)
-
-  # Disable warning
-  add_compile_options(/wd4100)
-  add_compile_options(/wd4127)
-  add_compile_options(/wd4206)
-  add_compile_options(/wd4512)
-  add_compile_options(/wd4701)
-  add_compile_options(/wd4706)
-  add_compile_options(/wd4800)
-
-  # Treat some criticial warnings as error
-  add_compile_options(/we4002)
-  add_compile_options(/we4003)
-  add_compile_options(/we4013)
-  add_compile_options(/we4020)
-  add_compile_options(/we4022)
-  add_compile_options(/we4024)
-  add_compile_options(/we4028)
-  add_compile_options(/we4029)
-  add_compile_options(/we4030)
-  add_compile_options(/we4031)
-  add_compile_options(/we4033)
-  add_compile_options(/we4047)
-  add_compile_options(/we4089)
-  add_compile_options(/we4113)
-  add_compile_options(/we4133)
-  add_compile_options(/we4204)
-  add_compile_options(/we4700)
-  add_compile_options(/we4715)
-  add_compile_options(/we4789)
-
-  add_compile_definitions(
-    "_CRT_SECURE_NO_DEPRECATE"
-    "_CRT_NONSTDC_NO_DEPRECATE"
-    "_CRT_SECURE_NO_WARNINGS"
-  )
 endif()
 
 # Build shared libraries and theirs implibs with 'lib' prefix, for example
