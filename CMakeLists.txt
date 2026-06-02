@@ -91,6 +91,7 @@ option(SVN_ENABLE_NLS "Enable gettext functionality" OFF)
 option(SVN_ENABLE_TUI "Enable TUI applications (requires ncurses)" OFF)
 option(SVN_ENABLE_AUTH_KWALLET "Enable KWallet auth library" OFF)
 option(SVN_ENABLE_AUTH_GNOME_KEYRING "Enable GNOME Keyring for auth credentials" OFF)
+option(SVN_ENABLE_SASL "Enable Cyrus SASL v2" OFF)
 cmake_dependent_option(SVN_ENABLE_AUTH_GPG_AGENT "Enable GPG Agent support" OFF "WIN32" ON)
 
 option(SVN_INSTALL_PRIVATE_H "Install private header files." OFF)
@@ -728,6 +729,24 @@ if (SVN_ENABLE_TUI)
   endif()
 endif()
 
+if (SVN_ENABLE_SASL)
+  add_library(external-sasl INTERFACE)
+
+  if(SVN_USE_PKG_CONFIG)
+    pkg_check_modules(libsasl2 REQUIRED IMPORTED_TARGET libsasl2>=2.0.0)
+    target_link_libraries(external-sasl INTERFACE PkgConfig::libsasl2)
+    set(SVN_SASL_LIBS ${libsasl2_LDFLAGS})
+  else()
+    find_package(SASL 2.0.0 REQUIRED)
+    target_link_libraries(external-sasl INTERFACE SASL::SASL)
+  endif()
+
+  add_private_config_definition(
+    "Defined if Cyrus SASL v2 is present on the system"
+    "SVN_HAVE_SASL" "1"
+  )
+endif()
+
 if(SVN_ENABLE_SWIG_PERL OR SVN_ENABLE_SWIG_PYTHON OR SVN_ENABLE_SWIG_RUBY)
   file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/subversion/bindings/swig/proxy")
 
@@ -1095,6 +1114,7 @@ message(STATUS "  Auth providers:")
 message(STATUS "    Enable KWallet integration .... : ${SVN_ENABLE_AUTH_KWALLET}")
 message(STATUS "    Enable Gnome Keyring .......... : ${SVN_ENABLE_AUTH_GNOME_KEYRING}")
 message(STATUS "    Enable GPG Agent support ...... : ${SVN_ENABLE_AUTH_GPG_AGENT}")
+message(STATUS "    Enable Cyrus SASL v2 .......... : ${SVN_ENABLE_SASL}")
 message(STATUS "  Optional modules and targets:")
 message(STATUS "    Build Apache Modules .......... : ${SVN_ENABLE_APACHE_MODULES}")
 message(STATUS "    Build programs ................ : ${SVN_ENABLE_PROGRAMS}")

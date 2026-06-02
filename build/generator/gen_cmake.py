@@ -169,8 +169,7 @@ class Generator(gen_base.GeneratorBase):
                               "apr_memcache",
                               "magic",
                               "macos-plist",
-                              "macos-keychain",
-                              "sasl"]:
+                              "macos-keychain"]:
               # These dependencies are currently ignored
               # TODO:
               pass
