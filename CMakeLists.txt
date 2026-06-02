@@ -938,6 +938,7 @@ if(SVN_ENABLE_TESTS)
         --verbose
         --log-to-stdout
         --set-log-level=WARNING
+        --cleanup
         ${SVN_TEST_COMMAND_ARGUMENTS}
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${test_root}
