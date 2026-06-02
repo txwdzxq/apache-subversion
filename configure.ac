@@ -263,6 +263,8 @@ fi
 dnl Checksum backend
 AC_DEFINE([SVN_CHECKSUM_BACKEND_APR], 1,
           [Defined if svn should use APR to compute checksums])
+SVN_CHECKSUM_LIBS=""
+AC_SUBST(SVN_CHECKSUM_LIBS)
 
 dnl Search for apr_memcache (only affects fs_fs)
 SVN_LIB_APR_MEMCACHE
