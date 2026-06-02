@@ -23,6 +23,7 @@ import os
 import sys
 import ezt
 import gen_base
+from gen_pkgconfig import write_pkg_config_dot_in_files 
 
 class _eztdata(object):
   def __init__(self, **kw):
@@ -254,6 +255,9 @@ class Generator(gen_base.GeneratorBase):
     template.parse_file(os.path.join('build', 'generator', 'templates',
                                      'targets.cmake.ezt'))
     template.generate(output_file, data)
+
+    write_pkg_config_dot_in_files(self.version, self.sections,
+                                  self.get_install_sources())
 
   def get_install_sources(self):
     install_sources = self.graph.get_all_sources(gen_base.DT_INSTALL)
