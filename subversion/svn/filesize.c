@@ -31,6 +31,7 @@
 #include <apr_strings.h>
 
 #include "cl.h"
+#include "svn_private_config.h"
 
 
 /*** Code. ***/
@@ -72,16 +73,6 @@ format_size(double human_readable_size,
             apr_size_t index,
             apr_pool_t *result_pool)
 {
-  /* Apple in its infinite wisdom has seen fit to deprecate sprintf() which
-     has been part of the C standard library since the K&R days and is not
-     deprecated in any version of the C standard. */
-#ifdef __APPLE__
-#  if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2)
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#  endif
-#endif /* __APPLE__ */
-
   /* NOTE: We want to display a locale-specific decimal sepratator, but
            APR's formatter completely ignores the locale. So we use the
            good, old, standard, *dangerous* sprintf() to format the size.
@@ -107,22 +98,26 @@ format_size(double human_readable_size,
        the absolute size is actually a single-digit number, because
        files can't have fractional byte sizes. */
     if (absolute_human_readable_size >= 10)
-      sprintf(buffer, "%.0f", human_readable_size);
+      {
+#if !HAVE_SNPRINTF
+        sprintf(buffer, "%.0f", human_readable_size);
+#else
+        snprintf(buffer, sizeof(buffer), "%.0f", human_readable_size);
+#endif
+      }
     else
       {
         double integral;
         const double frac = modf(absolute_human_readable_size, &integral);
         const int decimals = (index > 0 && (integral < 9 || frac <= .949999999));
+#if !HAVE_SNPRINTF
         sprintf(buffer, "%.*f", decimals, human_readable_size);
+#else
+        snprintf(buffer, sizeof(buffer), "%.*f", decimals, human_readable_size);
+#endif
       }
 
     return apr_pstrcat(result_pool, buffer, suffix, SVN_VA_NULL);
-
-#ifdef __APPLE__
-#  if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2)
-#    pragma GCC diagnostic pop
-#  endif
-#endif /* __APPLE__ */
 }
 
 
