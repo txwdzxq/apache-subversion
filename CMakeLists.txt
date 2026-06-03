@@ -729,9 +729,8 @@ if (SVN_ENABLE_TUI)
   endif()
 endif()
 
+add_library(external-sasl INTERFACE)
 if (SVN_ENABLE_SASL)
-  add_library(external-sasl INTERFACE)
-
   if(SVN_USE_PKG_CONFIG)
     pkg_check_modules(libsasl2 REQUIRED IMPORTED_TARGET libsasl2>=2.0.0)
     target_link_libraries(external-sasl INTERFACE PkgConfig::libsasl2)
