@@ -72,19 +72,23 @@ AC_DEFUN(SVN_SVNBROWSE,
             ])
         fi
 
-        if test "$ncurses_found" != "no" && test "$cross_compiling" != "yes"; then
+        if test "$ncurses_found" != "no"; then
             AC_MSG_CHECKING([ncurses version])
             save_cppflags="$CPPFLAGS"
             save_ldflags="$LDFLAGS"
             CPPFLAGS="$CPPFLAGS $SVN_NCURSES_INCLUDES"
             LDFLAGS="$LDFLAGS $SVN_NCURSES_LIBS"
-            AC_TRY_RUN([
+            AC_RUN_IFELSE(
+            [AC_LANG_SOURCE([[
             #include <stdio.h>
             #include <curses.h>
             int main(void) {
               printf("%s\n", NCURSES_VERSION);
               return 0;
-            }],[],[echo "not available"])
+            }]])],
+            [],
+            [echo "not available"],
+            [echo "not available (cross compiling)"])
             CPPFLAGS="$save_cppflags"
             LDFLAGS="$save_ldflags"
         fi
