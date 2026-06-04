@@ -76,6 +76,8 @@ jobs:
             extra_config_opts: >
               -DSVN_ENABLE_AUTH_KWALLET=ON
               -DSVN_ENABLE_AUTH_GNOME_KEYRING=ON
+              -DSVN_ENABLE_SASL=ON
+              -DSVN_ENABLE_LIBMAGIC=ON
             extra_packages: >
               libkf5wallet-dev
               libkf5coreaddons-dev
@@ -85,6 +87,8 @@ jobs:
               libsecret-1-dev
               python3-lxml
               python3-rnc2rng
+              libsasl2-dev
+              libmagic-dev
           - name: Mac OS
             os: macos-latest
             build_shared: ON
