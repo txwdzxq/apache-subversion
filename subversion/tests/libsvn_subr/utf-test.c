@@ -1022,11 +1022,11 @@ static const char *bom = "\xEF\xBB\xBF" "abc";
 static svn_error_t *
 test_utf8_width(apr_pool_t *pool)
 {
-  apr_size_t length = -147;     /* Magic number used to check... */
+  apr_size_t length = 1578706; /* Magic number used to check... */
 
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(invalid), -1);
   SVN_TEST_INT_ASSERT(svn_utf__cstring_width(&length, invalid), -1);
-  SVN_TEST_INT_ASSERT(length, -147); /* ...that 'length' was not changed. */
+  SVN_TEST_INT_ASSERT(length, 1578706); /* ...that 'length' was not changed. */
 
   SVN_TEST_INT_ASSERT(svn_utf_cstring_utf8_width(""), 0);
   SVN_TEST_INT_ASSERT(svn_utf__cstring_width(&length, ""), 0);
