@@ -167,7 +167,6 @@ class Generator(gen_base.GeneratorBase):
               private_libs.append("fs-libs")
             elif dep.name in ["apriconv",
                               "apr_memcache",
-                              "magic",
                               "macos-plist",
                               "macos-keychain"]:
               # These dependencies are currently ignored
