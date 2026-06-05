@@ -81,6 +81,10 @@
 #include <mach-o/loader.h>
 #endif
 
+#ifdef SVN_HAVE_LIBMAGIC
+#include <magic.h>
+#endif
+
 #if HAVE_UNAME
 static const char *canonical_host_from_uname(apr_pool_t *pool);
 # ifndef SVN_HAVE_MACOS_PLIST
@@ -173,6 +177,18 @@ svn_sysinfo__linked_libs(apr_pool_t *pool)
     lib->compiled_version = apr_pstrdup(pool, svn_xml__compiled_version());
     lib->runtime_version = apr_pstrdup(pool, svn_xml__runtime_version());
   }
+
+#ifdef SVN_HAVE_LIBMAGIC
+  {
+    int libmagic_version = magic_version();
+    svn_version_ext_linked_lib_t *lib = apr_array_push(array);
+    lib->name = "Libmagic";
+    lib->compiled_version =
+        apr_psprintf(pool, "%d.%d", MAGIC_VERSION / 100, MAGIC_VERSION % 100);
+    lib->runtime_version = apr_psprintf(pool, "%d.%d", libmagic_version / 100,
+                                        libmagic_version % 100);
+  }
+#endif
 
   {
     svn_version_ext_linked_lib_t *lib = apr_array_push(array);
