@@ -31,6 +31,9 @@
 
 #include <serf.h>
 #include <serf_bucket_types.h>
+#if defined(SVN__SERF_EXPERIMENTAL) && SERF_VERSION_AT_LEAST(1, 5, 0)
+#include <serf_bucket_util.h>
+#endif
 
 #include "svn_hash.h"
 #include "svn_dirent_uri.h"
