@@ -218,37 +218,6 @@ svn_opt_parse_path(svn_opt_revision_t *rev,
   return SVN_NO_ERROR;
 }
 
-/* Note: This is substantially copied into svn_client_args_to_target_array() in
- * order to move to libsvn_client while maintaining backward compatibility. */
-svn_error_t *
-svn_opt__args_to_target_array(apr_array_header_t **targets_p,
-                              apr_getopt_t *os,
-                              const apr_array_header_t *known_targets,
-                              apr_pool_t *pool)
-{
-  apr_array_header_t *input_targets;
-  apr_array_header_t *utf8_input_targets;
-  int i;
-
-  SVN_ERR(svn_opt_parse_all_args(&input_targets, os, pool));
-
-  utf8_input_targets = apr_array_make(pool, input_targets->nelts,
-                                      sizeof(const char *));
-
-  for (i = 0; i < input_targets->nelts; i++)
-    {
-      const char *raw_target = APR_ARRAY_IDX(input_targets, i, const char *);
-      const char *utf8_target;
-
-      SVN_ERR(svn_utf_cstring_to_utf8(&utf8_target, raw_target, pool));
-
-      APR_ARRAY_PUSH(utf8_input_targets, const char *) = utf8_target;
-    }
-
-  return svn_error_trace(svn_opt__process_target_array(
-      targets_p, utf8_input_targets, known_targets, pool));
-}
-
 /* Note: This is substantially copied into svn_client___target_array() in
  * order to move to libsvn_client while maintaining backward compatibility. */
 svn_error_t *
