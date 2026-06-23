@@ -207,6 +207,7 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/installdir
           -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_triplet }}
           -DSVN_TEST_CONFIGURE_FOR_PARALLEL=ON
+          -DPython3_FIND_REGISTRY=NEVER
           ${{ matrix.extra_config_opts }}
 
       - name: Build CMake
