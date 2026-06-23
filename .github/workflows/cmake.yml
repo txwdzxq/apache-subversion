@@ -212,6 +212,7 @@ jobs:
           -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_triplet }}
           -DSVN_TEST_CONFIGURE_FOR_PARALLEL=ON
           -DPython3_FIND_REGISTRY=NEVER
+          -DPython3_FIND_STRATEGY=LOCATION
           ${{ matrix.extra_config_opts }}
 
       - name: Build CMake
